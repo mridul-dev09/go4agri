@@ -1,0 +1,5 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="85" fill="#0056b3"/>
+  <text x="100" y="115" font-family="Cambria, serif" font-size="60" text-anchor="middle" fill="#ffffff" font-weight="900">IAF</text>
+  <path d="M40 140 Q100 160 160 140" stroke="#ffffff" stroke-width="4" fill="none"/>
+</svg>

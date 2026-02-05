@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go4Agri - Trusted Organic Certification & Compliance Partner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <header class="main-header">
+        <div class="header-container">
+            <div class="logo">
+                <img src="/static/images/logo.svg" alt="Go4Agri Logo">
+            </div>
+            <nav class="main-nav">
+                <ul class="nav-list">
+                    <li><a href="{{ url_for('home') }}"><i class="fas fa-home"></i><span>Home</span></a></li>
+                    <li><a href="{{ url_for('about') }}"><i class="fas fa-info-circle"></i><span>About Us</span></a>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#"><i class="fas fa-certificate"></i><span>Certification <i class="fas fa-chevron-down"
+                                    style="font-size: 0.7rem;"></i></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="{{ url_for('certification_schemes') }}">Certification Schemes</a></li>
+                            <li><a href="/#certification-process">Certification Process</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="{{ url_for('services') }}"><i class="fas fa-cogs"></i><span>Services</span></a></li>
+                    <li><a href="{{ url_for('pricing') }}"><i class="fas fa-tags"></i><span>Pricing</span></a></li>
+                    <li><a href="{{ url_for('downloads') }}"><i class="fas fa-download"></i><span>Downloads</span></a>
+                    </li>
+                    <li><a href="{{ url_for('clients') }}"><i class="fas fa-users"></i><span>Clients</span></a></li>
+                    <li><a href="{{ url_for('updates') }}"><i class="fas fa-newspaper"></i><span>Updates</span></a></li>
+                    <li><a href="{{ url_for('appeal') }}"><i class="fas fa-balance-scale"></i><span>Appeal</span></a>
+                    </li>
+                    <li><a href="{{ url_for('complaints') }}"><i
+                                class="fas fa-exclamation-triangle"></i><span>Complaints</span></a></li>
+                    <li><a href="{{ url_for('careers') }}"><i class="fas fa-briefcase"></i><span>Careers</span></a></li>
+                    <li><a href="{{ url_for('contact') }}"><i class="fas fa-envelope"></i><span>Contact</span></a></li>
+                    {% if session.get('user_id') %}
+                    <li><a href="{{ url_for('dashboard') }}"><i
+                                class="fas fa-tachometer-alt"></i><span>DASHBOARD</span></a></li>
+                    <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i><span>LOGOUT</span></a>
+                    </li>
+                    {% else %}
+                    <li class="dropdown login-nav-item">
+                        <a href="#"><i class="fas fa-user-circle"></i><span>LOGIN <i class="fas fa-chevron-down"
+                                    style="font-size: 0.7rem;"></i></span></a>
+                        <ul class="dropdown-menu" style="right: 0; left: auto;">
+                            <li><a href="{{ url_for('employee_login') }}">Employee Login</a></li>
+                            <li><a href="{{ url_for('client_login') }}">Client Login</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages" style="max-width: 1200px; margin: 20px auto; padding: 0 20px;">
+            {% for category, message in messages %}
+            <div
+                style="padding: 15px; margin-bottom: 20px; border-radius: 5px; background: {% if category == 'error' %}#f8d7da{% else %}#d4edda{% endif %}; color: {% if category == 'error' %}#721c24{% else %}#155724{% endif %}; border: 1px solid {% if category == 'error' %}#f5c6cb{% else %}#c3e6cb{% endif %};">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="/about">About Us</a></li>
+                    <li><a href="/certification-schemes">Certification Schemes</a></li>
+                    <li><a href="/#certification-process">Certification Process</a></li>
+                    <li><a href="/contact">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>Resources</h3>
+                <ul>
+                    <li><a href="/faqs">FAQs</a></li>
+                    <li><a href="/policies">Policies</a></li>
+                    <li><a href="/verification">Certificate Verification</a></li>
+                    <li><a href="/updates">Notices & Updates</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>Contact Us</h3>
+                <p><strong>Reg. Address:</strong> FLAT NO 101,OZONE,1ST FLOOR, D WING, Samata Nagar,Takli-Upnagar Road
+                    Nashik,Maharashtra,India-422006</p>
+                <p><strong>Office Address:</strong> Aarkay Precidency, B WING, S.No13/1/1, plot no-02, Samata
+                    Nagar,Takli-Upnagar Road Nashik,Maharashtra,India-422006</p>
+                <p>info@go4agri.com</p>
+                <p>+91 8982593067</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Go4Agri. All Rights Reserved.</p>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+                <a href="#"><i class="fab fa-youtube"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <a href="https://wa.me/918510070029" class="whatsapp-float" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+</body>
+
+</html>

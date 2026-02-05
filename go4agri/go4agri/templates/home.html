@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-content">
+        <h1>Trusted Organic Certification & Compliance Partner</h1>
+        <p>NPOP | NOP | USDA & International Organic Standards</p>
+        <div class="hero-btns">
+            <a href="/apply" class="btn-gold">Apply for Certification</a>
+            <a href="/certification-schemes" class="btn-outline">View Certification Schemes</a>
+        </div>
+    </div>
+</section>
+
+<section class="section-container">
+    <h2 class="section-title">Our Certification Programs</h2>
+    <div class="program-logos"
+        style="display: flex; justify-content: space-around; align-items: center; margin-top: 25px; gap: 30px; flex-wrap: wrap;">
+        <img src="{{ url_for('static', filename='images/npop_new.png') }}" alt="NPOP Organic" style="height: 120px;">
+        <img src="{{ url_for('static', filename='images/nop.svg') }}" alt="NOP Organic" style="height: 120px;">
+        <img src="{{ url_for('static', filename='images/usda_new.jpg') }}" alt="USDA Organic" style="height: 120px;">
+    </div>
+</section>
+
+<section class="section-container" style="background: #fdfdfd;">
+    <h2 class="section-title">Why Choose <span style="color: #2d5a27;">Go4Agri?</span></h2>
+    <div class="features-grid"
+        style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; margin-top: 25px;">
+        <div class="feature-card">
+            <i class="fas fa-user-tie" style="font-size: 2.5rem; color: #2d5a27; margin-bottom: 20px;"></i>
+            <h3>Accredited Experts</h3>
+        </div>
+        <div class="feature-card">
+            <i class="fas fa-globe" style="font-size: 2.5rem; color: #2d5a27; margin-bottom: 20px;"></i>
+            <h3>Global Standards</h3>
+        </div>
+        <div class="feature-card">
+            <i class="fas fa-file-alt" style="font-size: 2.5rem; color: #2d5a27; margin-bottom: 20px;"></i>
+            <h3>Transparent Process</h3>
+        </div>
+        <div class="feature-card">
+            <i class="fas fa-hands-helping" style="font-size: 2.5rem; color: #2d5a27; margin-bottom: 20px;"></i>
+            <h3>Comprehensive Support</h3>
+        </div>
+    </div>
+</section>
+
+<section class="section-container" id="certification-process">
+    <h2 class="section-title">Our Certification Process</h2>
+    <div class="process-steps"
+        style="display: flex; justify-content: space-between; margin-top: 25px; position: relative;">
+        <div class="step">
+            <div class="step-num"
+                style="width: 50px; height: 50px; background: #2d5a27; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-weight: bold; font-size: 1.2rem;">
+                1</div>
+            <p>Application</p>
+        </div>
+        <div class="step">
+            <div class="step-num"
+                style="width: 50px; height: 50px; background: #2d5a27; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-weight: bold; font-size: 1.2rem;">
+                2</div>
+            <p>Document Review</p>
+        </div>
+        <div class="step">
+            <div class="step-num"
+                style="width: 50px; height: 50px; background: #2d5a27; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-weight: bold; font-size: 1.2rem;">
+                3</div>
+            <p>On-Site Inspection</p>
+        </div>
+        <div class="step">
+            <div class="step-num"
+                style="width: 50px; height: 50px; background: #2d5a27; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-weight: bold; font-size: 1.2rem;">
+                4</div>
+            <p>Compliance Check</p>
+        </div>
+        <div class="step">
+            <div class="step-num"
+                style="width: 50px; height: 50px; background: #2d5a27; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-weight: bold; font-size: 1.2rem;">
+                5</div>
+            <p>Certification Issued</p>
+        </div>
+    </div>
+</section>
+
+<section class="section-container" style="background: #f4f7f4; padding: 40px 10%;">
+    <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 25px; gap: 20px;">
+        <div style="flex: 1; height: 1px; background: #ddd;"></div>
+        <h2 style="font-size: 2rem; color: #1a3c17; margin: 0; font-weight: 700;">Who We Certify</h2>
+        <div style="flex: 1; height: 1px; background: #ddd;"></div>
+    </div>
+
+    <div class="cert-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px;">
+        <div class="cert-card-refined" style="text-align: center;">
+            <div
+                style="background: #fff; padding: 10px; border-radius: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; transition: transform 0.3s ease;">
+                <div style="height: 180px; overflow: hidden; border-radius: 3px;">
+                    <img src="/static/images/farmers.jpg" alt="Farmers"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <div style="flex: 1; height: 1px; background: #eee;"></div>
+                <p style="font-weight: 700; color: #333; margin: 0; min-width: 100px;">Farmers</p>
+                <div style="flex: 1; height: 1px; background: #eee;"></div>
+            </div>
+        </div>
+
+        <div class="cert-card-refined" style="text-align: center;">
+            <div
+                style="background: #fff; padding: 10px; border-radius: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; transition: transform 0.3s ease;">
+                <div style="height: 180px; overflow: hidden; border-radius: 3px;">
+                    <img src="/static/images/food_processors.jpeg" alt="Food Processors"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <div style="flex: 1; height: 1px; background: #eee;"></div>
+                <p style="font-weight: 700; color: #333; margin: 0; min-width: 120px;">Food Processors</p>
+                <div style="flex: 1; height: 1px; background: #eee;"></div>
+            </div>
+        </div>
+
+        <div class="cert-card-refined" style="text-align: center;">
+            <div
+                style="background: #fff; padding: 10px; border-radius: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; transition: transform 0.3s ease;">
+                <div style="height: 180px; overflow: hidden; border-radius: 3px;">
+                    <img src="/static/images/exporters.jpeg" alt="Exporters"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <div style="flex: 1; height: 1px; background: #eee;"></div>
+                <p style="font-weight: 700; color: #333; margin: 0; min-width: 100px;">Exporters</p>
+                <div style="flex: 1; height: 1px; background: #eee;"></div>
+            </div>
+        </div>
+
+        <div class="cert-card-refined" style="text-align: center;">
+            <div
+                style="background: #fff; padding: 10px; border-radius: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; transition: transform 0.3s ease;">
+                <div style="height: 180px; overflow: hidden; border-radius: 3px;">
+                    <img src="/static/images/input_manufacturers.jpeg" alt="Input Manufacturers"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <div style="flex: 1; height: 1px; background: #eee;"></div>
+                <p style="font-weight: 700; color: #333; margin: 0; min-width: 150px;">Input Manufacturers</p>
+                <div style="flex: 1; height: 1px; background: #eee;"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section-container">
+    <h2 class="section-title">Our Accreditations</h2>
+    <div class="accred-logos"
+        style="display: flex; justify-content: space-around; align-items: center; margin-top: 25px; gap: 40px; opacity: 1; flex-wrap: wrap;">
+        <img src="{{ url_for('static', filename='images/usda_new.jpg') }}" alt="USDA" style="height: 100px;">
+        <img src="{{ url_for('static', filename='images/nop.svg') }}" alt="NOP" style="height: 100px;">
+        <img src="/static/images/iaf.svg" alt="IAF" style="height: 100px;">
+        <img src="/static/images/ioas.svg" alt="IOAS" style="height: 100px;">
+    </div>
+</section>
+{% endblock %}

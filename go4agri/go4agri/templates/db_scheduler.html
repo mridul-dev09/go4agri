@@ -1,0 +1,38 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Inspection & Audit Scheduling{% endblock %}
+
+{% block dashboard_content %}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-clock"></i> Pending Assignments
+        </h3>
+
+        {% if not applications %}
+        <p style="text-align: center; color: #999; padding: 20px;">All inspections scheduled!</p>
+        {% else %}
+        {% for app in applications %}
+        <div
+            style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h5 style="margin: 0; color: #333;">{{ app.company_name }}</h5>
+                <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #666;">Type: {{ app.program_type }}</p>
+            </div>
+            <form action="/update-application-status/{{ app.id }}" method="POST">
+                <button type="submit" class="btn-gold"
+                    style="padding: 5px 12px; font-size: 0.75rem; border: none; cursor: pointer;">CONFIRM
+                    SCHEDULE</button>
+            </form>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-calendar-check"></i> Auditor
+            Availability</h3>
+        <p style="font-size: 0.9rem; color: #666;">View real-time auditor locations and schedules.</p>
+        <button class="btn-outline" style="width: 100%; margin-top: 15px;">OPEN CALENDAR</button>
+    </div>
+</div>
+{% endblock %}

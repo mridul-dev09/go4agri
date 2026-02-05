@@ -1,0 +1,188 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Client Dashboard - My Applications{% endblock %}
+
+{% block dashboard_content %}
+<div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h3 style="color: var(--primary-green); margin: 0;">Application Status Tracker</h3>
+        <a href="/apply" class="btn-gold" style="text-decoration: none; padding: 8px 15px; font-size: 0.9rem;">New
+            Application</a>
+    </div>
+
+    {% if not applications %}
+    <div style="text-align: center; padding: 40px; color: #999;">
+        <i class="fas fa-folder-open" style="font-size: 3rem; margin-bottom: 15px;"></i>
+        <p>No applications found. <a href="/apply" style="color: var(--accent-gold); font-weight: 600;">Start one
+                now</a></p>
+    </div>
+    {% else %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; background: #f9f9f9;">
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Date</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Company</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Program</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Status</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Certificate</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
+                <tr>
+                    <td style="padding: 15px; border-bottom: 1px solid #eee; font-size: 0.9rem;">{{
+                        app.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid #eee;">{{ app.company_name }}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid #eee; font-size: 0.9rem;">{{ app.program_type }}
+                    </td>
+                    <td style="padding: 15px; border-bottom: 1px solid #eee;">
+                        {% if app.status == 'CERTIFICATE_ISSUED' %}
+                        <span
+                            style="background: #e9f5e8; color: #2d5a27; padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: 700;">COMPLETED</span>
+                        {% elif app.status == 'PENDING_TRANSACTION' %}
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span
+                                style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: 700;">PAYMENT
+                                PENDING</span>
+                            <form action="/update-application-status/{{ app.id }}" method="POST">
+                                <input type="hidden" name="status_override" value="CERTIFICATE_ISSUED">
+                                <button type="submit" class="btn-gold"
+                                    style="padding: 4px 10px; font-size: 0.75rem; cursor: pointer; border: none; border-radius: 3px;">Pay
+                                    Now</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <span
+                            style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: 700;">{{
+                            app.status.replace('_', ' ') }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 15px; border-bottom: 1px solid #eee;">
+                        {% if app.status == 'CERTIFICATE_ISSUED' %}
+                        <a href="#" style="color: var(--primary-green); font-weight: 600; text-decoration: none;">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                        {% else %}
+                        <span style="color: #ccc; font-size: 0.85rem;">Pending approval</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+<div
+    style="margin-top: 30px; background: white; padding: 40px 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+    <h3 style="color: var(--primary-green); margin-bottom: 35px; text-align: center; font-size: 1.5rem;">
+        <i class="fas fa-tasks" style="color: var(--accent-gold);"></i> Our Certification Process
+    </h3>
+
+    {% if applications %}
+    {% set app = applications[0] %}
+    {# Map backend statuses to the 5 visual stages #}
+    {% set status_val = {
+    'PENDING_CEO_REVIEW': 0,
+    'PENDING_ADMIN_REVIEW': 0,
+    'PENDING_QA_REVIEW': 0,
+    'PENDING_INITIAL_REVIEW': 1,
+    'PENDING_EVALUATION': 2,
+    'PENDING_TECHNICAL_REVIEW': 3,
+    'PENDING_CERTIFICATION_OFFICER': 3,
+    'PENDING_CERTIFIER_APPROVAL': 3,
+    'PENDING_TRANSACTION': 4,
+    'CERTIFICATE_ISSUED': 5
+    }.get(app.status, 0) %}
+
+    <div
+        style="display: flex; justify-content: space-between; position: relative; max-width: 900px; margin: 0 auto 50px;">
+        {# Progress Line #}
+        <div
+            style="position: absolute; top: 25px; left: 10%; width: 80%; height: 4px; background: #e0e0e0; z-index: 1;">
+            <div
+                style="width: {% if status_val >= 5 %}100%{% else %}{{ (status_val) * 25 }}%{% endif %}; height: 100%; background: #2d5a27; transition: width 0.8s ease;">
+            </div>
+        </div>
+
+        {# Steps #}
+        {% set steps = [
+        {'name': 'Application', 'icon': '1'},
+        {'name': 'Document Review', 'icon': '2'},
+        {'name': 'On-Site Inspection', 'icon': '3'},
+        {'name': 'Compliance Check', 'icon': '4'},
+        {'name': 'Certification Issued', 'icon': '5'}
+        ] %}
+
+        {% for step in steps %}
+        {% set step_idx = loop.index0 %}
+        <div style="text-align: center; width: 20%; z-index: 2;">
+            {# Circle #}
+            <div style="width: 50px; height: 50px; border-radius: 50%; 
+                        background: {% if status_val > step_idx %}#2d5a27{% elif status_val == step_idx %}#c4a006{% else %}#f5f5f5{% endif %}; 
+                        color: {% if status_val >= step_idx %}white{% else %}#999{% endif %}; 
+                        display: flex; align-items: center; justify-content: center; 
+                        margin: 0 auto 15px; font-weight: 700; font-size: 1.2rem;
+                        border: 5px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                        transition: all 0.3s ease;">
+                {% if status_val > step_idx %}<i class="fas fa-check"></i>{% else %}{{ step.icon }}{% endif %}
+            </div>
+
+            {# Label #}
+            <div style="font-weight: 700; color: #333; font-size: 0.9rem; margin-bottom: 5px;">{{ step.name }}</div>
+
+            {# Status Label #}
+            <div style="font-size: 0.75rem; font-weight: 600; 
+                        color: {% if status_val > step_idx %}#2d5a27{% elif status_val == step_idx %}#c4a006{% else %}#bbb{% endif %};
+                        text-transform: uppercase;">
+                {% if status_val > step_idx %}
+                <i class="fas fa-check-circle"></i> Completed
+                {% elif status_val == step_idx %}
+                <i class="fas fa-spinner fa-spin"></i> Pending
+                {% else %}
+                Pending
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {# Detailed explanation for client #}
+    <div
+        style="max-width: 800px; margin: 0 auto; padding: 20px; background: #fdfaf4; border-radius: 8px; border-left: 5px solid #c4a006;">
+        <h4 style="margin-top: 0; color: #2d5a27;"><i class="fas fa-info-circle"></i> Milestone Details</h4>
+        <p style="margin: 0; color: #555; font-size: 0.95rem; line-height: 1.5;">
+            {% if status_val == 0 %}
+            Your <strong>Application</strong> is currently being reviewed by the CEO and Administrative team. We are
+            verifying the basic eligibility and program requirements.
+            {% elif status_val == 1 %}
+            We have received your application! The <strong>Document Review</strong> stage has started. Our initial
+            reviewers are checking your uploaded documents for compliance.
+            {% elif status_val == 2 %}
+            Documents verified! An <strong>On-Site Inspection</strong> is being scheduled or conducted. Our evaluators
+            will verify your organic practices on the field.
+            {% elif status_val == 3 %}
+            Inspection complete. We are now in the <strong>Compliance Check</strong> phase. Technical reviewers and
+            certification officers are performing a multi-level audit of the findings.
+            {% elif status_val == 4 %}
+            Final approval granted! <strong>Certification Issuance</strong> is pending. Please complete the
+            transaction/payment to activate your official organic certificate.
+            {% elif status_val == 5 %}
+            <strong>Process Complete!</strong> Your certification has been issued. You can download your official
+            certificate from the table above.
+            {% endif %}
+        </p>
+    </div>
+
+    {% else %}
+    <div style="text-align: center; padding: 50px; color: #999;">
+        <i class="fas fa-clipboard-list" style="font-size: 4rem; opacity: 0.2; margin-bottom: 20px;"></i>
+        <p style="font-size: 1.1rem;">You don't have any active certification processes.</p>
+        <a href="/apply" class="btn-gold" style="display: inline-block; margin-top: 15px; text-decoration: none;">Apply
+            for Certification</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

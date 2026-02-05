@@ -1,0 +1,50 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Certifier Approval Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+    <h3 style="color: var(--primary-green); margin-bottom: 20px;">Certificates Pending Approval</h3>
+
+    {% if not applications %}
+    <div style="text-align: center; padding: 40px; color: #999;">
+        <i class="fas fa-file-signature" style="font-size: 3rem; margin-bottom: 15px;"></i>
+        <p>No certificates pending approval.</p>
+    </div>
+    {% else %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="text-align: left; background: #f9f9f9;">
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Date</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Company</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Program</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
+                <tr>
+                    <td style="padding: 15px; border-bottom: 1px solid #eee;">{{ app.created_at.strftime('%Y-%m-%d') }}
+                    </td>
+                    <td style="padding: 15px; border-bottom: 1px solid #eee;">{{ app.company_name }}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid #eee;">{{ app.program_type }}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid #eee; display: flex; gap: 10px;">
+                        <form action="/update-application-status/{{ app.id }}" method="POST">
+                            <button type="submit" class="btn-gold" style="padding: 5px 15px; cursor: pointer;">APPROVE &
+                                TRANSACTION</button>
+                        </form>
+                        <form action="/update-application-status/{{ app.id }}" method="POST">
+                            <input type="hidden" name="action" value="issue">
+                            <button type="submit" class="btn-outline" style="padding: 5px 15px; cursor: pointer;">DIRECT
+                                ISSUE</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
