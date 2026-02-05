@@ -1,0 +1,5 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="90" fill="#ffffff" stroke="#006400" stroke-width="5"/>
+  <text x="100" y="90" font-family="Cambria, serif" font-size="32" text-anchor="middle" fill="#006400" font-weight="900">APEDA</text>
+  <path d="M60 110 L140 110 L100 160 Z" fill="#ff9933" opacity="0.8"/>
+</svg>

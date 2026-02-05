@@ -1,0 +1,5 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <path d="M50 20 L150 20 L180 180 L20 180 Z" fill="#f4fbf4" stroke="#2d5a27" stroke-width="4"/>
+  <text x="100" y="100" font-family="Cambria, serif" font-size="48" text-anchor="middle" fill="#2d5a27" font-weight="900">INCT</text>
+  <rect x="40" y="120" width="120" height="4" fill="#c5a059"/>
+</svg>

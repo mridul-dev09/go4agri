@@ -1,0 +1,6 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="90" fill="none" stroke="#2d5a27" stroke-width="2" stroke-dasharray="10 5"/>
+  <text x="100" y="80" font-family="Cambria, serif" font-size="24" text-anchor="middle" fill="#2d5a27" font-weight="bold">NATIONAL</text>
+  <text x="100" y="125" font-family="Cambria, serif" font-size="48" text-anchor="middle" fill="#2d5a27" font-weight="900">NOP</text>
+  <text x="100" y="160" font-family="Cambria, serif" font-size="20" text-anchor="middle" fill="#c5a059">PROGRAM</text>
+</svg>

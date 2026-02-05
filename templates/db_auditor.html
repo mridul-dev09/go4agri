@@ -1,0 +1,71 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Auditor Inspection & Compliance Log{% endblock %}
+
+{% block dashboard_content %}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-clipboard-check"></i> Upcoming
+            Audits</h3>
+        <ul style="list-style: none; padding: 0;">
+            <li style="padding: 15px 0; border-bottom: 1px solid #eee;">
+                <h5 style="margin: 0; color: #333;">Organic Valley Farm #3</h5>
+                <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #666;"><i class="far fa-calendar"></i> Feb 5,
+                    2026 | Type: NPOP Annual</p>
+                <div style="margin-top: 10px;">
+                    <button
+                        style="background: var(--primary-green); color: white; border: none; padding: 5px 15px; border-radius: 5px; font-size: 0.8rem; cursor: pointer;">PREPARE
+                        CHECKLIST</button>
+                </div>
+            </li>
+            <li style="padding: 15px 0;">
+                <h5 style="margin: 0; color: #333;">Fresh Green Processors</h5>
+                <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #666;"><i class="far fa-calendar"></i> Feb 8,
+                    2026 | Type: USDA Scope Audit</p>
+                <div style="margin-top: 10px;">
+                    <button
+                        style="background: var(--primary-green); color: white; border: none; padding: 5px 15px; border-radius: 5px; font-size: 0.8rem; cursor: pointer;">PREPARE
+                        CHECKLIST</button>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-history"></i> Recent Findings
+        </h3>
+        <div style="border-left: 3px solid var(--accent-gold); padding-left: 15px; margin-bottom: 20px;">
+            <p style="font-size: 0.9rem; margin-bottom: 5px; font-weight: 600;">Observation: Record Keeping Gap</p>
+            <p style="font-size: 0.85rem; color: #666;">Site: Heritage Grains | Date: Jan 28</p>
+        </div>
+        <div style="border-left: 3px solid #d9534f; padding-left: 15px;">
+            <p style="font-size: 0.9rem; margin-bottom: 5px; font-weight: 600;">Critical NC: Buffer Zone Encroachment
+            </p>
+            <p style="font-size: 0.85rem; color: #666;">Site: Blue Hills Farm | Date: Jan 30</p>
+        </div>
+        <button class="btn-gold" style="width: 100%; margin-top: 25px; border: none; cursor: pointer;">VIEW ALL
+            REPORTS</button>
+    </div>
+</div>
+
+<div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+    <h3 style="color: var(--primary-green); margin-bottom: 20px;">Auditor Tools</h3>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+        <div style="padding: 15px; background: #f9f9f9; border-radius: 5px; text-align: center;">
+            <i class="fas fa-book-open"
+                style="font-size: 2rem; color: var(--primary-green); margin-bottom: 10px; display: block;"></i>
+            <span style="font-size: 0.85rem;">Standards Manual</span>
+        </div>
+        <div style="padding: 15px; background: #f9f9f9; border-radius: 5px; text-align: center;">
+            <i class="fas fa-camera"
+                style="font-size: 2rem; color: var(--primary-green); margin-bottom: 10px; display: block;"></i>
+            <span style="font-size: 0.85rem;">Evidence Upload</span>
+        </div>
+        <div style="padding: 15px; background: #f9f9f9; border-radius: 5px; text-align: center;">
+            <i class="fas fa-file-signature"
+                style="font-size: 2rem; color: var(--primary-green); margin-bottom: 10px; display: block;"></i>
+            <span style="font-size: 0.85rem;">Digital Signature</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

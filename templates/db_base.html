@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-wrapper" style="display: flex; min-height: 80vh; background: #f4f7f4;">
+    <!-- Sidebar -->
+    <div class="sidebar" style="width: 280px; background: white; border-right: 1px solid #e0e0e0; padding: 30px 20px;">
+        <div class="user-profile"
+            style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee;">
+            <div
+                style="width: 80px; height: 80px; background: var(--primary-green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 2rem;">
+                <i class="fas fa-user"></i>
+            </div>
+            <h3 style="margin-bottom: 5px; color: #333;">{{ user.full_name }}</h3>
+            <p style="font-size: 0.85rem; color: var(--accent-gold); font-weight: 700; text-transform: uppercase;">{{
+                user.designation }}</p>
+        </div>
+
+        <nav class="sidebar-nav">
+            <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px;">
+                <li>
+                    <a href="/dashboard"
+                        style="display: flex; align-items: center; gap: 12px; padding: 12px 15px; text-decoration: none; color: var(--primary-green); background: #e9f5e8; border-radius: 5px; font-weight: 600;">
+                        <i class="fas fa-th-large"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="#"
+                        style="display: flex; align-items: center; gap: 12px; padding: 12px 15px; text-decoration: none; color: #666; transition: all 0.3s; border-radius: 5px;">
+                        <i class="fas fa-tasks"></i> My Tasks
+                    </a>
+                </li>
+                <li>
+                    <a href="#"
+                        style="display: flex; align-items: center; gap: 12px; padding: 12px 15px; text-decoration: none; color: #666; transition: all 0.3s; border-radius: 5px;">
+                        <i class="fas fa-envelope"></i> Messages
+                    </a>
+                </li>
+                <li>
+                    <a href="#"
+                        style="display: flex; align-items: center; gap: 12px; padding: 12px 15px; text-decoration: none; color: #666; transition: all 0.3s; border-radius: 5px;">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </li>
+                <li style="margin-top: 20px; border-top: 1px solid #eee; pt-20">
+                    <a href="/logout"
+                        style="display: flex; align-items: center; gap: 12px; padding: 12px 15px; text-decoration: none; color: #d9534f; transition: all 0.3s; border-radius: 5px;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="dashboard-main" style="flex: 1; padding: 40px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h1 style="color: var(--primary-green); font-size: 1.8rem;">{% block dashboard_title %}Welcome Back{%
+                endblock %}</h1>
+            <div style="color: #666;">
+                <i class="far fa-calendar-alt"></i> <span id="current-date"></span>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            {% block dashboard_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+</script>
+{% endblock %}

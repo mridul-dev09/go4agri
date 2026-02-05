@@ -1,0 +1,205 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}CEO Overview & Strategic Insights{% endblock %}
+
+{% block dashboard_content %}
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
+    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        <h3 style="color: var(--primary-green); margin-bottom: 20px;">Operational Performance</h3>
+        <div
+            style="height: 300px; background: #f9f9f9; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #999;">
+            <p><i class="fas fa-chart-line" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
+                Performance Graph Placeholder</p>
+        </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div
+            style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--accent-gold);">
+            <h4 style="margin-bottom: 10px; color: #333;">Revenue Target</h4>
+            <div style="width: 100%; height: 10px; background: #eee; border-radius: 5px; margin-bottom: 10px;">
+                <div style="width: 75%; height: 100%; background: var(--accent-gold); border-radius: 5px;"></div>
+            </div>
+            <p style="text-align: right; font-weight: 700; color: var(--primary-green);">75%</p>
+        </div>
+
+        <div
+            style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary-green);">
+            <h4 style="margin-bottom: 10px; color: #333;">Market Compliance</h4>
+            <p style="font-size: 2rem; font-weight: 700; color: var(--primary-green);">98.2%</p>
+            <p style="font-size: 0.8rem; color: #27ae60;"><i class="fas fa-arrow-up"></i> +1.2% from last month</p>
+        </div>
+    </div>
+</div>
+
+<div
+    style="margin-top: 30px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+    <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-headset"></i> Lead & Enquiries
+        Management</h3>
+    {% if enquiries %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr style="background: #f4faf4; text-align: left;">
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Date</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Name</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Program</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Contact</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Message</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enquiry in enquiries %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 15px;">{{ enquiry.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td style="padding: 15px; font-weight: 600;">{{ enquiry.name }}</td>
+                    <td style="padding: 15px;"><span
+                            style="background: #fff4e5; color: #d4a017; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">{{
+                            enquiry.program_type }}</span></td>
+                    <td style="padding: 15px;">
+                        <div style="font-size: 0.9rem;">{{ enquiry.email }}</div>
+                        <div style="font-size: 0.8rem; color: #666;">{{ enquiry.phone }}</div>
+                    </td>
+                    <td style="padding: 15px; max-width: 300px; font-size: 0.9rem; color: #555;">{{ enquiry.message }}
+                    </td>
+                    <td style="padding: 15px;">
+                        {% if enquiry.status == 'NEW' %}
+                        <button
+                            onclick="openRegistrationModal('{{ enquiry.name }}', '{{ enquiry.email }}', '{{ enquiry.id }}')"
+                            class="btn-gold"
+                            style="padding: 8px 15px; font-size: 0.85rem; cursor: pointer; border: none; border-radius: 5px;">Register
+                            Client</button>
+                        {% else %}
+                        <span style="color: #27ae60; font-weight: 600;"><i class="fas fa-check-circle"></i>
+                            Registered</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 40px; color: #999;">
+        <p><i class="fas fa-inbox" style="font-size: 2.5rem; margin-bottom: 10px; display: block;"></i> No new enquiries
+            at the moment.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div
+    style="margin-top: 30px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+    <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-file-signature"></i> New Application
+        Review</h3>
+    {% if applications %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr style="background: #f4faf4; text-align: left;">
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Date</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Company Name</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Program</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Current Status</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
+                {% if app.status == 'PENDING_CEO_REVIEW' %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 15px;">{{ app.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td style="padding: 15px; font-weight: 600;">{{ app.company_name }}</td>
+                    <td style="padding: 15px;">{{ app.program_type }}</td>
+                    <td style="padding: 15px;">
+                        <span
+                            style="background: #fff3cd; color: #856404; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">{{
+                            app.status.replace('_', ' ') }}</span>
+                    </td>
+                    <td style="padding: 15px;">
+                        <form action="/update-application-status/{{ app.id }}" method="POST">
+                            <button type="submit" class="btn-gold"
+                                style="padding: 8px 15px; font-size: 0.85rem; cursor: pointer; border: none; border-radius: 5px;">Approve
+                                & Send to Admin</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 40px; color: #999;">
+        <p><i class="fas fa-folder-open" style="font-size: 2.5rem; margin-bottom: 10px; display: block;"></i> No
+            applications pending review.</p>
+    </div>
+    {% endif %}
+</div>
+
+
+<!-- registration Modal -->
+<div id="regModal"
+    style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);">
+    <div
+        style="background: white; width: 450px; margin: 80px auto; padding: 35px; border-radius: 12px; position: relative; box-shadow: 0 15px 40px rgba(0,0,0,0.2);">
+        <span onclick="closeRegistrationModal()"
+            style="position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #999;">&times;</span>
+        <h3 style="color: var(--primary-green); margin-bottom: 5px;">Generate Client Access</h3>
+        <p style="color: #666; font-size: 0.9rem; margin-bottom: 25px;">Create credentials for the new client lead.</p>
+
+        <form action="/register-client" method="POST">
+            <input type="hidden" name="enquiry_id" id="regEnquiryId">
+
+            <div style="margin-bottom: 15px;">
+                <label
+                    style="display: block; margin-bottom: 5px; color: #333; font-weight: 600; font-size: 0.9rem;">Full
+                    Name</label>
+                <input type="text" name="full_name" id="regFullName" required
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label
+                    style="display: block; margin-bottom: 5px; color: #333; font-weight: 600; font-size: 0.9rem;">Email
+                    Address</label>
+                <input type="email" name="email" id="regEmail" required
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 600; font-size: 0.9rem;">Set
+                    Password</label>
+                <input type="text" name="password" value="client123" required
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9;">
+                <p style="font-size: 0.75rem; color: #999; margin-top: 5px;">Default password is 'client123'. You can
+                    change it here.</p>
+            </div>
+
+            <button type="submit" class="btn-gold"
+                style="width: 100%; cursor: pointer; border: none; padding: 12px; border-radius: 5px; font-weight: 600; font-size: 1rem;">GENERATE
+                & NOTIFY CLIENT</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openRegistrationModal(name, email, id) {
+        document.getElementById('regModal').style.display = 'block';
+        document.getElementById('regFullName').value = name;
+        document.getElementById('regEmail').value = email;
+        document.getElementById('regEnquiryId').value = id;
+    }
+
+    function closeRegistrationModal() {
+        document.getElementById('regModal').style.display = 'none';
+    }
+
+    window.onclick = function (event) {
+        let modal = document.getElementById('regModal');
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+</script>
+{% endblock %}

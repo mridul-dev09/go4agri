@@ -1,0 +1,5 @@
+<svg width="300" height="100" viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+  <path d="M10 50 Q10 20 40 20 L60 20 Q90 20 90 50 L90 80 Q90 90 80 90 L20 90 Q10 90 10 80 Z" fill="#2d5a27"/>
+  <path d="M30 40 Q40 30 50 40 L60 55" stroke="#ffffff" stroke-width="4" fill="none"/>
+  <text x="105" y="65" font-family="Cambria, serif" font-size="48" fill="#2d5a27" font-weight="900">Go4Agri</text>
+</svg>

@@ -1,0 +1,160 @@
+﻿{% extends 'base.html' %}
+
+{% block content %}
+<section class="section-container">
+    <h2 class="section-title">Global Certification Schemes</h2>
+    <p style="text-align: center; color: #666; max-width: 800px; margin: 0 auto 40px;">Explore our comprehensive
+        certification programs designed to help you access local and international organic markets with confidence.</p>
+
+    <div class="schemes-grid"
+        style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 20px;">
+        <!-- NPOP -->
+        <div class="scheme-card"
+            style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); transition: transform 0.3s ease; display: flex; flex-direction: column;">
+            <div style="background: #f4faf4; padding: 30px; text-align: center; border-bottom: 2px solid #eef7ee;">
+                <img src="{{ url_for('static', filename='images/npop_new.png') }}" alt="NPOP"
+                    style="height: 100px; margin-bottom: 15px;">
+                <h3 style="color: #2d5a27; margin: 0;">NPOP Certification</h3>
+            </div>
+            <div style="padding: 25px; flex-grow: 1;">
+                <h4 style="color: #333; margin-bottom: 10px;">Scope:</h4>
+                <ul style="color: #555; padding-left: 20px; line-height: 1.6;">
+                    <li>Crop Production</li>
+                    <li>Food Processing & Handling</li>
+                    <li>Livestock Management</li>
+                    <li>Beekeeping & Honey</li>
+                    <li>Wild Harvest Collection</li>
+                </ul>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 15px;">National Programme for Organic Production -
+                    India's flagship organic standard.</p>
+            </div>
+            <div style="padding: 20px; border-top: 1px solid #eee; text-align: center;">
+                <button onclick="openEnquiryModal('NPOP')" class="btn-gold"
+                    style="width: 100%; cursor: pointer; border: none; padding: 12px; border-radius: 5px; font-weight: 600;">Enquire
+                    Now</button>
+            </div>
+        </div>
+
+        <!-- NOP -->
+        <div class="scheme-card"
+            style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); transition: transform 0.3s ease; display: flex; flex-direction: column;">
+            <div style="background: #fef9f0; padding: 30px; text-align: center; border-bottom: 2px solid #fdf2e0;">
+                <img src="{{ url_for('static', filename='images/nop.svg') }}" alt="NOP"
+                    style="height: 100px; margin-bottom: 15px;">
+                <h3 style="color: #8d6e63; margin: 0;">NOP Certification</h3>
+            </div>
+            <div style="padding: 25px; flex-grow: 1;">
+                <h4 style="color: #333; margin-bottom: 10px;">Scope:</h4>
+                <ul style="color: #555; padding-left: 20px; line-height: 1.6;">
+                    <li>Organic Crops</li>
+                    <li>Organic Livestock</li>
+                    <li>Handled/Processed Products</li>
+                    <li>Wild Crops</li>
+                </ul>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 15px;">United States Department of Agriculture
+                    (USDA) National Organic Program.</p>
+            </div>
+            <div style="padding: 20px; border-top: 1px solid #eee; text-align: center;">
+                <button onclick="openEnquiryModal('NOP')" class="btn-gold"
+                    style="width: 100%; cursor: pointer; border: none; padding: 12px; border-radius: 5px; font-weight: 600;">Enquire
+                    Now</button>
+            </div>
+        </div>
+
+        <!-- USDA -->
+        <div class="scheme-card"
+            style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); transition: transform 0.3s ease; display: flex; flex-direction: column;">
+            <div style="background: #f0f4f9; padding: 30px; text-align: center; border-bottom: 2px solid #e1e9f2;">
+                <img src="{{ url_for('static', filename='images/usda_new.jpg') }}" alt="USDA"
+                    style="height: 100px; margin-bottom: 15px;">
+                <h3 style="color: #1a3c17; margin: 0;">USDA Organic</h3>
+            </div>
+            <div style="padding: 25px; flex-grow: 1;">
+                <h4 style="color: #333; margin-bottom: 10px;">Scope:</h4>
+                <ul style="color: #555; padding-left: 20px; line-height: 1.6;">
+                    <li>Global Market Access</li>
+                    <li>Equivalence Arrangements</li>
+                    <li>International Trade Compliance</li>
+                    <li>Premium Quality Assurance</li>
+                </ul>
+                <p style="color: #666; font-size: 0.9rem; margin-top: 15px;">Accreditation and certification for
+                    accessing international organic markets.</p>
+            </div>
+            <div style="padding: 20px; border-top: 1px solid #eee; text-align: center;">
+                <button onclick="openEnquiryModal('USDA')" class="btn-gold"
+                    style="width: 100%; cursor: pointer; border: none; padding: 12px; border-radius: 5px; font-weight: 600;">Enquire
+                    Now</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- enquiry Modal -->
+<div id="enquiryModal"
+    style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);">
+    <div
+        style="background: white; width: 500px; max-height: 90vh; overflow-y: auto; margin: 50px auto; padding: 40px; border-radius: 15px; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+        <span onclick="closeEnquiryModal()"
+            style="position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #999;">&times;</span>
+        <h2 style="color: #2d5a27; margin-bottom: 10px;">Certification Enquiry</h2>
+        <p style="color: #666; margin-bottom: 25px;">Interested in <span id="modalProgramName"
+                style="font-weight: 700; color: #c4a006;"></span>? Fill the form below and our team will contact you
+            shortly.</p>
+
+        <form id="enquiryForm" action="/submit-enquiry" method="POST">
+            <input type="hidden" name="program_type" id="inputProgramType">
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">Your Name</label>
+                <input type="text" name="name" required
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">Email Address</label>
+                <input type="email" name="email" required
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">Phone Number</label>
+                <input type="tel" name="phone" required
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">Additional
+                    Message</label>
+                <textarea name="message" rows="4"
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; resize: none;"></textarea>
+            </div>
+
+            <button type="submit" class="btn-gold"
+                style="width: 100%; cursor: pointer; border: none; padding: 12px; border-radius: 5px; font-weight: 600;">Send
+                Enquiry</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openEnquiryModal(program) {
+        let form = document.getElementById('enquiryForm');
+        if (form) form.reset();
+        document.getElementById('enquiryModal').style.display = 'block';
+        document.getElementById('modalProgramName').innerText = program;
+        document.getElementById('inputProgramType').value = program;
+    }
+
+    function closeEnquiryModal() {
+        document.getElementById('enquiryModal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function (event) {
+        let modal = document.getElementById('enquiryModal');
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+</script>
+{% endblock %}

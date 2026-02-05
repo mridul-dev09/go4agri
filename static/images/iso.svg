@@ -1,0 +1,5 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <rect x="20" y="40" width="160" height="120" rx="10" fill="#003366"/>
+  <text x="100" y="90" font-family="Cambria, serif" font-size="40" text-anchor="middle" fill="#ffffff" font-weight="bold">ISO</text>
+  <text x="100" y="130" font-family="Cambria, serif" font-size="32" text-anchor="middle" fill="#ffffff">9001</text>
+</svg>

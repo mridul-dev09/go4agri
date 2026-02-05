@@ -1,0 +1,50 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Application Review Queue{% endblock %}
+
+{% block dashboard_content %}
+<div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h3 style="color: var(--primary-green); margin: 0;">Applications Pending Initial Review</h3>
+        <span
+            style="background: var(--accent-gold); color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;">{{
+            applications|length }} Pending</span>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div
+        style="padding: 10px; margin-bottom: 15px; border-radius: 5px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb;">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    {% if not applications %}
+    <p style="text-align: center; color: #999; padding: 20px;">No new applications to review.</p>
+    {% else %}
+    <div class="application-list" style="display: flex; flex-direction: column; gap: 15px;">
+        {% for app in applications %}
+        <div style="border: 1px solid #f0f0f0; padding: 20px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h4 style="margin: 0 0 5px 0; color: #333;">{{ app.company_name }}</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #666;">
+                        <i class="fas fa-calendar-plus"></i> Submitted on {{ app.created_at.strftime('%Y-%m-%d') }} |
+                        Type: {{ app.program_type }}
+                    </p>
+                </div>
+                <form action="/update-application-status/{{ app.id }}" method="POST">
+                    <button type="submit" class="btn-gold"
+                        style="padding: 8px 20px; font-size: 0.85rem; border: none; cursor: pointer;">APPROVE & SEND TO
+                        EVALUATION</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

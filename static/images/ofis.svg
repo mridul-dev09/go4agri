@@ -1,0 +1,5 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <path d="M100 10 L180 50 L180 150 L100 190 L20 150 L20 50 Z" fill="none" stroke="#2d5a27" stroke-width="6"/>
+  <text x="100" y="100" font-family="Cambria, serif" font-size="45" text-anchor="middle" fill="#2d5a27" font-weight="900" alignment-baseline="middle">OFIS</text>
+  <text x="100" y="150" font-family="Cambria, serif" font-size="16" text-anchor="middle" fill="#c5a059" font-weight="bold">STANDARDS</text>
+</svg>

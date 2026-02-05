@@ -1,0 +1,27 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Certificate Issuance{% endblock %}
+
+{% block dashboard_content %}
+<div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+    <h4 style="color: var(--primary-green); margin-bottom: 20px;">Applications Approved for Certification</h4>
+
+    {% if not applications %}
+    <p style="text-align: center; color: #999; padding: 20px;">No certificates currently pending issuance.</p>
+    {% else %}
+    {% for app in applications %}
+    <div
+        style="padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h5 style="margin: 0; color: #333;">{{ app.company_name }}</h5>
+            <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #666;">Program: {{ app.program_type }}</p>
+        </div>
+        <form action="/update-application-status/{{ app.id }}" method="POST">
+            <button type="submit" class="btn-gold" style="border: none; cursor: pointer; padding: 10px 20px;">APPROVE
+                FOR FINAL SIGNING</button>
+        </form>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

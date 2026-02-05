@@ -1,0 +1,48 @@
+﻿{% extends 'base.html' %}
+
+{% block content %}
+<section class="section-container"
+    style="max-width: 800px; margin: 40px auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+    <h2 class="section-title" style="text-align: center; margin-bottom: 30px;">Apply for Certification</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div
+        style="padding: 15px; margin-bottom: 20px; border-radius: 5px; background: {% if category == 'error' %}#f8d7da{% else %}#d4edda{% endif %}; color: {% if category == 'error' %}#721c24{% else %}#155724{% endif %};">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form action="/submit-application" method="POST">
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Company Name</label>
+            <input type="text" name="company_name" required
+                style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px;">
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Choose Certification
+                Program</label>
+            <select name="program_type" required
+                style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; background: white;">
+                <option value="">Select a Program</option>
+                <option value="NPOP Organic">NPOP (National Programme for Organic Production)</option>
+                <option value="USDA-NOP">USDA-NOP (United States Department of Agriculture)</option>
+                <option value="OFIS">OFIS (Organic Food Information System)</option>
+                <option value="INCT">INCT (International Certification & Training)</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn-gold"
+            style="width: 100%; padding: 15px; font-size: 1.1rem; border: none; cursor: pointer;">SUBMIT
+            APPLICATION</button>
+    </form>
+
+    <p style="text-align: center; margin-top: 20px; color: #666; font-size: 0.9rem;">
+        Note: You must be logged in as a Client to submit an application.
+    </p>
+</section>
+{% endblock %}
