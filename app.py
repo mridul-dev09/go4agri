@@ -8,6 +8,11 @@ import io
 app = Flask(__name__)
 app.secret_key = 'go4agri_secret_key_2026'
 
+@app.route("/health")
+def health():
+    return "ok", 200
+
+
 # Navigation routes
 @app.route('/')
 def home():
