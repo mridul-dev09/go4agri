@@ -3,8 +3,8 @@
 {% block dashboard_title %}Auditor Inspection & Compliance Log{% endblock %}
 
 {% block dashboard_content %}
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
-    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+<div class="db-grid-1-1" style="margin-bottom: 30px;">
+    <div class="db-card">
         <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-clipboard-check"></i> Upcoming
             Audits</h3>
         <ul style="list-style: none; padding: 0;">
@@ -13,8 +13,7 @@
                 <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #666;"><i class="far fa-calendar"></i> Feb 5,
                     2026 | Type: NPOP Annual</p>
                 <div style="margin-top: 10px;">
-                    <button
-                        style="background: var(--primary-green); color: white; border: none; padding: 5px 15px; border-radius: 5px; font-size: 0.8rem; cursor: pointer;">PREPARE
+                    <button class="btn-gold" style="padding: 5px 15px; font-size: 0.8rem; border: none;">PREPARE
                         CHECKLIST</button>
                 </div>
             </li>
@@ -23,15 +22,14 @@
                 <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #666;"><i class="far fa-calendar"></i> Feb 8,
                     2026 | Type: USDA Scope Audit</p>
                 <div style="margin-top: 10px;">
-                    <button
-                        style="background: var(--primary-green); color: white; border: none; padding: 5px 15px; border-radius: 5px; font-size: 0.8rem; cursor: pointer;">PREPARE
+                    <button class="btn-gold" style="padding: 5px 15px; font-size: 0.8rem; border: none;">PREPARE
                         CHECKLIST</button>
                 </div>
             </li>
         </ul>
     </div>
 
-    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+    <div class="db-card">
         <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-history"></i> Recent Findings
         </h3>
         <div style="border-left: 3px solid var(--accent-gold); padding-left: 15px; margin-bottom: 20px;">
@@ -43,14 +41,13 @@
             </p>
             <p style="font-size: 0.85rem; color: #666;">Site: Blue Hills Farm | Date: Jan 30</p>
         </div>
-        <button class="btn-gold" style="width: 100%; margin-top: 25px; border: none; cursor: pointer;">VIEW ALL
-            REPORTS</button>
+        <button class="btn-gold" style="width: 100%; margin-top: 25px; border: none;">VIEW ALL REPORTS</button>
     </div>
 </div>
 
-<div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+<div class="db-card">
     <h3 style="color: var(--primary-green); margin-bottom: 20px;">Auditor Tools</h3>
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+    <div class="features-grid" style="grid-template-columns: repeat(3, 1fr);">
         <div style="padding: 15px; background: #f9f9f9; border-radius: 5px; text-align: center;">
             <i class="fas fa-book-open"
                 style="font-size: 2rem; color: var(--primary-green); margin-bottom: 10px; display: block;"></i>

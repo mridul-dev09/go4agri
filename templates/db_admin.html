@@ -3,18 +3,29 @@
 {% block dashboard_title %}Admin Control Panel{% endblock %}
 
 {% block dashboard_content %}
-<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px;">
-    <div
-        style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 5px solid #2d5a27;">
+<div class="features-grid" style="margin-bottom: 40px;">
+    <div class="db-card" style="border-left: 5px solid #2d5a27; padding: 25px;">
         <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">Ongoing Applications</p>
         <h2 style="color: #333;">{{ applications|length }}</h2>
     </div>
-    <!-- ... (other stats) ... -->
+    {# Placeholder for other stats #}
+    <div class="db-card" style="border-left: 5px solid var(--accent-gold); padding: 25px;">
+        <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">Total Clients</p>
+        <h2 style="color: #333;">0</h2>
+    </div>
+    <div class="db-card" style="border-left: 5px solid #3498db; padding: 25px;">
+        <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">New Enquiries</p>
+        <h2 style="color: #333;">0</h2>
+    </div>
+    <div class="db-card" style="border-left: 5px solid #e74c3c; padding: 25px;">
+        <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">Tasks Pending</p>
+        <h2 style="color: #333;">0</h2>
+    </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px;">
+<div class="db-grid-2-1" style="margin-bottom: 40px;">
     <!-- Application Approval Queue -->
-    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+    <div class="db-card">
         <h3
             style="color: var(--primary-green); margin-bottom: 20px; border-bottom: 2px solid #f4f7f4; padding-bottom: 10px;">
             Pending Approvals</h3>
@@ -22,56 +33,114 @@
         {% if not applications %}
         <p style="color: #999; padding: 20px; text-align: center;">No applications awaiting your approval.</p>
         {% else %}
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr style="text-align: left; border-bottom: 1px solid #eee;">
-                    <th style="padding: 12px; color: #666; font-weight: 600;">Company</th>
-                    <th style="padding: 12px; color: #666; font-weight: 600;">Program</th>
-                    <th style="padding: 12px; color: #666; font-weight: 600;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for app in applications %}
-                <tr style="border-bottom: 1px solid #f9f9f9;">
-                    <td style="padding: 12px; font-size: 0.9rem;">{{ app.company_name }}</td>
-                    <td style="padding: 12px; font-size: 0.9rem;">{{ app.program_type }}</td>
-                    <td style="padding: 12px;">
-                        <form action="/update-application-status/{{ app.id }}" method="POST">
-                            <button type="submit"
-                                style="background: #2d5a27; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">SEND
-                                TO QA</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; min-width: 400px;">
+                <thead>
+                    <tr style="text-align: left; border-bottom: 1px solid #eee;">
+                        <th style="padding: 12px; color: #666; font-weight: 600;">Company</th>
+                        <th style="padding: 12px; color: #666; font-weight: 600;">Program</th>
+                        <th style="padding: 12px; color: #666; font-weight: 600;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications %}
+                    <tr style="border-bottom: 1px solid #f9f9f9;">
+                        <td style="padding: 12px; font-size: 0.9rem;">{{ app.company_name }}</td>
+                        <td style="padding: 12px; font-size: 0.9rem;">{{ app.program_type }}</td>
+                        <td style="padding: 12px;">
+                            <form action="/update-application-status/{{ app.id }}" method="POST">
+                                <input type="hidden" name="current_status" value="{{ app.status }}">
+                                {% if app.status == 'PENDING_ADMIN_REVIEW' %}
+                                <button type="submit" class="btn-gold"
+                                    style="padding: 5px 10px; font-size: 0.75rem; border: none;">SEND TO QA</button>
+                                {% elif app.status == 'PENDING_CONTRACT' %}
+                                <button type="submit" class="btn-gold"
+                                    style="padding: 5px 10px; font-size: 0.75rem; border: none; background: #2980b9;">ISSUE
+                                    CONTRACT</button>
+                                {% else %}
+                                <button type="submit" class="btn-gold"
+                                    style="padding: 5px 10px; font-size: 0.75rem; border: none;">ADVANCE</button>
+                                {% endif %}
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         {% endif %}
     </div>
 
     <!-- Bulk Upload Section -->
-    <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+    <div class="db-card">
         <h3
             style="color: var(--primary-green); margin-bottom: 20px; border-bottom: 2px solid #f4f7f4; padding-bottom: 10px;">
             Bulk Employee Upload</h3>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-        {% for category, message in messages %}
-        <div
-            style="padding: 10px; margin-bottom: 15px; border-radius: 5px; font-size: 0.85rem; background: {% if category == 'error' %}#f8d7da{% else %}#d4edda{% endif %}; color: {% if category == 'error' %}#721c24{% else %}#155724{% endif %};">
-            {{ message }}
+        <div class="flash-messages" style="margin: 0 0 20px; padding: 0;">
+            {% for category, message in messages %}
+            <div class="flash-item {{ 'success' if category == 'message' else 'error' }}"
+                style="padding: 10px; margin-bottom: 10px;">
+                {{ message }}
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
         {% endif %}
         {% endwith %}
 
         <form action="/admin/upload-employees" method="POST" enctype="multipart/form-data">
-            <input type="file" name="employee_file" accept=".xlsx, .xls" required
-                style="width: 100%; border: 1px solid #ddd; padding: 8px; border-radius: 5px; font-size: 0.85rem; margin-bottom: 10px;">
-            <button type="submit" class="btn-gold"
-                style="width: 100%; border: none; cursor: pointer; padding: 12px;">UPLOAD & SYNC</button>
+            <div class="form-group">
+                <label>Select Spreadsheet (.xlsx, .xls)</label>
+                <input type="file" name="employee_file" accept=".xlsx, .xls" required style="padding: 8px;">
+            </div>
+            <button type="submit" class="btn-gold" style="width: 100%; border: none; padding: 12px;">UPLOAD &
+                SYNC</button>
         </form>
     </div>
+</div>
+
+<!-- All Client Documents Oversight -->
+<div id="document-oversight"
+    style="margin-top: 30px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--accent-gold);">
+    <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-folder-open"></i> Client Documents
+        Repository</h3>
+    {% if documents %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f4faf4; text-align: left;">
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Client Name</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Category</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">File Name</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Uploaded On</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px; font-weight: 600;">{{ doc.client_name }}</td>
+                    <td style="padding: 12px;"><span class="badge info">{{ doc.category }}</span></td>
+                    <td style="padding: 12px;">{{ doc.filename }}</td>
+                    <td style="padding: 12px; font-size: 0.85rem; color: #666;">{{ doc.uploaded_at.strftime('%Y-%m-%d
+                        %H:%M') }}</td>
+                    <td style="padding: 12px;">
+                        <a href="/download-document/{{ doc.id }}" class="btn-primary"
+                            style="padding: 5px 10px; font-size: 0.8rem; text-decoration: none; border: none; border-radius: 5px; background: var(--primary-green); color: white;">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 40px; color: #999;">
+        <p>No client documents uploaded yet.</p>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

@@ -1,25 +1,20 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="section-container"
-    style="min-height: 50vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--light-green);">
-    <div
-        style="background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; border-top: 5px solid var(--accent-gold);">
-        <h2 style="color: var(--primary-green); margin-bottom: 30px;"><i class="fas fa-users"></i> Client Login</h2>
-        <form action="/login" method="POST" style="display: flex; flex-direction: column; gap: 20px;">
+<div class="login-wrapper">
+    <div class="login-card">
+        <h2><i class="fas fa-users"></i> {{ _t('client_login_title') }}</h2>
+        <form action="/login" method="POST">
             <input type="hidden" name="login_type" value="client">
-            <div style="text-align: left;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;">Client ID /
-                    Email</label>
-                <input type="text" name="email" placeholder="Enter Client ID" required
-                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; outline: none;">
+            <div class="form-group">
+                <label>{{ _t('label_email') }}</label>
+                <input type="text" name="email" placeholder="{{ _t('enter_email') }}" required>
             </div>
-            <div style="text-align: left;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;">Password</label>
-                <input type="password" name="password" placeholder="Enter password" required
-                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; outline: none;">
+            <div class="form-group">
+                <label>{{ _t('password_label') }}</label>
+                <input type="password" name="password" placeholder="{{ _t('enter_password') }}" required>
             </div>
-            <button type="submit" class="btn-gold" style="border: none; cursor: pointer; width: 100%;">Login</button>
+            <button type="submit" class="btn-gold">{{ _t('login_btn') }}</button>
         </form>
     </div>
 </div>

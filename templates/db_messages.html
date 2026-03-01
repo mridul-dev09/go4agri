@@ -1,0 +1,132 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Messages{% endblock %}
+
+{% block dashboard_content %}
+<div class="db-card" style="padding: 0; overflow: hidden;">
+    <div style="display: grid; grid-template-columns: 350px 1fr; height: 600px;">
+        <!-- Sidebar: Message List -->
+        <div style="border-right: 1px solid #eee; background: #fdfdfd; display: flex; flex-direction: column;">
+            <div
+                style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="margin: 0; color: var(--primary-green);">Inbox</h4>
+                <button onclick="openNewMessageModal()" class="btn-gold"
+                    style="padding: 5px 10px; font-size: 0.8rem; border: none; border-radius: 5px;">New</button>
+            </div>
+            <div style="flex: 1; overflow-y: auto;">
+                {% if messages %}
+                {% for msg in messages %}
+                <div onclick="location.href='/messages?id={{ msg.id }}'"
+                    style="padding: 15px; border-bottom: 1px solid #f9f9f9; cursor: pointer; border-left: 4px solid {% if msg.is_read %}transparent{% else %}var(--accent-gold){% endif %}; background: {% if selected_message and selected_message.id == msg.id %}#f4faf4{% else %}transparent{% endif %};">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-weight: 700; font-size: 0.9rem;">{{ msg.sender_name }}</span>
+                        <span style="font-size: 0.75rem; color: #999;">{{ msg.created_at.strftime('%m-%d') }}</span>
+                    </div>
+                    <div
+                        style="font-size: 0.85rem; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        {{ msg.subject }}</div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div style="padding: 40px; text-align: center; color: #999;">
+                    <i class="fas fa-envelope-open" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                    No messages yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Main: Message Content -->
+        <div style="display: flex; flex-direction: column; background: white;">
+            {% if selected_message %}
+            <div style="padding: 30px; border-bottom: 1px solid #eee;">
+                <h2 style="color: var(--primary-green); margin-bottom: 10px;">{{ selected_message.subject }}</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="font-weight: 700;">From: {{ selected_message.sender_name }}</span>
+                        <span style="color: #999; margin: 0 10px;">&bull;</span>
+                        <span style="font-size: 0.85rem; color: #666;">To: {{ selected_message.receiver_name }}</span>
+                    </div>
+                    <span style="font-size: 0.85rem; color: #999;">{{ selected_message.created_at.strftime('%Y-%m-%d
+                        %H:%M') }}</span>
+                </div>
+            </div>
+            <div style="padding: 30px; flex: 1; overflow-y: auto; line-height: 1.6; color: #444;">
+                {{ selected_message.body|nl2br }}
+            </div>
+            <div style="padding: 20px; border-top: 1px solid #eee; text-align: right;">
+                <button onclick="openReplyModal()" class="btn-primary"
+                    style="background: var(--primary-green); color: white; border: none; padding: 8px 20px; border-radius: 5px;">Reply</button>
+            </div>
+            {% else %}
+            <div
+                style="flex: 1; display: flex; align-items: center; justify-content: center; color: #999; text-align: center; padding: 50px;">
+                <div>
+                    <i class="fas fa-inbox" style="font-size: 4rem; opacity: 0.1; margin-bottom: 20px;"></i>
+                    <h3>Select a message to read</h3>
+                    <p>Or click 'New' to start a conversation.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Send Message Modal -->
+<div id="msgModal" class="modal-overlay">
+    <div class="modal-content" style="width: 500px;">
+        <span onclick="closeMessageModal()"
+            style="position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #999;">&times;</span>
+        <h3 id="modalTitle" style="color: var(--primary-green); margin-bottom: 20px;">New Message</h3>
+        <form action="/send-message" method="POST">
+            <div class="form-group">
+                <label>Recipients</label>
+                <select name="receiver_id" id="msgReceiver" required>
+                    <option value="">-- Select Recipient --</option>
+                    {% for user in contacts %}
+                    <option value="{{ user.id }}">{{ user.full_name }} ({{ user.designation }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Subject</label>
+                <input type="text" name="subject" id="msgSubject" placeholder="Enter subject" required>
+            </div>
+            <div class="form-group">
+                <label>Message</label>
+                <textarea name="body" rows="6" placeholder="Type your message here..." required></textarea>
+            </div>
+            <button type="submit" class="btn-gold" style="width: 100%; border: none; margin-top: 10px;">SEND
+                MESSAGE</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openNewMessageModal() {
+        document.getElementById('msgModal').style.display = 'block';
+        document.getElementById('modalTitle').innerText = 'New Message';
+        document.getElementById('msgReceiver').value = '';
+        document.getElementById('msgSubject').value = '';
+    }
+
+    function openReplyModal() {
+        {% if selected_message %}
+        document.getElementById('msgModal').style.display = 'block';
+        document.getElementById('modalTitle').innerText = 'Reply Message';
+        document.getElementById('msgReceiver').value = "{{ selected_message.sender_id }}";
+        document.getElementById('msgSubject').value = "Re: {{ selected_message.subject }}";
+        {% endif %}
+    }
+
+    function closeMessageModal() {
+        document.getElementById('msgModal').style.display = 'none';
+    }
+
+    window.onclick = function (event) {
+        if (event.target.className === 'modal-overlay') {
+            document.getElementById('msgModal').style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

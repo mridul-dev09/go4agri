@@ -3,22 +3,23 @@
 {% block dashboard_title %}Application Review Queue{% endblock %}
 
 {% block dashboard_content %}
-<div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+<div class="db-card">
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px;">
         <h3 style="color: var(--primary-green); margin: 0;">Applications Pending Initial Review</h3>
-        <span
-            style="background: var(--accent-gold); color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;">{{
-            applications|length }} Pending</span>
+        <span class="badge" style="background: var(--accent-gold); color: white;">{{ applications|length }}
+            Pending</span>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-    {% for category, message in messages %}
-    <div
-        style="padding: 10px; margin-bottom: 15px; border-radius: 5px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb;">
-        {{ message }}
+    <div class="flash-messages" style="margin: 0 0 20px; padding: 0;">
+        {% for category, message in messages %}
+        <div class="flash-item success" style="padding: 10px; margin-bottom: 10px;">
+            {{ message }}
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
     {% endif %}
     {% endwith %}
 
@@ -28,7 +29,8 @@
     <div class="application-list" style="display: flex; flex-direction: column; gap: 15px;">
         {% for app in applications %}
         <div style="border: 1px solid #f0f0f0; padding: 20px; border-radius: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                 <div>
                     <h4 style="margin: 0 0 5px 0; color: #333;">{{ app.company_name }}</h4>
                     <p style="margin: 0; font-size: 0.85rem; color: #666;">
@@ -37,9 +39,9 @@
                     </p>
                 </div>
                 <form action="/update-application-status/{{ app.id }}" method="POST">
+                    <input type="hidden" name="current_status" value="{{ app.status }}">
                     <button type="submit" class="btn-gold"
-                        style="padding: 8px 20px; font-size: 0.85rem; border: none; cursor: pointer;">APPROVE & SEND TO
-                        EVALUATION</button>
+                        style="padding: 8px 20px; font-size: 0.85rem; border: none;">APPROVE & ISSUE CONTRACT</button>
                 </form>
             </div>
         </div>

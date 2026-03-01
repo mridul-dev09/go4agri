@@ -1,49 +1,42 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard-wrapper" style="display: flex; min-height: 80vh; background: #f4f7f4;">
+<div class="dashboard-wrapper">
     <!-- Sidebar -->
-    <div class="sidebar" style="width: 280px; background: white; border-right: 1px solid #e0e0e0; padding: 30px 20px;">
-        <div class="user-profile"
-            style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee;">
-            <div
-                style="width: 80px; height: 80px; background: var(--primary-green); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 2rem;">
+    <div class="sidebar">
+        <div class="user-profile">
+            <div class="user-avatar">
                 <i class="fas fa-user"></i>
             </div>
-            <h3 style="margin-bottom: 5px; color: #333;">{{ user.full_name }}</h3>
+            <h3>{{ user.full_name }}</h3>
             <p style="font-size: 0.85rem; color: var(--accent-gold); font-weight: 700; text-transform: uppercase;">{{
                 user.designation }}</p>
         </div>
 
         <nav class="sidebar-nav">
-            <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px;">
+            <ul>
                 <li>
-                    <a href="/dashboard"
-                        style="display: flex; align-items: center; gap: 12px; padding: 12px 15px; text-decoration: none; color: var(--primary-green); background: #e9f5e8; border-radius: 5px; font-weight: 600;">
+                    <a href="/dashboard" class="{% if request.path == '/dashboard' %}active{% endif %}">
                         <i class="fas fa-th-large"></i> Dashboard
                     </a>
                 </li>
                 <li>
-                    <a href="#"
-                        style="display: flex; align-items: center; gap: 12px; padding: 12px 15px; text-decoration: none; color: #666; transition: all 0.3s; border-radius: 5px;">
+                    <a href="{% if user.designation == 'CEO' %}/dashboard#tasks{% else %}/dashboard{% endif %}">
                         <i class="fas fa-tasks"></i> My Tasks
                     </a>
                 </li>
                 <li>
-                    <a href="#"
-                        style="display: flex; align-items: center; gap: 12px; padding: 12px 15px; text-decoration: none; color: #666; transition: all 0.3s; border-radius: 5px;">
+                    <a href="/messages" class="{% if request.path == '/messages' %}active{% endif %}">
                         <i class="fas fa-envelope"></i> Messages
                     </a>
                 </li>
                 <li>
-                    <a href="#"
-                        style="display: flex; align-items: center; gap: 12px; padding: 12px 15px; text-decoration: none; color: #666; transition: all 0.3s; border-radius: 5px;">
+                    <a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}">
                         <i class="fas fa-cog"></i> Settings
                     </a>
                 </li>
-                <li style="margin-top: 20px; border-top: 1px solid #eee; pt-20">
-                    <a href="/logout"
-                        style="display: flex; align-items: center; gap: 12px; padding: 12px 15px; text-decoration: none; color: #d9534f; transition: all 0.3s; border-radius: 5px;">
+                <li class="logout-link">
+                    <a href="/logout">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </a>
                 </li>
@@ -52,16 +45,56 @@
     </div>
 
     <!-- Main Content Area -->
-    <div class="dashboard-main" style="flex: 1; padding: 40px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-            <h1 style="color: var(--primary-green); font-size: 1.8rem;">{% block dashboard_title %}Welcome Back{%
-                endblock %}</h1>
+    <div class="dashboard-main">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+            <h1 style="color: var(--primary-green); font-size: 1.8rem; margin: 0;">{% block dashboard_title %}Welcome
+                Back{% endblock %}</h1>
             <div style="color: #666;">
                 <i class="far fa-calendar-alt"></i> <span id="current-date"></span>
             </div>
         </div>
 
         <div class="dashboard-content">
+            {% if user.designation != 'CEO' and tasks %}
+            <div
+                style="margin-bottom: 30px; background: #fff8e1; padding: 20px; border-radius: 10px; border-left: 5px solid var(--accent-gold);">
+                <h3 style="color: #856404; margin-bottom: 15px;"><i class="fas fa-exclamation-circle"></i> Tasks
+                    Assigned to You</h3>
+                <div style="display: grid; gap: 15px;">
+                    {% for task in tasks %}
+                    <div
+                        style="background: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <div style="font-weight: 700; color: var(--primary-green);">{{ task.title }}</div>
+                            <div style="font-size: 0.85rem; color: #666;">{{ task.description }}</div>
+                            <div style="margin-top: 5px; font-size: 0.8rem;">
+                                <span
+                                    class="badge {% if task.priority == 'HIGH' %}danger{% elif task.priority == 'MEDIUM' %}warning{% else %}info{% endif %}">{{
+                                    task.priority }} Priority</span>
+                                <span style="margin-left: 10px; color: #999;">From: {{ task.allotter_name }}</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span
+                                class="badge {% if task.status == 'COMPLETED' %}success{% elif task.status == 'IN_PROGRESS' %}info{% else %}secondary{% endif %}">{{
+                                task.status }}</span>
+                            <form action="/update-task-status/{{ task.id }}" method="POST"
+                                style="display: flex; gap: 5px;">
+                                <select name="status" onchange="this.form.submit()"
+                                    style="padding: 5px; border-radius: 3px; border: 1px solid #ccc; font-size: 0.8rem;">
+                                    <option value="">Update Status</option>
+                                    <option value="IN_PROGRESS">In Progress</option>
+                                    <option value="COMPLETED">Completed</option>
+                                </select>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
             {% block dashboard_content %}{% endblock %}
         </div>
     </div>

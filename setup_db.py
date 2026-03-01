@@ -58,6 +58,67 @@ def setup_database():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+
+        # Create activity_log table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS activity_log (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT,
+                action VARCHAR(100) NOT NULL,
+                details TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            )
+        """)
+
+        # Create tasks table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS tasks (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                allotter_id INT NOT NULL,
+                assignee_id INT NOT NULL,
+                application_id INT,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                priority ENUM('LOW', 'MEDIUM', 'HIGH') DEFAULT 'MEDIUM',
+                status ENUM('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED') DEFAULT 'PENDING',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (allotter_id) REFERENCES users(id),
+                FOREIGN KEY (assignee_id) REFERENCES users(id),
+                FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE
+            )
+        """)
+
+        # Create messages table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS messages (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                sender_id INT NOT NULL,
+                receiver_id INT NOT NULL,
+                subject VARCHAR(255),
+                body TEXT NOT NULL,
+                is_read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (sender_id) REFERENCES users(id),
+                FOREIGN KEY (receiver_id) REFERENCES users(id)
+            )
+        """)
+
+        # Create documents table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS documents (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                client_id INT NOT NULL,
+                application_id INT,
+                category VARCHAR(100) NOT NULL,
+                filename VARCHAR(255) NOT NULL,
+                filepath VARCHAR(255) NOT NULL,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (client_id) REFERENCES users(id),
+                FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE
+            )
+        """)
         
         designations = [
             ('CEO', 'ceo@go4agri.com', 'ceo123'),

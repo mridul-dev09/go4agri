@@ -3,7 +3,7 @@
 {% block dashboard_title %}Quality Assurance (QA) Dashboard{% endblock %}
 
 {% block dashboard_content %}
-<div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+<div class="db-card">
     <h3 style="color: var(--primary-green); margin-bottom: 20px;">Applications Pending QA Review</h3>
 
     {% if not applications %}
@@ -13,7 +13,7 @@
     </div>
     {% else %}
     <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse;">
+        <table style="width: 100%; border-collapse: collapse; min-width: 500px;">
             <thead>
                 <tr style="text-align: left; background: #f9f9f9;">
                     <th style="padding: 15px; border-bottom: 2px solid #eee;">Date</th>
@@ -27,11 +27,18 @@
                 <tr>
                     <td style="padding: 15px; border-bottom: 1px solid #eee;">{{ app.created_at.strftime('%Y-%m-%d') }}
                     </td>
-                    <td style="padding: 15px; border-bottom: 1px solid #eee;">{{ app.company_name }}</td>
+                    <td style="padding: 15px; border-bottom: 1px solid #eee;">
+                        <a href="/client-details/{{ app.client_id }}"
+                            style="color: var(--primary-green); text-decoration: none;">
+                            <i class="fas fa-external-link-alt" style="margin-right: 5px; font-size: 0.8em;"></i>{{
+                            app.company_name }}
+                        </a>
+                    </td>
                     <td style="padding: 15px; border-bottom: 1px solid #eee;">{{ app.program_type }}</td>
                     <td style="padding: 15px; border-bottom: 1px solid #eee;">
                         <form action="/update-application-status/{{ app.id }}" method="POST">
-                            <button type="submit" class="btn-gold" style="padding: 5px 15px; cursor: pointer;">APPROVE
+                            <input type="hidden" name="current_status" value="{{ app.status }}">
+                            <button type="submit" class="btn-gold" style="padding: 5px 15px; border: none;">APPROVE
                                 QA</button>
                         </form>
                     </td>
@@ -42,4 +49,6 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Removed All Client Documents Oversight -->
 {% endblock %}
