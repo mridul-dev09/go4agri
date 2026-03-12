@@ -3,244 +3,145 @@
 {% block dashboard_title %}CEO Overview & Strategic Insights{% endblock %}
 
 {% block dashboard_content %}
-<div id="top" class="db-grid-2-1">
-    <div id="quick-actions" class="db-card">
-        <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-tasks"></i> CEO Quick Actions
-        </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
-            <button onclick="openTaskModal()" class="btn-gold"
-                style="padding: 20px; text-align: center; border: none; border-radius: 10px;">
-                <i class="fas fa-plus-circle" style="font-size: 1.5rem; display: block; margin-bottom: 10px;"></i>
-                Allot New Task
-            </button>
-        </div>
-    </div>
-
-    <div style="display: flex; flex-direction: column; gap: 20px;">
-        <div class="db-card" style="padding: 25px; border-top: 5px solid var(--accent-gold);">
-            <h4 style="margin-bottom: 10px; color: #333;">Operational Status</h4>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span>Pending Tasks</span>
+<style>
+    .portal-row:hover {
+        background-color: #f4f9fc !important;
+    }
+</style>
+<div id="top">
+    <div class="db-card" style="padding: 25px; border-top: 5px solid var(--accent-gold); margin-bottom: 30px;">
+        <h4 style="margin-bottom: 10px; color: #333;">Operational Status</h4>
+        <div style="display: flex; gap: 30px; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span>Pending Tasks:</span>
                 <span class="badge info">{{ tasks|selectattr('status', 'equalto', 'PENDING')|list|length }}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span>Active Apps</span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span>Active Apps:</span>
                 <span class="badge warning">{{ applications|length }}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span>New Enquiries:</span>
+                <span class="badge info">{{ enquiries|length }}</span>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Task Management Section -->
-<div id="tasks"
-    style="margin-top: 30px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 style="color: var(--primary-green); margin: 0;"><i class="fas fa-clipboard-list"></i> Task Overview</h3>
-        <button onclick="openTaskModal()" class="btn-gold"
-            style="padding: 8px 15px; font-size: 0.85rem; border: none; border-radius: 5px;">Allot Task</button>
-    </div>
 
-    {% if tasks %}
-    <div style="overflow-x: auto;">
+
+
+
+
+
+<!-- Registered Clients Section -->
+<div id="registered-clients"
+    style="margin-top: 30px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary-green);">
+    <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-users"></i> Registered Clients
+        Overview</h3>
+    {% if registered_clients %}
+    <div class="table-responsive">
         <table style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr style="background: #f4faf4; text-align: left;">
-                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Created</th>
-                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Task Title</th>
-                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Assigned To</th>
-                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Priority</th>
-                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for task in tasks %}
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 15px;">{{ task.created_at.strftime('%m-%d %H:%M') }}</td>
-                    <td style="padding: 15px;">
-                        <div style="font-weight: 600;">{{ task.title }}</div>
-                        <div style="font-size: 0.8rem; color: #666;">{{ task.description[:50] }}{% if
-                            task.description|length > 50 %}...{% endif %}</div>
-                    </td>
-                    <td style="padding: 15px;">{{ task.assignee_name }}</td>
-                    <td style="padding: 15px;">
-                        <span
-                            class="badge {% if task.priority == 'HIGH' %}danger{% elif task.priority == 'MEDIUM' %}warning{% else %}info{% endif %}">
-                            {{ task.priority }}
-                        </span>
-                    </td>
-                    <td style="padding: 15px;">
-                        <span
-                            class="badge {% if task.status == 'COMPLETED' %}success{% elif task.status == 'IN_PROGRESS' %}info{% elif task.status == 'CANCELLED' %}secondary{% else %}warning{% endif %}">
-                            {{ task.status }}
-                        </span>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div style="text-align: center; padding: 40px; color: #999;">
-        <p>No tasks allotted yet.</p>
-    </div>
-    {% endif %}
-</div>
-
-<!-- Application Tracking Section -->
-<div id="applications"
-    style="margin-top: 30px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-    <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-project-diagram"></i> All-Client
-        Certification Process</h3>
-    {% if applications %}
-    <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr style="background: #f4faf4; text-align: left;">
-                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Client/Company</th>
-                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Program</th>
-                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Status</th>
-                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Last Update</th>
-                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for app in applications %}
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 15px; font-weight: 600;">
-                        <a href="/client-details/{{ app.client_id }}"
-                            style="color: var(--primary-green); text-decoration: none;">
-                            <i class="fas fa-external-link-alt" style="margin-right: 5px; font-size: 0.8em;"></i>{{
-                            app.company_name }}
-                        </a>
-                    </td>
-                    <td style="padding: 15px;">{{ app.program_type }}</td>
-                    <td style="padding: 15px;">
-                        <span
-                            class="badge {% if 'PENDING' in app.status %}warning{% elif 'REJECTED' in app.status %}danger{% else %}success{% endif %}">
-                            {{ app.status.replace('_', ' ') }}
-                        </span>
-                    </td>
-                    <td style="padding: 15px; font-size: 0.85rem;">{{ app.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td style="padding: 15px;">
-                        {% if app.status == 'PENDING_CEO_REVIEW' %}
-                        <form action="/update-application-status/{{ app.id }}" method="POST">
-                            <input type="hidden" name="current_status" value="{{ app.status }}">
-                            <button type="submit" class="btn-gold"
-                                style="padding: 5px 10px; font-size: 0.8rem; border: none; border-radius: 5px;">Approve</button>
-                        </form>
-                        {% else %}
-                        <button onclick="openTaskModal('{{ app.company_name }}', '{{ app.id }}')" class="btn-primary"
-                            style="padding: 5px 10px; font-size: 0.8rem; border: none; border-radius: 5px; background: var(--primary-green); color: white;">Allot
-                            Task</button>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div style="text-align: center; padding: 40px; color: #999;">
-        <p>No applications found.</p>
-    </div>
-    {% endif %}
-</div>
-
-<!-- Removed Activity Log Section -->
-
-<!-- Leads Section -->
-<div id="leads"
-    style="margin-top: 30px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-    <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-headset"></i> Leads & Enquiries</h3>
-    {% if enquiries %}
-    <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr style="background: #f4faf4; text-align: left;">
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Name</th>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Program</th>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Contact</th>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Status</th>
+                    <th style="width: 40px;"></th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">User ID</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Full Name</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Email</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Registered On</th>
                     <th style="padding: 12px; border-bottom: 2px solid #eee;">Action</th>
                 </tr>
             </thead>
             <tbody>
-                {% for enquiry in enquiries %}
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 12px; font-weight: 600;">{{ enquiry.name }}</td>
-                    <td style="padding: 12px;">{{ enquiry.program_type }}</td>
-                    <td style="padding: 12px; font-size: 0.85rem;">{{ enquiry.email }}</td>
-                    <td style="padding: 12px;">{{ enquiry.status }}</td>
+                {% for client in registered_clients %}
+                <tr class="portal-row" style="border-bottom: 1px solid #eee; cursor: pointer;" onclick="toggleDetails('client-details-{{ client.id }}', 'client-icon-{{ client.id }}')">
+                    <td style="text-align: center; color: #0072bc;"><i id="client-icon-{{ client.id }}" class="fas fa-caret-right"></i></td>
+                    <td style="padding: 12px; font-weight: 600; color: #555;">USR-{{ "%04d" | format(client.id) }}</td>
+                    <td style="padding: 12px; font-weight: 600;">
+                        <a href="/client-details/{{ client.id }}"
+                            style="color: var(--primary-green); text-decoration: none;" onclick="event.stopPropagation();">
+                            <i class="fas fa-user-circle" style="margin-right: 5px;"></i>{{ client.full_name }}
+                        </a>
+                    </td>
+                    <td style="padding: 12px; color: #666;"><i class="fas fa-envelope" style="width: 15px;"></i> {{
+                        client.email }}</td>
+                    <td style="padding: 12px; font-size: 0.85rem; color: #666;">{{
+                        client.created_at.strftime('%Y-%m-%d') }}</td>
                     <td style="padding: 12px;">
-                        {% if enquiry.status == 'NEW' %}
-                        <button
-                            onclick="openRegistrationModal('{{ enquiry.name }}', '{{ enquiry.email }}', '{{ enquiry.id }}')"
-                            class="btn-gold"
-                            style="padding: 5px 10px; font-size: 0.8rem; border: none; border-radius: 5px;">Register</button>
-                        {% endif %}
+                        <a href="/client-details/{{ client.id }}" class="btn-primary"
+                            style="padding: 5px 10px; font-size: 0.8rem; text-decoration: none; border: none; border-radius: 5px; background: #0072bc; color: white;" onclick="event.stopPropagation();">
+                            <i class="fas fa-eye"></i> View Profile
+                        </a>
+                    </td>
+                </tr>
+                <!-- Expandable Application Table -->
+                <tr id="client-details-{{ client.id }}" class="details-row" style="display: none; background: #fdfdfd;">
+                    <td></td>
+                    <td colspan="5" style="padding: 15px;">
+                        <div class="table-responsive" style="padding: 15px; border-left: 3px solid var(--primary-green); background: #f9fdf9; border-radius: 0 5px 5px 0;">
+                            <h4 style="color: var(--primary-green); margin-bottom: 10px; font-size: 0.9rem;"><i class="fas fa-certificate"></i> Certification Programs / Applications</h4>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                <thead>
+                                    <tr style="text-align: left; border-bottom: 1px solid #ddd;">
+                                        <th style="padding: 8px;">Program ID</th>
+                                        <th style="padding: 8px;">Program Type</th>
+                                        <th style="padding: 8px;">Activity #</th>
+                                        <th style="padding: 8px;">Status</th>
+                                        <th style="padding: 8px;">Audit Dates</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set client_apps = applications | selectattr('client_id', 'equalto', client.id) | list %}
+                                    {% if client_apps %}
+                                        {% for app in client_apps %}
+                                        <tr style="border-bottom: 1px dotted #eee;">
+                                            <td style="padding: 8px; font-weight: 600; color: var(--primary-green);">PRG-{{ "%04d" | format(app.id) }}</td>
+                                            <td style="padding: 8px;">{{ app.program_type }}</td>
+                                            <td style="padding: 8px; color: #666;">ACTY-{{ "%06d" | format(app.id) }}</td>
+                                            <td style="padding: 8px;">
+                                                <span class="badge info" style="padding: 2px 8px; font-size: 0.7rem;">{{ app.status.replace('_', ' ') }}</span>
+                                                {% if app.status == 'FINAL_PAYMENT_VERIFIED' %}
+                                                <form action="/generate-certificate/{{ app.id }}" method="POST" style="display: inline; margin-left: 10px;">
+                                                    <button type="submit" class="btn-primary" style="padding: 2px 8px; font-size: 0.7rem; background: #27ae60; border: none; border-radius: 3px; color: white; cursor: pointer;">
+                                                        <i class="fas fa-certificate"></i> Generate Certificate
+                                                    </button>
+                                                </form>
+                                                {% endif %}
+                                            </td>
+                                            <td style="padding: 8px; font-size: 0.8rem; color: #555;">
+                                                {% if app.audit_start_date %}{{ app.audit_start_date }} to {{ app.audit_end_date }}{% else %}TBD{% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="5" style="padding: 10px; text-align: center; color: #999;">No active certification programs found for this client.</td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    {% else %}
+    <div style="text-align: center; padding: 40px; color: #999;">
+        <p>No clients have been registered yet.</p>
+    </div>
     {% endif %}
 </div>
 
+
+<!-- Removed Activity Log Section -->
+
+<!-- Leads Section (REMOVED FROM HERE) -->
+
 <!-- Removed All Client Documents Oversight -->
 
-<!-- Task Allotment Modal -->
-<div id="taskModal" class="modal-overlay">
-    <div class="modal-content" style="width: 500px;">
-        <span onclick="closeTaskModal()"
-            style="position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #999;">&times;</span>
-        <h3 style="color: var(--primary-green); margin-bottom: 5px;">Allot New Task</h3>
-        <p style="color: #666; font-size: 0.9rem; margin-bottom: 25px;">Assign a responsibility to a team member.</p>
 
-        <form action="/allot-task" method="POST">
-            <div class="form-group">
-                <label>Select Team Member *</label>
-                <select name="assignee_id" required>
-                    <option value="">-- Choose Employee --</option>
-                    {% for emp in employees %}
-                    <option value="{{ emp.id }}">{{ emp.full_name }} ({{ emp.designation }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Related Application (Optional)</label>
-                <select name="application_id" id="taskAppId">
-                    <option value="">-- No specific application --</option>
-                    {% for app in applications %}
-                    <option value="{{ app.id }}">{{ app.company_name }} - {{ app.program_type }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Task Title *</label>
-                <input type="text" name="title" id="taskTitle" placeholder="e.g., Review EU Organic Doc" required>
-            </div>
-
-            <div class="form-group">
-                <label>Task Description</label>
-                <textarea name="description" rows="3" placeholder="Explain what needs to be done..."></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 25px;">
-                <label>Priority</label>
-                <select name="priority">
-                    <option value="LOW">Low</option>
-                    <option value="MEDIUM" selected>Medium</option>
-                    <option value="HIGH">High</option>
-                </select>
-            </div>
-
-            <button type="submit" class="btn-gold" style="width: 100%; border: none;">ALLOT TASK NOW</button>
-        </form>
-    </div>
-</div>
 
 <!-- Registration Modal -->
 <div id="regModal" class="modal-overlay">
@@ -250,6 +151,13 @@
         <h3 style="color: var(--primary-green); margin-bottom: 5px;">Generate Client Access</h3>
         <form action="/register-client" method="POST">
             <input type="hidden" name="enquiry_id" id="regEnquiryId">
+
+            <div
+                style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-size: 0.9rem; border-left: 4px solid var(--accent-gold);">
+                <div style="margin-bottom: 5px;"><strong>Company:</strong> <span id="displayCompany"></span></div>
+                <div><strong>Phone:</strong> <span id="displayPhone"></span></div>
+            </div>
+
             <div class="form-group">
                 <label>Full Name</label>
                 <input type="text" name="full_name" id="regFullName" required>
@@ -262,7 +170,8 @@
                 <label>Password</label>
                 <input type="text" name="password" value="client123" required>
             </div>
-            <button type="submit" class="btn-gold" style="width: 100%; border: none; margin-top: 15px;">REGISTER
+            <button type="submit" class="btn-gold"
+                style="width: 100%; border: none; margin-top: 15px; padding: 12px;">REGISTER
                 CLIENT</button>
         </form>
     </div>
@@ -283,11 +192,27 @@
         document.getElementById('taskTitle').value = '';
     }
 
-    function openRegistrationModal(name, email, id) {
+    function toggleDetails(rowId, iconId) {
+        const row = document.getElementById(rowId);
+        const icon = document.getElementById(iconId);
+        if (row.style.display === 'none') {
+            row.style.display = 'table-row';
+            icon.classList.remove('fa-caret-right');
+            icon.classList.add('fa-caret-down');
+        } else {
+            row.style.display = 'none';
+            icon.classList.remove('fa-caret-down');
+            icon.classList.add('fa-caret-right');
+        }
+    }
+
+    function openRegistrationModal(name, email, id, company, phone) {
         document.getElementById('regModal').style.display = 'block';
         document.getElementById('regFullName').value = name;
         document.getElementById('regEmail').value = email;
         document.getElementById('regEnquiryId').value = id;
+        document.getElementById('displayCompany').innerText = company || 'N/A';
+        document.getElementById('displayPhone').innerText = phone || 'N/A';
     }
 
     function closeRegistrationModal() {

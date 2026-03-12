@@ -4,22 +4,29 @@
 
 {% block dashboard_content %}
 <div class="db-card" style="padding: 0; overflow: hidden;">
-    <div style="display: grid; grid-template-columns: 350px 1fr; height: 600px;">
+    <div class="table-responsive" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); height: auto; min-height: 600px;">
         <!-- Sidebar: Message List -->
         <div style="border-right: 1px solid #eee; background: #fdfdfd; display: flex; flex-direction: column;">
-            <div
-                style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-                <h4 style="margin: 0; color: var(--primary-green);">Inbox</h4>
-                <button onclick="openNewMessageModal()" class="btn-gold"
-                    style="padding: 5px 10px; font-size: 0.8rem; border: none; border-radius: 5px;">New</button>
+            <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; gap: 15px;">
+                    <a href="/messages?tab=inbox" style="text-decoration: none; color: {% if active_tab == 'inbox' %}var(--primary-green){% else %}#999{% endif %}; font-weight: {% if active_tab == 'inbox' %}700{% else %}500{% endif %}; font-size: 1.1rem;">Inbox</a>
+                    <a href="/messages?tab=sent" style="text-decoration: none; color: {% if active_tab == 'sent' %}var(--primary-green){% else %}#999{% endif %}; font-weight: {% if active_tab == 'sent' %}700{% else %}500{% endif %}; font-size: 1.1rem;">Sent</a>
+                </div>
+                <button onclick="openNewMessageModal()" class="btn-gold" style="padding: 5px 10px; font-size: 0.8rem; border: none; border-radius: 5px;">New</button>
             </div>
             <div style="flex: 1; overflow-y: auto;">
                 {% if messages %}
                 {% for msg in messages %}
-                <div onclick="location.href='/messages?id={{ msg.id }}'"
-                    style="padding: 15px; border-bottom: 1px solid #f9f9f9; cursor: pointer; border-left: 4px solid {% if msg.is_read %}transparent{% else %}var(--accent-gold){% endif %}; background: {% if selected_message and selected_message.id == msg.id %}#f4faf4{% else %}transparent{% endif %};">
+                <div onclick="location.href='/messages?tab={{ active_tab }}&id={{ msg.id }}'"
+                    style="padding: 15px; border-bottom: 1px solid #f9f9f9; cursor: pointer; border-left: 4px solid {% if active_tab == 'inbox' and not msg.is_read %}var(--accent-gold){% else %}transparent{% endif %}; background: {% if selected_message and selected_message.id == msg.id %}#f4faf4{% else %}transparent{% endif %};">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span style="font-weight: 700; font-size: 0.9rem;">{{ msg.sender_name }}</span>
+                        <span style="font-weight: 700; font-size: 0.9rem;">
+                            {% if active_tab == 'sent' %}
+                            To: {{ msg.receiver_name }}
+                            {% else %}
+                            {{ msg.sender_name }}
+                            {% endif %}
+                        </span>
                         <span style="font-size: 0.75rem; color: #999;">{{ msg.created_at.strftime('%m-%d') }}</span>
                     </div>
                     <div
@@ -54,10 +61,12 @@
             <div style="padding: 30px; flex: 1; overflow-y: auto; line-height: 1.6; color: #444;">
                 {{ selected_message.body|nl2br }}
             </div>
+            {% if active_tab == 'inbox' %}
             <div style="padding: 20px; border-top: 1px solid #eee; text-align: right;">
                 <button onclick="openReplyModal()" class="btn-primary"
                     style="background: var(--primary-green); color: white; border: none; padding: 8px 20px; border-radius: 5px;">Reply</button>
             </div>
+            {% endif %}
             {% else %}
             <div
                 style="flex: 1; display: flex; align-items: center; justify-content: center; color: #999; text-align: center; padding: 50px;">

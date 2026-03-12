@@ -1,0 +1,233 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Portal Dashboard - {{ session.designation }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="portal-header">
+    <i class="fas fa-list-alt"></i> {{ session.designation }} Dashboard
+</div>
+<div class="db-card" style="border-radius: 0 0 10px 10px; padding: 20px;">
+    <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px; color: #666; font-size: 0.9rem;">
+        <i class="fas fa-minus-square"></i> Basic search options
+    </div>
+
+    <div class="audit-table-wrapper table-responsive" style="width: 100%; border-radius: 4px; border: 1px solid #eee;">
+        <table class="audit-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px;"></th>
+                    <th>User ID</th>
+                    <th>Program ID</th>
+                    <th>Company Name</th>
+                    <th>Activity #</th>
+                    <th>Activity Name</th>
+                    <th>Activity Lead Auditor</th>
+                    <th>Time for Audit Plan Submission</th>
+                    <th>Time for Draft ASR</th>
+                    <th>Time for CA Review</th>
+                    <th>Audit Start Date</th>
+                    <th>Audit End Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if applications %}
+                {% for app in applications %}
+                <!-- Main Row -->
+                <tr class="portal-row" onclick="toggleDetails('details-{{ app.id }}', 'icon-{{ app.id }}')">
+                    <td style="text-align: center; color: #0072bc; cursor: pointer;">
+                        <i id="icon-{{ app.id }}" class="fas fa-caret-right"></i>
+                    </td>
+                    <td style="font-weight: 600; color: #555;">USR-{{ "%04d" | format(app.client_id) }}</td>
+                    <td style="font-weight: 600; color: var(--primary-green);">PRG-{{ "%04d" | format(app.id) }}</td>
+                    <td>
+                        <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}"
+                            style="text-decoration: none; color: #0072bc; font-weight: 600;">
+                            {{ app.company_name }}
+                        </a>
+                    </td>
+                    <td>{{ "ACTY-2025-%06d" | format(app.id) }}</td>
+                    <td><span
+                            style="background: #f0f8ff; padding: 3px 8px; border-radius: 4px; border: 1px solid #cce5ff; font-size: 0.8em; color: #0056b3;">{{
+                            app.status.replace('_', ' ') }}</span></td>
+                    <td>{{ app.lead_auditor_name if app.lead_auditor_name else 'Not Assigned' }}</td>
+                    <td style="text-align: center;">{{ app.plan_submission_days | default('1') }} <i class="fas fa-flag"
+                            style="color: #d9534f;"></i></td>
+                    <td style="text-align: center;">{{ app.draft_asr_days | default('15') }} <i class="fas fa-flag"
+                            style="color: #d9534f;"></i></td>
+                    <td style="text-align: center;">{{ app.ca_review_days if app.ca_review_days else 'N/A' }}</td>
+                    <td>{{ app.audit_start_date if app.audit_start_date else '15-Nov-2025' }}</td>
+                    <td>{{ app.audit_end_date if app.audit_end_date else '15-Nov-2025' }}</td>
+                </tr>
+
+                <!-- Expandable Details/Actions Row -->
+                <tr id="details-{{ app.id }}" class="details-row" style="display: none; background: #fdfdfd;">
+                    <td></td>
+                    <td colspan="11" style="padding: 0;">
+                        <div
+                            style="padding: 10px 15px; border-left: 2px solid #0072bc; display: flex; gap: 15px; align-items: center; background: #f8fafc;">
+
+                            <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" class="action-menu-link">
+                                <i class="fas fa-eye"></i> View Details / Documents
+                            </a>
+
+                            <span style="color: #ccc;">|</span>
+
+                            <form action="/update-application-status/{{ app.id }}" method="POST" enctype="multipart/form-data"
+                                style="margin: 0; display: flex; gap: 15px; align-items: center;">
+                                <input type="hidden" name="current_status" value="{{ app.status }}">
+                                
+                                <!-- Common Comment Area for Rejection -->
+                                <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px;">
+                                    <textarea name="comment" placeholder="Add comments (Mandatory if Rejecting)" rows="2" style="font-size: 0.75rem; border: 1px solid #ddd; padding: 4px; border-radius: 3px; min-width: 200px;"></textarea>
+                                </div>
+                                <div style="display: flex; gap: 10px; align-items: center; border-left: 1px solid #ddd; padding-left: 15px;">
+                                    {% if session.designation == 'Initial reviewer' %}
+                                    <button type="submit" name="action" value="forward" class="action-menu-btn"><i class="fas fa-check-circle"></i> FORWARD TO INSPECTION PLANNER</button>
+                                    <button type="submit" name="action" value="reject" class="action-menu-btn" style="color: #d9534f; border-color: #d9534f;"><i class="fas fa-times-circle"></i> REJECT</button>
+                                    {% elif session.designation == 'Inspection planner' %}
+                                    <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px;">
+                                        <label style="font-size: 0.7rem; color: #666; font-weight: 600;">Upload Planning Doc (PDF/Image) *</label>
+                                        <input type="file" name="planning_doc" style="font-size: 0.75rem; border: 1px solid #ddd; padding: 2px; border-radius: 3px;">
+                                    </div>
+                                    <button type="submit" name="action" value="forward" class="action-menu-btn"><i class="fas fa-calendar-check"></i> START AUDIT PROCESS</button>
+                                    <button type="submit" name="action" value="reject" class="action-menu-btn" style="color: #d9534f; border-color: #d9534f;"><i class="fas fa-times-circle"></i> REJECT</button>
+                                    {% elif session.designation == 'Auditor' %}
+                                    <!-- Auditor Update Details Form -->
+                                    <div style="display: flex; gap: 10px; align-items: center; border-right: 1px solid #ddd; padding-right: 15px; margin-right: 15px;">
+                                        <div style="display: flex; flex-direction: column;">
+                                            <label style="font-size: 0.7rem; color: #666;">Audit Plan (Days)</label>
+                                            <input type="number" name="plan_days" form="audit-form-{{ app.id }}" value="{{ app.plan_submission_days }}" style="width: 55px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.8rem;">
+                                        </div>
+                                        <div style="display: flex; flex-direction: column;">
+                                            <label style="font-size: 0.7rem; color: #666;">Draft ASR (Days)</label>
+                                            <input type="number" name="asr_days" form="audit-form-{{ app.id }}" value="{{ app.draft_asr_days }}" style="width: 55px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.8rem;">
+                                        </div>
+                                        <div style="display: flex; flex-direction: column;">
+                                            <label style="font-size: 0.7rem; color: #666;">Start Date</label>
+                                            <input type="date" name="start_date" form="audit-form-{{ app.id }}" value="{{ app.audit_start_date }}" style="padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.75rem;">
+                                        </div>
+                                        <div style="display: flex; flex-direction: column;">
+                                            <label style="font-size: 0.7rem; color: #666;">End Date</label>
+                                            <input type="date" name="end_date" form="audit-form-{{ app.id }}" value="{{ app.audit_end_date }}" style="padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.75rem;">
+                                        </div>
+                                        <button type="submit" form="audit-form-{{ app.id }}" class="action-menu-btn" style="color: #0072bc; margin-top: 12px; border: 1px solid #0072bc;"><i class="fas fa-sync-alt"></i> UPDATE</button>
+                                    </div>
+                                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                                        <label style="font-size: 0.7rem; color: #666; font-weight: 600;">Upload Audit Report (PDF/Image) *</label>
+                                        <input type="file" name="audit_report" style="font-size: 0.75rem; border: 1px solid #ddd; padding: 2px; border-radius: 3px;">
+                                        <div style="display: flex; gap: 5px;">
+                                            <button type="submit" name="action" value="forward" class="action-menu-btn"><i class="fas fa-file-contract"></i> SUBMIT AUDIT REPORT</button>
+                                            <button type="submit" name="action" value="reject" class="action-menu-btn" style="color: #d9534f; border-color: #d9534f;" formnovalidate><i class="fas fa-times-circle"></i> REJECT</button>
+                                        </div>
+                                    </div>
+                                    {% elif session.designation == 'Technical reviewer' %}
+                                    <button type="submit" name="action" value="forward" class="action-menu-btn"><i class="fas fa-microscope"></i> COMPLETE TECHNICAL REVIEW</button>
+                                    <button type="submit" name="action" value="reject" class="action-menu-btn" style="color: #d9534f; border-color: #d9534f;"><i class="fas fa-times-circle"></i> REJECT</button>
+                                    {% elif session.designation == 'Certifier' %}
+                                    <button type="submit" name="action" value="forward" class="action-menu-btn" style="color: #27ae60;"><i class="fas fa-award"></i> GRANT CERTIFICATION</button>
+                                    <button type="submit" name="action" value="reject" class="action-menu-btn" style="color: #d9534f; border-color: #d9534f;"><i class="fas fa-times-circle"></i> REJECT</button>
+                                    {% else %}
+                                    <span style="color: #999; font-size: 0.85rem;"><i class="fas fa-info-circle"></i> No specific action required.</span>
+                                    {% endif %}
+                                </div>
+                            </form>
+                            
+                            {% if session.designation == 'Auditor' %}
+                            <form id="audit-form-{{ app.id }}" action="/update-audit-details/{{ app.id }}" method="POST" style="display:none;"></form>
+                            {% endif %}
+
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="10" style="text-align: center; padding: 30px; color: #999;">
+                        <i class="fas fa-box-open"
+                            style="font-size: 2rem; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+                        No activities pending your review.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    <div
+        style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #666;">
+        <div>
+            <i class="fas fa-backward"></i> <i class="fas fa-step-backward" style="margin-right: 5px;"></i> 1 <i
+                class="fas fa-step-forward" style="margin-left: 5px;"></i>
+            <i class="fas fa-forward"></i>
+            <span style="margin-left: 10px;">Page Size: <select>
+                    <option>20</option>
+                </select></span>
+        </div>
+        <div>{{ applications|length }} items in 1 pages</div>
+    </div>
+</div>
+
+<style>
+    .portal-row:hover {
+        background-color: #f4f9fc !important;
+    }
+
+    .action-menu-link {
+        color: #444;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .action-menu-link:hover {
+        background: #e9ecef;
+        color: #0072bc;
+    }
+
+    .action-menu-btn {
+        background: none;
+        border: none;
+        color: #d9534f;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .action-menu-btn:hover {
+        background: #fdf5f5;
+        color: #c9302c;
+    }
+
+    .details-row td {
+        border-bottom: 1px solid #eee;
+    }
+</style>
+
+<script>
+    function toggleDetails(rowId, iconId) {
+        var detailsRow = document.getElementById(rowId);
+        var icon = document.getElementById(iconId);
+
+        if (detailsRow.style.display === "none") {
+            detailsRow.style.display = "table-row";
+            icon.classList.remove("fa-caret-right");
+            icon.classList.add("fa-caret-down");
+        } else {
+            detailsRow.style.display = "none";
+            icon.classList.remove("fa-caret-down");
+            icon.classList.add("fa-caret-right");
+        }
+    }
+</script>
+{% endblock %}

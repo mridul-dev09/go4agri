@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block header_logout %}{% endblock %}
+
 {% block content %}
 <div class="dashboard-wrapper">
     <!-- Sidebar -->
@@ -20,14 +22,19 @@
                         <i class="fas fa-th-large"></i> Dashboard
                     </a>
                 </li>
+                {% if user.designation in ['CEO', 'Admin'] %}
                 <li>
-                    <a href="{% if user.designation == 'CEO' %}/dashboard#tasks{% else %}/dashboard{% endif %}">
-                        <i class="fas fa-tasks"></i> My Tasks
+                    <a href="/dashboard#registered-clients">
+                        <i class="fas fa-users"></i> Registered Clients
                     </a>
                 </li>
+                {% endif %}
                 <li>
                     <a href="/messages" class="{% if request.path == '/messages' %}active{% endif %}">
                         <i class="fas fa-envelope"></i> Messages
+                        {% if unread_count and unread_count > 0 %}
+                        <span class="badge danger" style="padding: 2px 6px; font-size: 0.7rem; margin-left: 5px; background: #d9534f; color: white; border-radius: 10px;">{{ unread_count }}</span>
+                        {% endif %}
                     </a>
                 </li>
                 <li>
@@ -42,6 +49,24 @@
                 </li>
             </ul>
         </nav>
+        
+        {% if user.designation == 'Admin' %}
+        <div class="sidebar-upload" style="margin-top: 30px; padding: 20px; background: #f9fbf9; border-radius: 10px; border: 1px solid #e8eee8;">
+            <h4 style="color: var(--primary-green); font-size: 0.8rem; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">
+                <i class="fas fa-file-excel" style="margin-right: 5px;"></i> Bulk Upload
+            </h4>
+            <form action="/admin/upload-employees" method="POST" enctype="multipart/form-data">
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; color: #666; font-size: 0.7rem; margin-bottom: 5px; font-weight: 600;">Select Spreadsheet</label>
+                    <input type="file" name="employee_file" accept=".xlsx, .xls" required 
+                           style="width: 100%; font-size: 0.7rem; color: #555; background: white; border: 1px solid #ddd; padding: 6px; border-radius: 4px; cursor: pointer;">
+                </div>
+                <button type="submit" class="btn-gold" style="width: 100%; padding: 10px; font-size: 0.75rem; border: none; border-radius: 4px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    UPLOAD & SYNC
+                </button>
+            </form>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Main Content Area -->
@@ -61,7 +86,7 @@
                 style="margin-bottom: 30px; background: #fff8e1; padding: 20px; border-radius: 10px; border-left: 5px solid var(--accent-gold);">
                 <h3 style="color: #856404; margin-bottom: 15px;"><i class="fas fa-exclamation-circle"></i> Tasks
                     Assigned to You</h3>
-                <div style="display: grid; gap: 15px;">
+                <div class="table-responsive" style="display: grid; gap: 15px;">
                     {% for task in tasks %}
                     <div
                         style="background: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
@@ -101,6 +126,22 @@
 </div>
 
 <script>
+    function openTab(evt, tabName) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tab-content");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+            tabcontent[i].classList.remove("active");
+        }
+        tablinks = document.getElementsByClassName("tab-btn");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].classList.remove("active");
+        }
+        document.getElementById(tabName).style.display = "block";
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+
     document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',

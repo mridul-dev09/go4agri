@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="section-container">
+    <h2 class="section-title">{{ _t('scheme_eu') }}</h2>
+    <div
+        style="background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center;">
+        <img src="{{ url_for('static', filename='images/eu_organic.png') }}" alt="EU Organic"
+            style="height: 120px; margin-bottom: 30px;">
+        <p style="color: #666; font-size: 1.1rem; line-height: 1.8; max-width: 800px; margin: 0 auto;">
+            Detailed information about EU Organic certification will be published here soon.
+        </p>
+        <div style="margin-top: 40px;">
+            <a href="{{ url_for('certification_schemes') }}" class="btn-outline">Back to Schemes</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

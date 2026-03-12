@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory, send_file
 import os
 from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -8,9 +8,22 @@ import io
 from translations import TRANSLATIONS
 from markupsafe import Markup
 import re
+from flask_mail import Mail, Message
+from datetime import datetime, timedelta
+import zipfile
 
 app = Flask(__name__)
 app.secret_key = 'go4agri_secret_key_2026'
+
+# Email Configuration
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'go4agri.demo@gmail.com')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'demo_password') # Use app password or secure env var
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME', 'go4agri.demo@gmail.com')
+
+mail = Mail(app)
 
 # Document Upload Configuration
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
@@ -55,6 +68,28 @@ def log_activity(user_id, action, details):
         conn.close()
     except Exception as e:
         print(f"Logging error: {e}")
+
+def send_system_message(receiver_designation, subject, body):
+    """Sends a system message to all users of a specific designation."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        # Find all users with this designation (except 'Client' unless specifically intended)
+        cursor.execute("SELECT id FROM users WHERE designation = %s", (receiver_designation,))
+        receivers = cursor.fetchall()
+        
+        system_user_id = 1 # Assuming user ID 1 is Admin/System
+        
+        for receiver in receivers:
+            cursor.execute(
+                "INSERT INTO messages (sender_id, receiver_id, subject, body) VALUES (%s, %s, %s, %s)",
+                (system_user_id, receiver['id'], subject, body)
+            )
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"System Message Error: {e}")
 
 
 # Navigation routes
@@ -106,6 +141,18 @@ def contact():
 def certification_schemes():
     return render_template('certification_schemes.html')
 
+@app.route('/scheme-npop')
+def scheme_npop():
+    return render_template('scheme_npop.html')
+
+@app.route('/scheme-cor')
+def scheme_cor():
+    return render_template('scheme_cor.html')
+
+@app.route('/scheme-eu')
+def scheme_eu():
+    return render_template('scheme_eu.html')
+
 @app.route('/certification-process')
 def certification_process():
     return redirect('/#certification-process')
@@ -142,6 +189,15 @@ def login():
         conn.close()
         
         if user and check_password_hash(user['password'], password):
+            # Role validation based on login_type
+            if login_type == 'client' and user['designation'] != 'Client':
+                flash('Please use the employee login portal.', 'error')
+                return redirect(url_for('client_login'))
+            
+            if login_type == 'employee' and user['designation'] == 'Client':
+                flash('Please use the client login portal.', 'error')
+                return redirect(url_for('employee_login'))
+
             session['user_id'] = user['id']
             session['email'] = user['email']
             session['designation'] = user['designation']
@@ -167,17 +223,15 @@ def dashboard():
     
     # Mapping designations to template filenames
     template_map = {
-        'Initial reviewer': 'db_initial_reviewer.html',
         'Admin': 'db_admin.html',
-        'Scheduler': 'db_scheduler.html',
-        'Evaluator': 'db_evaluator.html',
-        'Technical reviewer': 'db_technical_reviewer.html',
-        'Certification officer': 'db_certification_officer.html',
         'CEO': 'db_ceo.html',
-        'QA': 'db_qa.html',
-        'Certifier': 'db_certifier.html',
-        'Auditor': 'db_auditor.html',
-        'Client': 'db_client.html'
+        'Client': 'db_client.html',
+        'Accounts': 'db_accounts.html',
+        'Initial reviewer': 'db_employee.html',
+        'Inspection planner': 'db_employee.html',
+        'Auditor': 'db_employee.html',
+        'Technical reviewer': 'db_employee.html',
+        'Certifier': 'db_employee.html'
     }
     print(f"DEBUG: Dashboard requested for {designation}")
     template = template_map.get(designation, 'db_base.html')
@@ -189,16 +243,23 @@ def dashboard():
     tasks = []
     employees = []
     documents = []
+    registered_clients = []
     
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
         if designation == 'CEO':
-            cursor.execute("SELECT * FROM applications ORDER BY created_at DESC")
+            cursor.execute("""
+                SELECT a.*, u.full_name as lead_auditor_name 
+                FROM applications a
+                LEFT JOIN users u ON a.lead_auditor_id = u.id
+                WHERE a.status = 'FINAL_PAYMENT_VERIFIED'
+                ORDER BY a.created_at DESC
+            """)
             apps = cursor.fetchall()
-            cursor.execute("SELECT * FROM enquiries ORDER BY created_at DESC")
-            enquiries = cursor.fetchall()
+            cursor.execute("SELECT id, full_name, designation FROM users WHERE designation != 'Client' AND designation != 'CEO'")
+            employees = cursor.fetchall()
             cursor.execute("""
                 SELECT al.*, u.full_name, u.designation 
                 FROM activity_log al 
@@ -214,8 +275,6 @@ def dashboard():
                 ORDER BY t.created_at DESC
             """)
             tasks = cursor.fetchall()
-            cursor.execute("SELECT id, full_name, designation FROM users WHERE designation != 'Client' AND designation != 'CEO'")
-            employees = cursor.fetchall()
         elif designation == 'Client':
             cursor.execute("SELECT * FROM applications WHERE client_id = %s ORDER BY created_at DESC", (session['user_id'],))
             apps = cursor.fetchall()
@@ -231,23 +290,85 @@ def dashboard():
             tasks = cursor.fetchall()
             
             # Fetch relevant applications based on role logic
+            # Role-based workflow filtering
             if designation == 'Admin':
-                cursor.execute("SELECT * FROM applications WHERE status = 'PENDING_ADMIN_REVIEW' ORDER BY created_at DESC")
-            elif designation == 'QA':
-                cursor.execute("SELECT * FROM applications WHERE status = 'PENDING_QA_REVIEW' ORDER BY created_at DESC")
+                cursor.execute("""
+                    SELECT a.*, u.full_name as lead_auditor_name 
+                    FROM applications a
+                    LEFT JOIN users u ON a.lead_auditor_id = u.id
+                    WHERE a.status IN ('APPLICATION_RECEIVED', 'PARTIAL_PAYMENT_VERIFIED', 'REJECTED')
+                    ORDER BY CASE a.status WHEN 'REJECTED' THEN 0 ELSE 1 END, a.created_at DESC
+                """)
+                apps = cursor.fetchall()
+            elif designation == 'Accounts':
+                cursor.execute("""
+                    SELECT a.*, u.full_name as client_name 
+                    FROM applications a
+                    JOIN users u ON a.client_id = u.id
+                    WHERE a.status IN ('CONTRACT_UPLOADED', 'FINAL_PAYMENT_SUBMITTED')
+                    ORDER BY a.created_at DESC
+                """)
+                apps = cursor.fetchall()
             elif designation == 'Initial reviewer':
-                cursor.execute("SELECT * FROM applications WHERE status = 'PENDING_INITIAL_REVIEW' ORDER BY created_at DESC")
-            elif designation == 'Evaluator':
-                cursor.execute("SELECT * FROM applications WHERE status IN ('PENDING_EVALUATION', 'PENDING_NC_FOLLOWUP') ORDER BY created_at DESC")
+                cursor.execute("""
+                    SELECT a.*, u.full_name as lead_auditor_name 
+                    FROM applications a
+                    LEFT JOIN users u ON a.lead_auditor_id = u.id
+                    WHERE a.status = 'DOCUMENT_REVIEW'
+                    ORDER BY a.created_at DESC
+                """)
+                apps = cursor.fetchall()
+            elif designation == 'Inspection planner':
+                cursor.execute("""
+                    SELECT a.*, u.full_name as lead_auditor_name 
+                    FROM applications a
+                    LEFT JOIN users u ON a.lead_auditor_id = u.id
+                    WHERE a.status = 'INSPECTION_PLANNING'
+                    ORDER BY a.created_at DESC
+                """)
+                apps = cursor.fetchall()
+            elif designation == 'Auditor':
+                cursor.execute("""
+                    SELECT a.*, u.full_name as lead_auditor_name 
+                    FROM applications a
+                    LEFT JOIN users u ON a.lead_auditor_id = u.id
+                    WHERE a.status = 'AUDIT_IN_PROGRESS'
+                    ORDER BY a.created_at DESC
+                """)
+                apps = cursor.fetchall()
             elif designation == 'Technical reviewer':
-                cursor.execute("SELECT * FROM applications WHERE status = 'PENDING_TECHNICAL_REVIEW' ORDER BY created_at DESC")
-            elif designation == 'Certification officer':
-                cursor.execute("SELECT * FROM applications WHERE status = 'PENDING_CERTIFICATION_OFFICER' ORDER BY created_at DESC")
-            elif designation == 'Certifier':
-                cursor.execute("SELECT * FROM applications WHERE status = 'PENDING_CERTIFIER_APPROVAL' ORDER BY created_at DESC")
+                cursor.execute("""
+                    SELECT a.*, u.full_name as lead_auditor_name 
+                    FROM applications a
+                    LEFT JOIN users u ON a.lead_auditor_id = u.id
+                    WHERE a.status = 'TECHNICAL_REVIEW'
+                    ORDER BY a.created_at DESC
+                """)
+                apps = cursor.fetchall()
+            elif designation in ['Certifier', 'CEO']:
+                cursor.execute("""
+                    SELECT a.*, u.full_name as lead_auditor_name 
+                    FROM applications a
+                    LEFT JOIN users u ON a.lead_auditor_id = u.id
+                    WHERE a.status = 'FINAL_PAYMENT_VERIFIED'
+                    ORDER BY a.created_at DESC
+                """)
+                apps = cursor.fetchall()
             else:
-                cursor.execute("SELECT * FROM applications ORDER BY created_at DESC LIMIT 5")
-            apps = cursor.fetchall()
+                cursor.execute("""
+                    SELECT a.*, u.full_name as lead_auditor_name 
+                    FROM applications a
+                    LEFT JOIN users u ON a.lead_auditor_id = u.id
+                    ORDER BY a.created_at DESC LIMIT 10
+                """)
+                apps = cursor.fetchall()
+
+        # Shared Data for Management (CEO & Admin)
+        if designation in ['CEO', 'Admin']:
+            cursor.execute("SELECT * FROM enquiries ORDER BY created_at DESC")
+            enquiries = cursor.fetchall()
+            cursor.execute("SELECT id, full_name, email, created_at FROM users WHERE designation = 'Client' ORDER BY created_at DESC")
+            registered_clients = cursor.fetchall()
 
         # Fetch Documents based on role
         if designation in ['CEO', 'Admin', 'QA']:
@@ -267,43 +388,195 @@ def dashboard():
             # User said: "uploaded documents should be seen on CEO, Quality and ADmin dashborad"
             pass
             
+        # Fetch unread message count for badge
+        unread_count = 0
+        if 'user_id' in session:
+            cursor.execute("SELECT COUNT(*) as count FROM messages WHERE receiver_id = %s AND is_read = FALSE", (session['user_id'],))
+            unread_count = cursor.fetchone()['count']
+
+        print(f"DEBUG: Designation={designation}, Apps Found={len(apps)}")
         cursor.close()
         conn.close()
     except Exception as e:
         print(f"DEBUG: Error fetching dashboard data: {e}")
         
-    return render_template(template, user=session, applications=apps, enquiries=enquiries, activities=activities, tasks=tasks, employees=employees, documents=documents)
+    return render_template(template, user=session, applications=apps, enquiries=enquiries, activities=activities, tasks=tasks, employees=employees, documents=documents, registered_clients=registered_clients, unread_count=unread_count)
 
 @app.route('/submit-application', methods=['POST'])
 def submit_application():
-    if 'user_id' not in session or session.get('designation') != 'Client':
-        flash('Unauthorized.', 'error')
-        return redirect(url_for('home'))
-        
     company_name = request.form.get('company_name')
     program_type = request.form.get('program_type')
     
-    if not company_name or not program_type:
-        flash('Please fill all fields.', 'error')
+    # Check if user is logged in
+    is_client = 'user_id' in session and session.get('designation') == 'Client'
+    
+    if is_client:
+        if not company_name or not program_type:
+            flash('Please fill all fields.', 'error')
+            return redirect(url_for('apply'))
+            
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            # Check for existing application with same client_id and program_type
+            cursor.execute("SELECT id FROM applications WHERE client_id = %s AND program_type = %s", (session['user_id'], program_type))
+            if cursor.fetchone():
+                flash(f'You have already applied for the {program_type} program.', 'error')
+                cursor.close()
+                conn.close()
+                return redirect(url_for('apply'))
+                
+            cursor.execute(
+                "INSERT INTO applications (client_id, company_name, program_type, status) VALUES (%s, %s, %s, 'PENDING_CONTRACT_QUOTATION')",
+                (session['user_id'], company_name, program_type)
+            )
+            conn.commit()
+            cursor.close()
+            conn.close()
+            log_activity(session['user_id'], 'SUBMIT_APPLICATION', f"Submitted application for {company_name}")
+            flash('Application submitted successfully!', 'success')
+            return redirect(url_for('dashboard'))
+        except Exception as e:
+            print(f"Error submitting app: {e}")
+            flash('Error submitting application.', 'error')
+            return redirect(url_for('apply'))
+    else:
+        # User is a guest, process as enquiry
+        name = request.form.get('full_name')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        
+        if not name or not email or not phone or not company_name or not program_type:
+            flash('Please fill all required fields.', 'error')
+            return redirect(url_for('apply'))
+            
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO enquiries (name, company_name, email, phone, program_type, message, status) VALUES (%s, %s, %s, %s, %s, 'Submitted via application form', 'NEW')",
+                (name, company_name, email, phone, program_type)
+            )
+            conn.commit()
+            cursor.close()
+            conn.close()
+            log_activity(None, 'APPLICATION_ENQUIRY', f"New enquiry/app from guest {name} for {company_name}")
+            flash('Your application/enquiry has been submitted! Our team will review it and contact you to set up your account.', 'success')
+            return redirect(url_for('home'))
+        except Exception as e:
+            print(f"Error submitting guest application: {e}")
+            flash('An error occurred. Please try again later.', 'error')
+            return redirect(url_for('apply'))
+        print(f"Error submitting app: {e}")
+        flash('Error submitting application.', 'error')
         return redirect(url_for('apply'))
+
+@app.route('/submit-contract/<int:app_id>', methods=['POST'])
+def submit_contract(app_id):
+    if 'user_id' not in session or session.get('designation') != 'Client':
+        flash('Unauthorized access.', 'error')
+        return redirect(url_for('client_login'))
+        
+    contract_file = request.files.get('contract')
+    receipt_file = request.files.get('payment_receipt')
+    txn_no = request.form.get('partial_payment_txn')
+    
+    if not contract_file or not receipt_file or not txn_no:
+        flash('Please provide the signed contract, payment receipt, and transaction ID.', 'error')
+        return redirect(url_for('dashboard'))
+        
+    try:
+        # Save Contract
+        c_filename = secure_filename(f"contract_{app_id}_{contract_file.filename}")
+        c_filepath = os.path.join(app.config['UPLOAD_FOLDER'], c_filename)
+        contract_file.save(c_filepath)
+        
+        # Save Receipt
+        r_filename = secure_filename(f"receipt_{app_id}_{receipt_file.filename}")
+        r_filepath = os.path.join(app.config['UPLOAD_FOLDER'], r_filename)
+        receipt_file.save(r_filepath)
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Save document entries
+        cursor.execute(
+            "INSERT INTO documents (client_id, application_id, filename, filepath, category) VALUES (%s, %s, %s, %s, 'SIGNED_CONTRACT')",
+            (session['user_id'], app_id, c_filename, c_filepath)
+        )
+        cursor.execute(
+            "INSERT INTO documents (client_id, application_id, filename, filepath, category) VALUES (%s, %s, %s, %s, 'PAYMENT_RECEIPT')",
+            (session['user_id'], app_id, r_filename, r_filepath)
+        )
+        
+        # Update application status
+        cursor.execute(
+            "UPDATE applications SET status = 'CONTRACT_UPLOADED', partial_payment_txn = %s WHERE id = %s",
+            (txn_no, app_id)
+        )
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        log_activity(session['user_id'], 'UPLOAD_CONTRACT_PAYMENT', f"Uploaded contract, receipt and txn {txn_no} for app {app_id}")
+        flash('Contract and payment receipt submitted successfully! Admin will review them.', 'success')
+    except Exception as e:
+        print(f"Error uploading contract/receipt: {e}")
+        flash('Error submitting documents.', 'error')
+        
+    return redirect(url_for('dashboard'))
+
+@app.route('/submit-final-payment/<int:app_id>', methods=['POST'])
+def submit_final_payment(app_id):
+    if 'user_id' not in session or session.get('designation') != 'Client':
+        flash('Unauthorized access.', 'error')
+        return redirect(url_for('client_login'))
+        
+    txn_no = request.form.get('final_payment_txn')
+    receipt_file = request.files.get('final_payment_receipt')
+    
+    if not txn_no or not receipt_file or receipt_file.filename == '':
+        flash('Please provide both transaction number and payment receipt.', 'error')
+        return redirect(url_for('dashboard'))
         
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # Securely save the receipt
+        filename = secure_filename(f"final_payment_{app_id}_{receipt_file.filename}")
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        receipt_file.save(filepath)
+        
+        # Save to documents table
         cursor.execute(
-            "INSERT INTO applications (client_id, company_name, program_type, status) VALUES (%s, %s, %s, 'PENDING_CEO_REVIEW')",
-            (session['user_id'], company_name, program_type)
+            "INSERT INTO documents (client_id, application_id, filename, filepath, category) VALUES (%s, %s, %s, %s, 'FINAL_PAYMENT_RECEIPT')",
+            (session['user_id'], app_id, filename, filename)
+        )
+        
+        # Update application status
+        cursor.execute(
+            "UPDATE applications SET status = 'FINAL_PAYMENT_SUBMITTED', final_payment_txn = %s WHERE id = %s",
+            (txn_no, app_id)
         )
         conn.commit()
         cursor.close()
         conn.close()
-        log_activity(session['user_id'], 'SUBMIT_APPLICATION', f"Submitted application for {company_name}")
-        flash('Application submitted successfully!', 'success')
-        return redirect(url_for('dashboard'))
+        
+        log_activity(session['user_id'], 'SUBMIT_FINAL_PAYMENT', f"Submitted final payment txn {txn_no} and receipt for app {app_id}")
+        flash('Final payment details submitted! Admin will verify and issue your certificate.', 'success')
     except Exception as e:
-        print(f"Error submitting app: {e}")
-        flash('Error submitting application.', 'error')
-        return redirect(url_for('apply'))
+        print(f"Error submitting final payment: {e}")
+        flash('Error submitting final payment.', 'error')
+        
+    return redirect(url_for('dashboard'))
+
+@app.route('/download-sample-contract')
+def download_sample_contract():
+    filename = 'Professional Service Contract.pdf'
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
 
 @app.route('/submit-enquiry', methods=['POST'])
 def submit_enquiry():
@@ -342,64 +615,173 @@ def update_application_status(app_id):
         
     role = session.get('designation')
     
-    # Define status flow matching 7 steps
-    flow = {
-        'CEO': 'PENDING_ADMIN_REVIEW',
-        'Admin': 'PENDING_QA_REVIEW',
-        'QA': 'PENDING_INITIAL_REVIEW',
-        'Initial reviewer': 'PENDING_CONTRACT',
-        # For middle steps without specific new roles, we allow Admin/CEO to move them or reuse roles
-        'Contract Manager': 'PENDING_EVALUATION', 
-        'Evaluator': 'PENDING_NC_FOLLOWUP',
-        'NC Specialist': 'PENDING_TECHNICAL_REVIEW',
-        'Technical reviewer': 'PENDING_CERTIFICATION_OFFICER',
-        'Certification officer': 'PENDING_CERTIFIER_APPROVAL',
-        'Certifier': 'PENDING_TRANSACTION',
+    # Define 14-step workflow transitions map (current_status -> role -> next_status)
+    transitions = {
+        'APPLICATION_RECEIVED': { 'Admin': 'CLIENT_REGISTERED' },
+        'CLIENT_REGISTERED': { 'Admin': 'PENDING_CONTRACT_QUOTATION' },
+        'CONTRACT_UPLOADED': { 'Accounts': 'PARTIAL_PAYMENT_VERIFIED', 'Admin': 'PARTIAL_PAYMENT_VERIFIED' },
+        'PARTIAL_PAYMENT_VERIFIED': { 'Admin': 'DOCUMENT_REVIEW' },
+        'DOCUMENT_REVIEW': { 'Initial reviewer': 'INSPECTION_PLANNING' },
+        'INSPECTION_PLANNING': { 'Inspection planner': 'AUDIT_IN_PROGRESS' },
+        'AUDIT_IN_PROGRESS': { 'Auditor': 'TECHNICAL_REVIEW' },
+        'TECHNICAL_REVIEW': { 'Technical reviewer': 'FINAL_PAYMENT_PENDING' },
+        'FINAL_PAYMENT_SUBMITTED': { 'Accounts': 'FINAL_PAYMENT_VERIFIED', 'Admin': 'FINAL_PAYMENT_VERIFIED' },
+        'FINAL_PAYMENT_PENDING': { 'Accounts': 'FINAL_PAYMENT_VERIFIED', 'Admin': 'FINAL_PAYMENT_VERIFIED' },
+        'FINAL_PAYMENT_VERIFIED': { 'Certifier': 'CERTIFICATE_ISSUED', 'CEO': 'CERTIFICATE_ISSUED' }
     }
     
-    # Adding flexibility if specific roles for new steps don't exist yet
-    if role == 'Admin' and request.form.get('current_status') == 'PENDING_CONTRACT':
-        new_status = 'PENDING_EVALUATION'
-    elif role == 'Evaluator' and request.form.get('current_status') == 'PENDING_NC_FOLLOWUP':
-        new_status = 'PENDING_TECHNICAL_REVIEW'
-    else:
-        new_status = flow.get(role)
+    current_status = request.form.get('current_status')
+    new_status = request.form.get('status_override')
+    action = request.form.get('action')
+    comment = request.form.get('comment', '').strip()
     
-    # Handle direct transition to CERTIFICATE_ISSUED from TRANSACTION stage
-    # This might be handled by another role or a separate route, but for simplicity:
-    if role == 'Certifier' and request.form.get('action') == 'issue':
-        new_status = 'CERTIFICATE_ISSUED'
-    else:
-        new_status = flow.get(role)
+    if action == 'reject':
+        if not comment:
+            flash('A comment is mandatory when rejecting an application.', 'error')
+            return redirect(url_for('dashboard'))
+        new_status = 'REJECTED'
+    elif not new_status:
+        if current_status:
+            new_status = transitions.get(current_status, {}).get(role)
+        else:
+            flash('Current status not provided.', 'error')
+            return redirect(url_for('dashboard'))
 
-    # If it's the transaction stage, we might need a separate action
-    if request.form.get('status_override'):
-        new_status = request.form.get('status_override')
     if not new_status:
-        flash('You are not authorized to advance applications.', 'error')
+        flash(f'No valid transition found for your role ({role}) and current status ({current_status}).', 'error')
         return redirect(url_for('dashboard'))
         
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # Auditor specific logic: Must upload report if not rejecting
+        if role == 'Auditor' and current_status == 'AUDIT_IN_PROGRESS' and action != 'reject':
+            report_file = request.files.get('audit_report')
+            if not report_file or report_file.filename == '':
+                flash('Audit report is mandatory for submission.', 'error')
+                return redirect(url_for('dashboard'))
+            
+            filename = secure_filename(f"audit_report_{app_id}_{report_file.filename}")
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            report_file.save(filepath)
+            
+            # Fetch client_id for document entry
+            cursor.execute("SELECT client_id FROM applications WHERE id = %s", (app_id,))
+            result = cursor.fetchone()
+            client_id = result[0] if result else None
+            
+            if client_id:
+                cursor.execute(
+                    "INSERT INTO documents (client_id, application_id, filename, filepath, category) VALUES (%s, %s, %s, %s, 'AUDIT_REPORT')",
+                    (client_id, app_id, filename, filename)
+                )
+
+        # Inspection Planner specific logic: Must upload planning doc if not rejecting
+        elif role == 'Inspection planner' and current_status == 'INSPECTION_PLANNING' and action != 'reject':
+            plan_file = request.files.get('planning_doc')
+            if not plan_file or plan_file.filename == '':
+                flash('Planning document is mandatory for submission.', 'error')
+                return redirect(url_for('dashboard'))
+            
+            filename = secure_filename(f"planning_doc_{app_id}_{plan_file.filename}")
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            plan_file.save(filepath)
+            
+            # Fetch client_id for document entry
+            cursor.execute("SELECT client_id FROM applications WHERE id = %s", (app_id,))
+            result = cursor.fetchone()
+            client_id = result[0] if result else None
+            
+            if client_id:
+                cursor.execute(
+                    "INSERT INTO documents (client_id, application_id, filename, filepath, category) VALUES (%s, %s, %s, %s, 'PLANNING_DOCUMENT')",
+                    (client_id, app_id, filename, filename)
+                )
+        
         cursor.execute(
             "UPDATE applications SET status = %s WHERE id = %s",
             (new_status, app_id)
         )
         conn.commit()
+
+        # Automated Notifications based on new_status
+        notification_map = {
+            'CLIENT_REGISTERED': ('Admin', 'New Client Registered', f'Application {app_id} is ready for contract generation.'),
+            'CONTRACT_UPLOADED': ('Accounts', 'Contract Uploaded', f'New contract and payment receipt uploaded for application {app_id}.'),
+            'PARTIAL_PAYMENT_VERIFIED': ('Admin', 'Payment Verified', f'Partial payment verified for application {app_id}. Ready for document review.'),
+            'DOCUMENT_REVIEW': ('Initial reviewer', 'New Activity: Document Review', f'Application {app_id} assigned for document review.'),
+            'INSPECTION_PLANNING': ('Inspection planner', 'New Activity: Inspection Planning', f'Application {app_id} assigned for inspection planning.'),
+            'AUDIT_IN_PROGRESS': ('Auditor', 'New Activity: Audit Assigned', f'Application {app_id} is now assigned to you for inspection.'),
+            'TECHNICAL_REVIEW': ('Technical reviewer', 'New Activity: Technical Review', f'Audit report submitted for application {app_id}. Technical review required.'),
+            'FINAL_PAYMENT_PENDING': ('Accounts', 'Final Payment Pending', f'Technical review completed for app {app_id}. Awaiting final payment.'),
+            'FINAL_PAYMENT_VERIFIED': ('Certifier', 'Payment Verified: Issue Certificate', f'Final payment verified for app {app_id}. Certificate can now be issued.'),
+            'CERTIFICATE_ISSUED': ('CEO', 'Certificate Issued', f'Certificate has been issued for application {app_id}.')
+        }
+
+        if new_status in notification_map:
+            dest_role, subject, body = notification_map[new_status]
+            send_system_message(dest_role, subject, body)
+            
+        if action == 'reject':
+            send_system_message('Admin', 'Application Rejected', f'Application {app_id} was rejected by {session.get("full_name")} ({role}). Reason: {comment}')
+
         cursor.close()
         conn.close()
-        log_activity(session['user_id'], 'UPDATE_STATUS', f"Advanced application {app_id} to {new_status}")
-        flash(f'Application advanced to {new_status.replace("_", " ")}.', 'success')
+        
+        if action == 'reject':
+            log_activity(session['user_id'], 'REJECT_APPLICATION', f"Rejected application {app_id}. Reason: {comment}")
+            flash(f'Application rejected successfully.', 'success')
+        else:
+            log_activity(session['user_id'], 'UPDATE_STATUS', f"Advanced application {app_id} to {new_status}")
+            flash(f'Application advanced to {new_status.replace("_", " ")}.', 'success')
+            
     except Exception as e:
         print(f"Error updating status: {e}")
         flash('Error updating application status.', 'error')
         
     return redirect(url_for('dashboard'))
 
+@app.route('/update-audit-details/<int:app_id>', methods=['POST'])
+def update_audit_details(app_id):
+    if 'user_id' not in session or session.get('designation') not in ['Admin', 'Auditor']:
+        flash('Unauthorized access.', 'error')
+        return redirect(url_for('dashboard'))
+        
+    plan_days = request.form.get('plan_days')
+    asr_days = request.form.get('asr_days')
+    start_date = request.form.get('start_date')
+    end_date = request.form.get('end_date')
+    
+    # Handle empty strings for integer fields
+    plan_days = plan_days if plan_days else 0
+    asr_days = asr_days if asr_days else 0
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE applications 
+            SET plan_submission_days = %s, 
+                draft_asr_days = %s, 
+                audit_start_date = %s, 
+                audit_end_date = %s 
+            WHERE id = %s
+        """, (plan_days, asr_days, start_date or None, end_date or None, app_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        log_activity(session['user_id'], 'UPDATE_AUDIT_DETAILS', f"Updated audit details for application {app_id}")
+        flash('Audit details updated successfully.', 'success')
+    except Exception as e:
+        print(f"Error updating audit details: {e}")
+        flash('Error updating audit details.', 'error')
+        
+    return redirect(url_for('dashboard'))
+
 @app.route('/register-client', methods=['POST'])
 def register_client():
-    if 'user_id' not in session or session.get('designation') != 'CEO':
+    if 'user_id' not in session or session.get('designation') not in ['CEO', 'Admin']:
         flash('Unauthorized access.', 'error')
         return redirect(url_for('home'))
         
@@ -419,26 +801,118 @@ def register_client():
         hashed_pw = generate_password_hash(password)
         
         cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
-        if cursor.fetchone() is None:
+        existing_user = cursor.fetchone()
+        
+        if existing_user is None:
             cursor.execute(
                 "INSERT INTO users (full_name, email, designation, password) VALUES (%s, %s, %s, %s)",
                 (full_name, email, 'Client', hashed_pw)
             )
+            client_id = cursor.lastrowid
+            flash_msg = f'Successfully registered client {full_name}.'
             
-            if enquiry_id:
-                cursor.execute("UPDATE enquiries SET status = 'REGISTERED' WHERE id = %s", (enquiry_id,))
-                
-            conn.commit()
-            log_activity(session['user_id'], 'REGISTER_CLIENT', f"Registered client {full_name} ({email})")
-            flash(f'Successfully registered client {full_name}.', 'success')
+            # Send email to the new client
+            try:
+                msg = Message('Welcome to Go4Agri - Your Account Details', recipients=[email])
+                msg.body = f"""Hello {full_name},
+
+Your Go4Agri client account has been successfully created.
+
+Here are your login details:
+Login URL: {url_for('client_login', _external=True)}
+Email: {email}
+Password: {password}
+
+NEXT STEPS TO COMPLETE YOUR REGISTRATION:
+1. Log in to your dashboard.
+2. View 'Company Bank Details' and 'Registration Steps'.
+3. Download the 'Standard Contract Template' from your dashboard.
+4. Print, sign, and scan the contract.
+5. Make the partial payment to our bank account.
+6. Upload the signed contract and transaction number in the Application Tracker.
+
+If you have any questions, please contact our support team.
+
+Thank you,
+The Go4Agri Team"""
+                mail.send(msg)
+                flash_msg += ' An email with login credentials and next steps has been sent.'
+            except Exception as e:
+                print(f"Failed to send email: {e}")
+                flash_msg += ' (Warning: Failed to send email with credentials).'
         else:
-            flash(f'User with email {email} already exists.', 'error')
+            client_id = existing_user[0]
+            flash_msg = f'User with email {email} already exists. Enquiry linked to existing account.'
+            
+        if enquiry_id:
+            cursor.execute("SELECT company_name, program_type FROM enquiries WHERE id = %s", (enquiry_id,))
+            enq = cursor.fetchone()
+            if enq:
+                company_name, program_type = enq
+                cursor.execute("SELECT id FROM applications WHERE client_id = %s AND program_type = %s", (client_id, program_type))
+                if cursor.fetchone() is None:
+                    cursor.execute(
+                        "INSERT INTO applications (client_id, company_name, program_type, status) VALUES (%s, %s, %s, 'PENDING_CONTRACT_QUOTATION')",
+                        (client_id, company_name, program_type)
+                    )
+                else:
+                    flash_msg += ' (Warning: Application for this program already exists).'
+                    
+            cursor.execute("UPDATE enquiries SET status = 'REGISTERED' WHERE id = %s", (enquiry_id,))
+            
+        conn.commit()
+        log_activity(session['user_id'], 'REGISTER_CLIENT', f"Registered/Linked client {full_name} ({email})")
+        flash(flash_msg, 'success')
             
         cursor.close()
         conn.close()
     except Exception as e:
         print(f"Registration error: {e}")
         flash(f'Error registering client: {str(e)}', 'error')
+
+        
+    return redirect(url_for('dashboard'))
+
+@app.route('/delete-enquiry/<int:enquiry_id>', methods=['POST'])
+def delete_enquiry(enquiry_id):
+    if 'user_id' not in session or session.get('designation') not in ['CEO', 'Admin']:
+        flash('Unauthorized access.', 'error')
+        return redirect(url_for('home'))
+        
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM enquiries WHERE id = %s", (enquiry_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        log_activity(session['user_id'], 'DELETE_ENQUIRY', f"Deleted enquiry {enquiry_id}")
+        flash('Enquiry deleted successfully.', 'success')
+    except Exception as e:
+        print(f"Error deleting enquiry: {e}")
+        flash('Error deleting enquiry.', 'error')
+        
+    return redirect(url_for('dashboard'))
+
+@app.route('/delete-application/<int:app_id>', methods=['POST'])
+def delete_application(app_id):
+    if 'user_id' not in session or session.get('designation') not in ['CEO', 'Admin']:
+        flash('Unauthorized access.', 'error')
+        return redirect(url_for('home'))
+        
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM applications WHERE id = %s", (app_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        log_activity(session['user_id'], 'DELETE_APPLICATION', f"Deleted application {app_id}")
+        flash('Application deleted successfully.', 'success')
+    except Exception as e:
+        print(f"Error deleting application: {e}")
+        # Could be foreign key constraint from tasks or documents, etc.
+        flash('Error deleting application. It may be linked to tasks or documents.', 'error')
         
     return redirect(url_for('dashboard'))
 
@@ -577,6 +1051,7 @@ def messages():
         
     user_id = session['user_id']
     msg_id = request.args.get('id')
+    active_tab = request.args.get('tab', 'inbox')
     
     msgs = []
     selected_msg = None
@@ -586,14 +1061,23 @@ def messages():
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        # Fetch inbox
-        cursor.execute("""
-            SELECT m.*, u.full_name as sender_name 
-            FROM messages m
-            JOIN users u ON m.sender_id = u.id
-            WHERE m.receiver_id = %s
-            ORDER BY m.created_at DESC
-        """, (user_id,))
+        # Fetch messages based on active tab
+        if active_tab == 'sent':
+            cursor.execute("""
+                SELECT m.*, u.full_name as receiver_name 
+                FROM messages m
+                JOIN users u ON m.receiver_id = u.id
+                WHERE m.sender_id = %s
+                ORDER BY m.created_at DESC
+            """, (user_id,))
+        else: # Default to inbox
+            cursor.execute("""
+                SELECT m.*, u.full_name as sender_name 
+                FROM messages m
+                JOIN users u ON m.sender_id = u.id
+                WHERE m.receiver_id = %s
+                ORDER BY m.created_at DESC
+            """, (user_id,))
         msgs = cursor.fetchall()
         
         # Fetch selected message
@@ -623,7 +1107,7 @@ def messages():
     except Exception as e:
         print(f"Error fetching messages: {e}")
         
-    return render_template('db_messages.html', user=session, messages=msgs, selected_message=selected_msg, contacts=contacts)
+    return render_template('db_messages.html', user=session, messages=msgs, selected_message=selected_msg, contacts=contacts, active_tab=active_tab)
 
 @app.route('/send-message', methods=['POST'])
 def send_message():
@@ -755,7 +1239,8 @@ def upload_document():
 
 @app.route('/client-details/<int:client_id>')
 def client_details(client_id):
-    if 'user_id' not in session or session.get('designation') not in ['CEO', 'Admin', 'QA']:
+    allowed_roles = ['CEO', 'Admin', 'QA', 'Initial reviewer', 'Inspection planner', 'Auditor', 'Technical reviewer', 'Certifier']
+    if 'user_id' not in session or session.get('designation') not in allowed_roles:
         flash('Unauthorized access.', 'error')
         return redirect(url_for('dashboard'))
         
@@ -772,7 +1257,13 @@ def client_details(client_id):
             return redirect(url_for('dashboard'))
             
         # Get client applications
-        cursor.execute("SELECT * FROM applications WHERE client_id = %s ORDER BY created_at DESC", (client_id,))
+        cursor.execute("""
+            SELECT a.*, u.full_name as lead_auditor_name 
+            FROM applications a
+            LEFT JOIN users u ON a.lead_auditor_id = u.id
+            WHERE a.client_id = %s 
+            ORDER BY a.created_at DESC
+        """, (client_id,))
         apps = cursor.fetchall()
         
         # Get client documents
@@ -805,8 +1296,14 @@ def download_document(doc_id):
             flash('Document not found.', 'error')
             return redirect(url_for('dashboard'))
             
-        # Check permissions: Client can only download their own, others (CEO/Admin/QA) can download any
+        # Check permissions
+        allowed_roles = ['CEO', 'Admin', 'QA', 'Initial reviewer', 'Inspection planner', 'Auditor', 'Technical reviewer', 'Certifier']
+        is_employee = session.get('designation') in allowed_roles
+        
         if session['designation'] == 'Client' and doc['client_id'] != session['user_id']:
+            flash('Unauthorized access.', 'error')
+            return redirect(url_for('dashboard'))
+        elif session['designation'] != 'Client' and not is_employee:
             flash('Unauthorized access.', 'error')
             return redirect(url_for('dashboard'))
             
@@ -816,5 +1313,241 @@ def download_document(doc_id):
         flash('Error downloading document.', 'error')
         return redirect(url_for('dashboard'))
 
+@app.route('/download-all-documents/<int:client_id>')
+def download_all_documents(client_id):
+    allowed_roles = ['CEO', 'Admin', 'QA', 'Initial reviewer', 'Inspection planner', 'Auditor', 'Technical reviewer', 'Certifier']
+    if 'user_id' not in session or session.get('designation') not in allowed_roles:
+        flash('Unauthorized access.', 'error')
+        return redirect(url_for('dashboard'))
+        
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM documents WHERE client_id = %s", (client_id,))
+        docs = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        if not docs:
+            flash('No documents found for this client.', 'error')
+            return redirect(url_for('client_details', client_id=client_id))
+            
+        memory_file = io.BytesIO()
+        with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for doc in docs:
+                # Use the full path to the file on the server
+                full_filepath = os.path.join(app.config['UPLOAD_FOLDER'], doc['filepath'])
+                if os.path.exists(full_filepath):
+                    safe_filename = secure_filename(doc['filename'])
+                    # Group by category in the zip file
+                    archive_name = f"{doc['category']}/{safe_filename}"
+                    zipf.write(full_filepath, archive_name)
+                    
+        memory_file.seek(0)
+        return send_file(
+            memory_file,
+            download_name=f'client_{client_id}_documents.zip',
+            as_attachment=True,
+            mimetype='application/zip'
+        )
+            
+    except Exception as e:
+        print(f"Error downloading all documents: {e}")
+        flash('Error compressing and downloading documents.', 'error')
+        return redirect(url_for('client_details', client_id=client_id))
+
+
+@app.route('/verify-payment/<int:app_id>', methods=['POST'])
+def verify_payment(app_id):
+    if 'user_id' not in session or session.get('designation') != 'Accounts':
+        return redirect(url_for('employee_login'))
+        
+    payment_type = request.form.get('payment_type') # 'partial' or 'final'
+    action = request.form.get('action') # 'approve' or 'reject'
+    
+    new_status = 'PARTIAL_PAYMENT_VERIFIED' if payment_type == 'partial' else 'FINAL_PAYMENT_VERIFIED'
+    
+    if action == 'reject':
+        new_status = 'PENDING_CONTRACT_QUOTATION' if payment_type == 'partial' else 'TECHNICAL_REVIEW' # send back
+        
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE applications SET status = %s WHERE id = %s", (new_status, app_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        log_activity(session['user_id'], 'PAYMENT_VERIFY', f"{action.capitalize()}ed {payment_type} payment for app {app_id}")
+        flash(f'Payment {action}d successfully.', 'success')
+    except Exception as e:
+        print(f"Error verifying payment: {e}")
+        flash('Error processing payment.', 'error')
+        
+    return redirect(url_for('dashboard'))
+
+@app.route('/view-certificate/<int:app_id>')
+def view_certificate(app_id):
+    if 'user_id' not in session:
+        return redirect(url_for('home'))
+        
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM documents WHERE application_id = %s AND category = 'CERTIFICATE' ORDER BY uploaded_at DESC LIMIT 1", (app_id,))
+        doc = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if not doc:
+            flash('Certificate not found.', 'error')
+            return redirect(url_for('dashboard'))
+            
+        # Permission check
+        allowed_roles = ['CEO', 'Admin', 'Certifier']
+        if session.get('designation') == 'Client':
+            if doc['client_id'] != session['user_id']:
+                flash('Unauthorized.', 'error')
+                return redirect(url_for('dashboard'))
+        elif session.get('designation') not in allowed_roles:
+            flash('Unauthorized.', 'error')
+            return redirect(url_for('dashboard'))
+            
+        return send_from_directory(app.config['UPLOAD_FOLDER'], doc['filepath'], as_attachment=True, download_name=doc['filename'])
+    except Exception as e:
+        print(f"Error viewing certificate: {e}")
+        flash('Error loading certificate.', 'error')
+        return redirect(url_for('dashboard'))
+
+@app.route('/generate-certificate/<int:app_id>', methods=['POST'])
+def generate_certificate(app_id):
+    if 'user_id' not in session or session.get('designation') != 'CEO':
+        flash('Unauthorized access.', 'error')
+        return redirect(url_for('dashboard'))
+        
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Fetch application and client details
+        cursor.execute("""
+            SELECT a.*, u.full_name as client_name 
+            FROM applications a
+            JOIN users u ON a.client_id = u.id
+            WHERE a.id = %s
+        """, (app_id,))
+        app_data = cursor.fetchone()
+        
+        if not app_data:
+            flash('Application not found.', 'error')
+            return redirect(url_for('dashboard'))
+            
+        # Use the uploaded certificate template
+        template_name = "Certificate Of Achievement.pdf"
+        template_path = os.path.join(app.config['UPLOAD_FOLDER'], template_name)
+        
+        if not os.path.exists(template_path):
+            flash('Certificate template not found in uploads folder.', 'error')
+            return redirect(url_for('dashboard'))
+            
+        import shutil
+        filename = f"Certificate_{app_id}_{datetime.now().strftime('%Y%m%d')}.pdf"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        shutil.copy(template_path, filepath)
+        
+        # Save to documents table
+        cursor.execute(
+            "INSERT INTO documents (client_id, application_id, filename, filepath, category) VALUES (%s, %s, %s, %s, 'CERTIFICATE')",
+            (app_data['client_id'], app_id, filename, filename)
+        )
+        
+        # Update application status
+        cursor.execute("UPDATE applications SET status = 'CERTIFICATE_ISSUED' WHERE id = %s", (app_id,))
+        conn.commit()
+        
+        cursor.close()
+        conn.close()
+        
+        log_activity(session['user_id'], 'GENERATE_CERTIFICATE', f"Issued certificate {filename} for application {app_id} using template")
+        flash('Certificate issued successfully using the provided template!', 'success')
+    except Exception as e:
+        print(f"Error issuing certificate: {e}")
+        flash('Error issuing certificate.', 'error')
+        
+    return redirect(url_for('dashboard'))
+
+
+
+@app.route('/restart-application/<int:app_id>', methods=['POST'])
+def restart_application(app_id):
+    if 'user_id' not in session or session.get('designation') != 'Admin':
+        flash('Unauthorized access.', 'error')
+        return redirect(url_for('employee_login'))
+    rejection_reason = request.form.get('rejection_reason', '').strip()
+    if not rejection_reason:
+        flash('A rejection reason is mandatory to restart the application.', 'error')
+        return redirect(url_for('dashboard'))
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT * FROM applications WHERE id = %s', (app_id,))
+        application = cursor.fetchone()
+        if not application or application['status'] != 'REJECTED':
+            flash('Only REJECTED applications can be restarted.', 'error')
+            cursor.close()
+            conn.close()
+            return redirect(url_for('dashboard'))
+        new_restart_count = (application.get('restart_count') or 0) + 1
+        cursor.execute(
+            'UPDATE applications SET status = %s, restart_count = %s WHERE id = %s',
+            ('DOCUMENT_REVIEW', new_restart_count, app_id)
+        )
+        cursor.execute(
+            'INSERT INTO application_restarts (application_id, restarted_by, restart_count, rejection_reason) VALUES (%s, %s, %s, %s)',
+            (app_id, session['user_id'], new_restart_count, rejection_reason)
+        )
+        conn.commit()
+        cursor.execute(
+            'INSERT INTO messages (sender_id, receiver_id, subject, body, is_read) VALUES (%s, %s, %s, %s, 0)',
+            (session['user_id'], application['client_id'],
+             f'Application #{app_id} Restarted (Attempt #{new_restart_count})',
+             f'Your application requires corrections.\n\nReason: {rejection_reason}\n\nPlease re-upload the corrected documents from your dashboard.')
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        log_activity(session['user_id'], 'RESTART_APPLICATION', f'Restarted application {app_id} (Attempt #{new_restart_count}). Reason: {rejection_reason}')
+        flash(f'Application #{app_id} has been restarted (Attempt #{new_restart_count}). Client has been notified.', 'success')
+    except Exception as e:
+        print(f'Error restarting application: {e}')
+        flash('Error restarting application.', 'error')
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/restart-history/<int:app_id>')
+def restart_history(app_id):
+    allowed_roles = ['CEO', 'Admin', 'QA', 'Initial reviewer', 'Inspection planner', 'Auditor', 'Technical reviewer', 'Certifier']
+    if 'user_id' not in session or session.get('designation') not in allowed_roles:
+        flash('Unauthorized access.', 'error')
+        return redirect(url_for('dashboard'))
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT * FROM applications WHERE id = %s', (app_id,))
+        application = cursor.fetchone()
+        cursor.execute(
+            'SELECT r.*, u.full_name as restarted_by_name FROM application_restarts r JOIN users u ON r.restarted_by = u.id WHERE r.application_id = %s ORDER BY r.restarted_at ASC',
+            (app_id,)
+        )
+        history = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return render_template('restart_history.html', user=session, application=application, history=history)
+    except Exception as e:
+        print(f'Error fetching restart history: {e}')
+        flash('Error loading restart history.', 'error')
+        return redirect(url_for('dashboard'))
+
 if __name__ == '__main__':
+    # Trigger hot reload for templates
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.run(debug=True)

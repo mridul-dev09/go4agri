@@ -15,8 +15,23 @@
     {% endwith %}
 
     <form action="/submit-application" method="POST">
+        {% if not session.get('user_id') or session.get('designation') != 'Client' %}
         <div class="form-group">
-            <label>{{ _t('company_name') }}</label>
+            <label>Full Name *</label>
+            <input type="text" name="full_name" required>
+        </div>
+        <div class="form-group">
+            <label>Email Address *</label>
+            <input type="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label>Phone Number *</label>
+            <input type="tel" name="phone" required>
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label>{{ _t('company_name') }} *</label>
             <input type="text" name="company_name" required>
         </div>
 
@@ -24,10 +39,9 @@
             <label>{{ _t('choose_program') }}</label>
             <select name="program_type" required>
                 <option value="">{{ _t('select_program') }}</option>
-                <option value="NPOP Organic">NPOP (National Programme for Organic Production)</option>
-                <option value="USDA-NOP">USDA-NOP (United States Department of Agriculture)</option>
-                <option value="OFIS">OFIS (Organic Food Information System)</option>
-                <option value="INCT">INCT (International Certification & Training)</option>
+                <option value="NPOP">{{ _t('scheme_npop') }} (National Programme for Organic Production)</option>
+                <option value="COR">{{ _t('scheme_cor') }} (Canada Organic Regime)</option>
+                <option value="EU Organic">{{ _t('scheme_eu') }} (EU Regulation 2018/848)</option>
             </select>
         </div>
 

@@ -32,12 +32,12 @@
                                     class="fas fa-chevron-down" style="font-size: 0.7rem;"></i></span></a>
                         <ul class="dropdown-menu">
                             <li class="dropdown">
-                                <a href="#">{{ _t('nav_certification_schemes') }} <i class="fas fa-chevron-right"
-                                        style="font-size: 0.7rem;"></i></a>
+                                <a href="{{ url_for('certification_schemes') }}">{{ _t('nav_certification_schemes') }}
+                                    <i class="fas fa-chevron-right" style="font-size: 0.7rem;"></i></a>
                                 <ul class="dropdown-menu">
-                                    <li><a href="{{ url_for('certification_schemes') }}">{{
-                                            _t('nav_certification_schemes') }}</a></li>
-                                    <li><a href="/#certification-process">{{ _t('nav_certification_process') }}</a></li>
+                                    <li><a href="{{ url_for('scheme_npop') }}">NPOP</a></li>
+                                    <li><a href="{{ url_for('scheme_cor') }}">COR</a></li>
+                                    <li><a href="{{ url_for('scheme_eu') }}">EU</a></li>
                                 </ul>
                             </li>
                             <li><a href="{{ url_for('services') }}">{{ _t('nav_training') }}</a></li>
@@ -69,9 +69,11 @@
                     {% if session.get('user_id') %}
                     <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt"></i><span>{{
                                 _t('nav_dashboard') }}</span></a></li>
+                    {% block header_logout %}
                     <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i><span>{{ _t('nav_logout')
                                 }}</span></a>
                     </li>
+                    {% endblock %}
                     {% else %}
                     <li class="dropdown login-nav-item">
                         <a href="#"><i class="fas fa-user-circle"></i><span>{{ _t('nav_login') }} <i

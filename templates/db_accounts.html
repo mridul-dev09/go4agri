@@ -1,0 +1,106 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Portal Dashboard - Accounts{% endblock %}
+
+{% block dashboard_content %}
+<div class="portal-header">
+    <i class="fas fa-file-invoice-dollar"></i> Accounts Dashboard
+</div>
+<div class="db-card" style="border-radius: 0 0 10px 10px; padding: 20px;">
+    <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-money-check-alt"></i> Pending Payment Verifications</h3>
+
+    <div class="audit-table-wrapper table-responsive">
+        <table class="audit-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px;"></th>
+                    <th>User ID</th>
+                    <th>Program ID</th>
+                    <th>Company Name</th>
+                    <th>Status (Pending Action)</th>
+                    <th>Partial Payment Txn</th>
+                    <th>Final Payment Txn</th>
+                    <th>Contract</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if applications %}
+                {% for app in applications %}
+                <tr class="portal-row" onclick="toggleDetails('details-{{ app.id }}', 'icon-{{ app.id }}')">
+                    <td style="text-align: center; color: #0072bc; cursor: pointer;">
+                        <i id="icon-{{ app.id }}" class="fas fa-caret-right"></i>
+                    </td>
+                    <td style="font-weight: 600; color: #555;">USR-{{ "%04d" | format(app.client_id) }}</td>
+                    <td style="font-weight: 600; color: var(--primary-green);">PRG-{{ "%04d" | format(app.id) }}</td>
+                    <td>
+                        <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" style="text-decoration: none; color: #0072bc; font-weight: 600;">
+                            {{ app.company_name }}
+                        </a>
+                    </td>
+                    <td><span class="badge warning">{{ app.status.replace('_', ' ') }}</span></td>
+                    <td>{{ app.partial_payment_txn or 'N/A' }}</td>
+                    <td>{{ app.final_payment_txn or 'N/A' }}</td>
+                    <td>
+                        {% if app.signed_contract_path %}
+                        <a href="{{ url_for('static', filename='uploads/' ~ app.signed_contract_path) }}" target="_blank" style="color: #27ae60;"><i class="fas fa-file-pdf"></i> View</a>
+                        {% else %}
+                        No file
+                        {% endif %}
+                    </td>
+                </tr>
+
+                <tr id="details-{{ app.id }}" class="details-row" style="display: none; background: #fdfdfd;">
+                    <td></td>
+                    <td colspan="7" style="padding: 0;">
+                        <div style="padding: 10px 15px; border-left: 2px solid #0072bc; display: flex; gap: 15px; align-items: center; background: #f8fafc;">
+                            <form action="/verify-payment/{{ app.id }}" method="POST" style="margin: 0; display: flex; gap: 10px;">
+                                {% if 'PARTIAL' in app.status or app.status == 'PARTIAL_PAYMENT_PENDING' or app.status == 'CONTRACT_UPLOADED' %}
+                                <input type="hidden" name="payment_type" value="partial">
+                                {% else %}
+                                <input type="hidden" name="payment_type" value="final">
+                                {% endif %}
+                                <button type="submit" name="action" value="approve" class="btn btn-primary btn-sm" style="background: #27ae60; border: none; padding: 5px 15px; border-radius: 4px; color: white; cursor: pointer;">
+                                    <i class="fas fa-check"></i> Verify Payment
+                                </button>
+                                <button type="submit" name="action" value="reject" class="btn btn-danger btn-sm" style="background: #e74c3c; border: none; padding: 5px 15px; border-radius: 4px; color: white; cursor: pointer;">
+                                    <i class="fas fa-times"></i> Reject Payment
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 30px; color: #999;">
+                        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+                        No pending payments to verify.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .portal-row:hover { background-color: #f4f9fc !important; }
+    .details-row td { border-bottom: 1px solid #eee; }
+</style>
+
+<script>
+    function toggleDetails(rowId, iconId) {
+        var detailsRow = document.getElementById(rowId);
+        var icon = document.getElementById(iconId);
+        if (detailsRow.style.display === "none") {
+            detailsRow.style.display = "table-row";
+            icon.classList.remove("fa-caret-right");
+            icon.classList.add("fa-caret-down");
+        } else {
+            detailsRow.style.display = "none";
+            icon.classList.remove("fa-caret-down");
+            icon.classList.add("fa-caret-right");
+        }
+    }
+</script>
+{% endblock %}

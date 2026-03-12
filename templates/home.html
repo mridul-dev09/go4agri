@@ -14,9 +14,14 @@
 <section class="section-container">
     <h2 class="section-title">{{ _t('our_certification_programs') }}</h2>
     <div class="program-logos">
-        <img src="{{ url_for('static', filename='images/canada_organic.jpg') }}" alt="Canada Organic"
-            style="height: 120px;">
-        <img src="{{ url_for('static', filename='images/eu_organic.png') }}" alt="EU Organic" style="height: 120px;">
+        <a href="{{ url_for('certification_schemes') }}">
+            <img src="{{ url_for('static', filename='images/canada_organic.jpg') }}" alt="Canada Organic"
+                style="height: 120px;">
+        </a>
+        <a href="{{ url_for('certification_schemes') }}">
+            <img src="{{ url_for('static', filename='images/eu_organic.png') }}" alt="EU Organic"
+                style="height: 120px;">
+        </a>
     </div>
 </section>
 
@@ -87,6 +92,18 @@
                 7</div>
             <p>{{ _t('step_7') }}</p>
         </div>
+        <div class="step">
+            <div class="step-num"
+                style="width: 50px; height: 50px; background: #2d5a27; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-weight: bold; font-size: 1.2rem;">
+                8</div>
+            <p>{{ _t('step_8') }}</p>
+        </div>
+        <div class="step">
+            <div class="step-num"
+                style="width: 50px; height: 50px; background: #2d5a27; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-weight: bold; font-size: 1.2rem;">
+                9</div>
+            <p>{{ _t('step_9') }}</p>
+        </div>
     </div>
 </section>
 
@@ -101,12 +118,15 @@
         <div class="cert-card-refined">
             <div class="card-bg">
                 <div class="img-container">
-                    <img src="/static/images/farmers.jpg" alt="Farmers">
+                    <img src="/static/images/crop_production.png" alt="Crop Production">
                 </div>
             </div>
             <div class="label-container">
                 <div class="divider"></div>
-                <p>{{ _t('farmers') }}</p>
+                <div class="label-text">
+                    <p class="main-label">{{ _t('crop_production') }}</p>
+                    <p class="sub-label">{{ _t('crop_production_sub') }}</p>
+                </div>
                 <div class="divider"></div>
             </div>
         </div>
@@ -119,7 +139,9 @@
             </div>
             <div class="label-container">
                 <div class="divider"></div>
-                <p style="min-width: 120px;">{{ _t('processors') }}</p>
+                <div class="label-text">
+                    <p class="main-label">{{ _t('processors') }}</p>
+                </div>
                 <div class="divider"></div>
             </div>
         </div>
@@ -132,7 +154,9 @@
             </div>
             <div class="label-container">
                 <div class="divider"></div>
-                <p>{{ _t('exporters') }}</p>
+                <div class="label-text">
+                    <p class="main-label">{{ _t('exporters') }}</p>
+                </div>
                 <div class="divider"></div>
             </div>
         </div>
@@ -140,25 +164,50 @@
         <div class="cert-card-refined">
             <div class="card-bg">
                 <div class="img-container">
-                    <img src="/static/images/input_manufacturers.jpeg" alt="Input Manufacturers">
+                    <img src="/static/images/wild_collection.jpeg" alt="Wild Collection">
                 </div>
             </div>
             <div class="label-container">
                 <div class="divider"></div>
-                <p style="min-width: 150px;">{{ _t('input_mfrs') }}</p>
+                <div class="label-text">
+                    <p class="main-label">{{ _t('wild_collection') }}</p>
+                </div>
+                <div class="divider"></div>
+            </div>
+        </div>
+
+        <div class="cert-card-refined">
+            <div class="card-bg">
+                <div class="img-container">
+                    <img src="/static/images/animal_feed.png" alt="Animal Feed">
+                </div>
+            </div>
+            <div class="label-container">
+                <div class="divider"></div>
+                <div class="label-text">
+                    <p class="main-label">{{ _t('animal_feed') }}</p>
+                </div>
                 <div class="divider"></div>
             </div>
         </div>
     </div>
 </section>
 
+
 <section class="section-container">
     <h2 class="section-title">{{ _t('our_accreditations') }}</h2>
     <div class="accred-logos">
-        <img src="{{ url_for('static', filename='images/ioas_new.png') }}" alt="IOAS" style="height: 100px;">
-        <img src="{{ url_for('static', filename='images/canada_organic.jpg') }}" alt="Canada Organic"
-            style="height: 100px;">
-        <img src="{{ url_for('static', filename='images/eu_organic.png') }}" alt="EU Organic" style="height: 100px;">
+        <a href="{{ url_for('static', filename='images/IOAS certificate.jpg') }}" target="_blank">
+            <img src="{{ url_for('static', filename='images/ioas_new.png') }}" alt="IOAS" style="height: 100px;">
+        </a>
+        <a href="{{ url_for('static', filename='images/COR certificate.jpg') }}" target="_blank">
+            <img src="{{ url_for('static', filename='images/canada_organic.jpg') }}" alt="Canada Organic"
+                style="height: 100px;">
+        </a>
+        <a href="{{ url_for('static', filename='images/EU (under recognition) certificate.jpg') }}" target="_blank">
+            <img src="{{ url_for('static', filename='images/eu_organic.png') }}" alt="EU Organic"
+                style="height: 100px;">
+        </a>
     </div>
 </section>
 {% endblock %}

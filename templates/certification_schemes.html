@@ -7,7 +7,7 @@
 
     <div class="schemes-grid">
         <!-- NPOP -->
-        <div class="scheme-card">
+        <div class="scheme-card" id="npop" onclick="window.location.href='/scheme-npop'" style="cursor: pointer;">
             <div class="scheme-header">
                 <img src="{{ url_for('static', filename='images/npop_new.png') }}" alt="NPOP">
                 <h3 style="color: #2d5a27;">{{ _t('scheme_npop') }}</h3>
@@ -26,13 +26,13 @@
             <div class="scheme-footer">
                 <div
                     style="width: 100%; padding: 12px; border: 2px dashed #ccc; border-radius: 5px; color: #777; font-weight: 600; text-align: center; cursor: default; background: #fdfdfd;">
-                    {{ _t('under_recognition') }}
+                    {{ _t('applicant') }}
                 </div>
             </div>
         </div>
 
         <!-- COR -->
-        <div class="scheme-card">
+        <div class="scheme-card" id="cor" onclick="window.location.href='/scheme-cor'" style="cursor: pointer;">
             <div class="scheme-header" style="background: #fef9f0; border-bottom-color: #fdf2e0;">
                 <img src="{{ url_for('static', filename='images/canada_organic.jpg') }}" alt="COR">
                 <h3 style="color: #8d6e63;">{{ _t('scheme_cor') }}</h3>
@@ -48,13 +48,14 @@
                 <p style="color: #666; font-size: 0.9rem; margin-top: 15px;">{{ _t('cor_desc') }}</p>
             </div>
             <div class="scheme-footer">
-                <button onclick="openEnquiryModal('COR')" class="btn-gold" style="width: 100%; border: none;">{{
+                <button onclick="event.stopPropagation(); openEnquiryModal('COR')" class="btn-gold"
+                    style="width: 100%; border: none;">{{
                     _t('enquire_now') }}</button>
             </div>
         </div>
 
         <!-- EU Organic -->
-        <div class="scheme-card">
+        <div class="scheme-card" id="eu" onclick="window.location.href='/scheme-eu'" style="cursor: pointer;">
             <div class="scheme-header" style="background: #f0f4f9; border-bottom-color: #e1e9f2;">
                 <img src="{{ url_for('static', filename='images/eu_organic.png') }}" alt="EU Organic">
                 <h3 style="color: #1a3c17;">{{ _t('scheme_eu') }}</h3>
@@ -70,8 +71,10 @@
                 <p style="color: #666; font-size: 0.9rem; margin-top: 15px;">{{ _t('eu_desc') }}</p>
             </div>
             <div class="scheme-footer">
-                <button onclick="openEnquiryModal('EU Organic')" class="btn-gold" style="width: 100%; border: none;">{{
-                    _t('enquire_now') }}</button>
+                <div
+                    style="width: 100%; padding: 12px; border: 2px dashed #ccc; border-radius: 5px; color: #777; font-weight: 600; text-align: center; cursor: default; background: #fdfdfd;">
+                    {{ _t('under_recognition') }}
+                </div>
             </div>
         </div>
     </div>
