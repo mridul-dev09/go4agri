@@ -11,6 +11,7 @@ import re
 from flask_mail import Mail, Message
 from datetime import datetime, timedelta
 import zipfile
+from threading import Thread
 
 app = Flask(__name__)
 app.secret_key = 'go4agri_secret_key_2026'
@@ -26,6 +27,13 @@ app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME', 'admingo4agri@gma
 app.config['MAIL_TIMEOUT'] = 10
 
 mail = Mail(app)
+
+def send_async_email(app, msg):
+    with app.app_context():
+        try:
+            mail.send(msg)
+        except Exception as e:
+            print(f"Async email sending failed: {e}")
 
 # Document Upload Configuration
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
@@ -838,9 +846,9 @@ If you have any questions, please contact our support team.
 Thank you,
 The Go4Agri Team"""
                 try:
-                    mail.send(msg)
+                    Thread(target=send_async_email, args=(app, msg)).start()
                 except Exception as e:
-                    print(f"Email sending failed: {e}")
+                    print(f"Failed to start async email thread: {e}")
 
                 flash_msg += ' An email with login credentials and next steps has been sent.'
             except Exception as e:
