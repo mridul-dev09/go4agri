@@ -1212,43 +1212,53 @@ def upload_document():
 
     category = request.form.get('category')
     app_id = request.form.get('application_id') or None
-    file = request.files.get('document_file')
+    files = request.files.getlist('document_file')
     
-    if not file or file.filename == '':
-        flash('No file selected for upload.', 'error')
+    if not files or all(f.filename == '' for f in files):
+        flash('No files selected for upload.', 'error')
         return redirect(url_for('upload_document'))
         
     try:
-        filename = secure_filename(file.filename)
-        # Add timestamp to filename to prevent overwrites
-        from datetime import datetime
-        ts_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
-        
-        # Ensure upload folder exists (safety check)
-        if not os.path.exists(app.config['UPLOAD_FOLDER']):
-            os.makedirs(app.config['UPLOAD_FOLDER'])
-            
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], ts_filename)
-        file.save(filepath)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO documents (client_id, application_id, category, filename, filepath) VALUES (%s, %s, %s, %s, %s)",
-            (session['user_id'], app_id, category, filename, ts_filename)
-        )
+        
+        success_count = 0
+        for file in files:
+            if file and file.filename != '':
+                filename = secure_filename(file.filename)
+                # Add timestamp to filename to prevent overwrites
+                from datetime import datetime
+                ts_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+                
+                # Ensure upload folder exists
+                if not os.path.exists(app.config['UPLOAD_FOLDER']):
+                    os.makedirs(app.config['UPLOAD_FOLDER'])
+                    
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], ts_filename)
+                file.save(filepath)
+                
+                cursor.execute(
+                    "INSERT INTO documents (client_id, application_id, category, filename, filepath) VALUES (%s, %s, %s, %s, %s)",
+                    (session['user_id'], app_id, category, filename, ts_filename)
+                )
+                success_count += 1
+                log_activity(session['user_id'], 'UPLOAD_DOC', f"Uploaded {category}: {filename}")
+
         conn.commit()
         cursor.close()
         conn.close()
         
-        log_activity(session['user_id'], 'UPLOAD_DOC', f"Uploaded {category}: {filename}")
-        flash('Document uploaded successfully!', 'success')
+        if success_count > 1:
+            flash(f'{success_count} documents uploaded successfully!', 'success')
+        else:
+            flash('Document uploaded successfully!', 'success')
+            
         return redirect(url_for('dashboard'))
     except Exception as e:
         print(f"CRITICAL: Upload error in app.py: {e}")
         import traceback
         traceback.print_exc()
-        flash(f'Error saving document: {str(e)}', 'error')
+        flash(f'Error saving documents: {str(e)}', 'error')
         return redirect(url_for('upload_document'))
 
 @app.route('/client-details/<int:client_id>')
