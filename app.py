@@ -836,9 +836,9 @@ If you have any questions, please contact our support team.
 Thank you,
 The Go4Agri Team"""
                 try:
-    mail.send(msg)
-except Exception as e:
-    print(f"Email sending failed: {e}")
+                    mail.send(msg)
+                except Exception as e:
+                    print(f"Email sending failed: {e}")
 
                 flash_msg += ' An email with login credentials and next steps has been sent.'
             except Exception as e:
