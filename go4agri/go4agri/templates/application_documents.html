@@ -1,0 +1,100 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Application Documents - PRG-{{ "%04d" | format(application.id) }}{% endblock %}
+
+{% block dashboard_content %}
+<div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; border-top: 5px solid var(--primary-green);">
+
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <h2 style="color: var(--primary-green); margin: 0 0 8px 0;">
+                <i class="fas fa-folder-open"></i> Application Documents
+            </h2>
+            <p style="color: #666; margin: 0; font-size: 0.95rem;">
+                PRG-{{ "%04d" | format(application.id) }} &mdash;
+                {{ application.company_name }} &mdash;
+                <strong>{{ application.program_type }}</strong>
+            </p>
+        </div>
+        <a href="{{ url_for('dashboard') }}"
+           style="background: #f4f4f4; color: #555; border: 1px solid #ddd; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Status Badge -->
+    <div style="margin-bottom: 25px;">
+        {% if application.status == 'CERTIFICATE_ISSUED' %}
+        <span style="background: #e9f5e8; color: #2d5a27; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;">
+            <i class="fas fa-check-circle"></i> COMPLETED
+        </span>
+        {% else %}
+        <span style="background: #fff3cd; color: #856404; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;">
+            <i class="fas fa-clock"></i> {{ application.status.replace('_', ' ') if application.status else 'Pending' }}
+        </span>
+        {% endif %}
+    </div>
+
+    <!-- Documents Table -->
+    {% if documents %}
+    <div class="table-responsive">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+            <thead>
+                <tr style="background: #f4faf4; text-align: left;">
+                    <th style="padding: 14px 16px; border-bottom: 2px solid #ddd; color: #444;">#</th>
+                    <th style="padding: 14px 16px; border-bottom: 2px solid #ddd; color: #444;">File Name</th>
+                    <th style="padding: 14px 16px; border-bottom: 2px solid #ddd; color: #444;">Category</th>
+                    <th style="padding: 14px 16px; border-bottom: 2px solid #ddd; color: #444;">Upload Date</th>
+                    <th style="padding: 14px 16px; border-bottom: 2px solid #ddd; color: #444; text-align: center;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                <tr style="border-bottom: 1px solid #f0f0f0; transition: background 0.15s;">
+                    <td style="padding: 14px 16px; color: #999; font-size: 0.8rem;">{{ loop.index }}</td>
+                    <td style="padding: 14px 16px; font-weight: 600; color: #333; word-break: break-all;">
+                        {% if doc.category == 'CERTIFICATE' %}
+                        <i class="fas fa-certificate" style="color: #f39c12; margin-right: 6px;"></i>
+                        {% elif doc.category == 'SIGNED_CONTRACT' %}
+                        <i class="fas fa-file-signature" style="color: #0072bc; margin-right: 6px;"></i>
+                        {% elif 'PAYMENT' in doc.category %}
+                        <i class="fas fa-receipt" style="color: #27ae60; margin-right: 6px;"></i>
+                        {% else %}
+                        <i class="fas fa-file-alt" style="color: #888; margin-right: 6px;"></i>
+                        {% endif %}
+                        {{ doc.filename }}
+                    </td>
+                    <td style="padding: 14px 16px;">
+                        <span style="background: #eef6ff; color: #0072bc; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                            {{ doc.category.replace('_', ' ') }}
+                        </span>
+                    </td>
+                    <td style="padding: 14px 16px; color: #888; font-size: 0.85rem;">
+                        {{ doc.uploaded_at.strftime('%d %b %Y, %I:%M %p') if doc.uploaded_at else 'N/A' }}
+                    </td>
+                    <td style="padding: 14px 16px; text-align: center;">
+                        <a href="/download-document/{{ doc.id }}"
+                           style="background: var(--primary-green); color: white; padding: 6px 14px; border-radius: 5px; text-decoration: none; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px;">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 60px 20px; background: #fafafa; border-radius: 8px; border: 2px dashed #e0e0e0;">
+        <i class="fas fa-folder-open" style="font-size: 3.5rem; color: #ccc; display: block; margin-bottom: 16px;"></i>
+        <h4 style="color: #aaa; margin: 0 0 8px 0; font-weight: 600;">No Documents Found</h4>
+        <p style="color: #bbb; margin: 0; font-size: 0.9rem;">No documents have been uploaded for this application yet.</p>
+        <a href="{{ url_for('dashboard') }}#documents"
+           style="margin-top: 20px; display: inline-block; background: var(--primary-green); color: white; padding: 8px 20px; border-radius: 6px; text-decoration: none; font-size: 0.9rem;">
+            <i class="fas fa-upload"></i> Upload Documents
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
