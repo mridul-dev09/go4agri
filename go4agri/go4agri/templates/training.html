@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="section-container" style="background-color: #fcfcfc;">
+    <h2 class="section-title">Professional Training Programs</h2>
+    
+    <div style="max-width: 900px; margin: 0 auto 50px auto; text-align: center; color: #555; line-height: 1.8; font-size: 1.1rem;">
+        <p>GO4AGRI Certification Pvt. Ltd. provides structured training programs designed to enhance knowledge and understanding of international standards related to organic production, food safety, quality management, and certification systems.</p>
+        <p>These training programs are developed to support capacity building, awareness, and competence development for operators, industry professionals, and stakeholders across the agri-food value chain.</p>
+    </div>
+
+    <!-- Training Types Row -->
+    <div style="max-width: 1000px; margin: 0 auto 60px auto; display: flex; flex-wrap: wrap; gap: 30px;">
+        <div style="flex: 1; min-width: 300px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-users" style="margin-right: 10px;"></i> Open Training</h3>
+            <p style="color: #666; margin-bottom: 15px;">Scheduled training sessions conducted on fixed dates, allowing participation from multiple organizations and individuals.</p>
+            <ul style="color: #555; list-style-type: none; padding-left: 0;">
+                <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--accent-gold); margin-right: 10px;"></i> Interactive classroom-based sessions</li>
+                <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--accent-gold); margin-right: 10px;"></i> Knowledge sharing across industries</li>
+                <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--accent-gold); margin-right: 10px;"></i> Ideal for professionals seeking standard awareness updates</li>
+            </ul>
+        </div>
+        
+        <div style="flex: 1; min-width: 300px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-laptop" style="margin-right: 10px;"></i> Virtual Classroom</h3>
+            <p style="color: #666; margin-bottom: 15px;">Live online training sessions delivered through digital platforms with full interactive capabilities.</p>
+            <ul style="color: #555; list-style-type: none; padding-left: 0;">
+                <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--accent-gold); margin-right: 10px;"></i> Real-time interaction with trainers</li>
+                <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--accent-gold); margin-right: 10px;"></i> Audio, video, and presentation-based learning</li>
+                <li style="margin-bottom: 10px;"><i class="fas fa-check" style="color: var(--accent-gold); margin-right: 10px;"></i> Accessible without travel, ensuring flexibility</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- The 4 Cards Grid mimicking Ecocert -->
+    <h3 style="text-align: center; color: var(--primary-green); font-size: 2rem; margin-bottom: 40px; margin-top: 20px;">Our Training Areas</h3>
+    
+    <div class="training-grid" style="max-width: 1200px; margin: 0 auto 60px auto;">
+        {% for area_id, data in training_data.items() %}
+        <a href="{{ url_for('training_detail', area_id=area_id) }}" class="training-card">
+            <div class="training-card-img" style="background: {{ data.gradient }}; display: flex; justify-content: center; align-items: flex-start; padding-top: 35px;">
+                <i class="{{ data.icon }} training-card-hero-icon" style="font-size: 5rem; color: rgba(255,255,255,0.85);"></i>
+                <div class="training-card-overlay">
+                    <h4 class="training-card-title">{{ data.title }}</h4>
+                    <span class="training-card-btn">Explore <i class="fas fa-arrow-right"></i></span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Bottom Info Blocks -->
+    <div style="max-width: 1000px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        <h4 style="color: var(--primary-green); font-size: 1.3rem; margin-bottom: 15px;">Training Approach</h4>
+        <p style="color: #555; line-height: 1.7; margin-bottom: 30px;">GO4AGRI training programs are designed to provide standard interpretation and technical understanding, enhance operational awareness and compliance readiness, build competence in audit and certification systems, and promote best practices across the supply chain.</p>
+        
+        <h4 style="color: var(--primary-green); font-size: 1.3rem; margin-bottom: 15px;">Impartiality Statement</h4>
+        <p style="color: #555; line-height: 1.7; margin-bottom: 30px;">Training activities are conducted independently and do not influence certification decisions. GO4AGRI maintains strict separation between training and certification functions, ensuring compliance with ISO/IEC 17065 principles. We operate strictly as a certification body and do not provide consultancy services.</p>
+        
+        <div style="background: #fdfaf0; border-left: 4px solid var(--accent-gold); padding: 25px; margin-top: 30px;">
+            <h4 style="color: var(--primary-green); font-size: 1.2rem; margin-bottom: 10px;">Enroll in Training</h4>
+            <p style="color: #555; margin-bottom: 15px;">For upcoming training schedules and registration, contact GO4AGRI Certification Pvt. Ltd.</p>
+            <a href="{{ url_for('enquire_training') }}" class="btn-gold" style="display: inline-block;">Enquire for Training</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

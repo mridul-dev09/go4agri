@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="section-container">
+    <div style="max-width: 1000px; margin: 0 auto;">
+        <h2 class="section-title" style="margin-bottom: 5px;">NOP Certification (USDA Organic)</h2>
+        <p style="text-align: center; color: var(--accent-gold); font-size: 1.1rem; font-weight: 600; margin-bottom: 30px;">in collaboration with STC</p>
+        
+        <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); margin-bottom: 40px;">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <img src="{{ url_for('static', filename='images/nop_logo.png') }}" alt="NOP Organic" style="height: 100px;">
+                <h3 style="color: var(--primary-green); margin-top: 20px;">Certification Services through Recognized Certification Body</h3>
+            </div>
+
+
+            <div class="scheme-details" style="color: #444; line-height: 1.8;">
+                <p>GO4AGRI Certification Pvt. Ltd. operates in collaboration with <strong>Sertifikācijas un testēšanas centrs (STC)</strong>, an established international certification body, for certification services under the USDA National Organic Program (NOP).</p>
+                
+                <p>STC is a long-standing institution with origins dating back to 1911, with extensive expertise in organic certification, conformity assessment, and technical evaluation. The organization operates as a limited liability company and provides certification services across multiple countries, including organic certification under internationally recognized standards.</p>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Applicable Standard</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>USDA National Organic Program (NOP)</li>
+                    <li>7 CFR Part 205 — National Organic Standards</li>
+                </ul>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Certification Scope</h4>
+                <p>Certification services are available for the following scopes under USDA NOP:</p>
+                <ol style="margin-left: 20px; margin-top: 10px;">
+                    <li>Crop Production</li>
+                    <li>Livestock Production</li>
+                    <li>Handling / Processing</li>
+                    <li>Wild Collection</li>
+                    <li>Trading / Export</li>
+                </ol>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Certification Approach</h4>
+                <p>Certification activities are conducted through a structured process including application and contract review, evaluation of Organic System Plan (OSP), on-site inspection, certification decision by authorized personnel of the certification body, and surveillance and annual re-certification.</p>
+                <p>All certification activities are performed in accordance with applicable regulatory requirements and ISO/IEC 17065 principles, ensuring impartiality, consistency, and credibility.</p>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Regulatory Recognition</h4>
+                <p>USDA NOP certification enables operators to market products as “USDA Organic” in the United States, access global markets recognizing USDA organic standards, and demonstrate compliance with internationally accepted organic requirements.</p>
+
+                <div style="background: #fff8e1; padding: 20px; border-left: 5px solid var(--accent-gold); border-radius: 4px; margin-top: 30px;">
+                    <p><strong>Important Note:</strong> Certification under USDA NOP is issued by the recognized certification body (STC). GO4AGRI facilitates coordination and process management in accordance with the applicable certification framework.</p>
+                </div>
+            </div>
+
+            <div style="margin-top: 50px; text-align: center; border-top: 1px solid #eee; padding-top: 30px;">
+                <a href="{{ url_for('apply', program='NOP') }}" class="btn-primary" style="padding: 15px 40px; font-size: 1.2rem;">APPLY FOR NOP CERTIFICATION</a>
+                <div style="margin-top: 20px;">
+                    <a href="{{ url_for('certification_schemes') }}" class="btn-outline">Back to Schemes</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

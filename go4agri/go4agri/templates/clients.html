@@ -1,8 +1,64 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
-<section class='section-container'>
-    <h2 class='section-title'>Clients</h2>
-    <p>This is the clients page. Content coming soon.</p>
+<section class="section-container">
+    <h2 class="section-title">{{ _t('nav_clients') }}</h2>
+    <p style="text-align: center; color: #666; max-width: 700px; margin: 0 auto 40px;">
+        Organizations that have successfully completed organic certification through Go4Agri Certification Pvt. Ltd.
+    </p>
+
+    {% if certified %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.07);">
+            <thead>
+                <tr style="background: var(--primary-green); color: white; text-align: left;">
+                    <th style="padding: 16px 20px;">#</th>
+                    <th style="padding: 16px 20px;">Organization</th>
+                    <th style="padding: 16px 20px;">Certification Scheme</th>
+                    <th style="padding: 16px 20px;">Scope</th>
+                    <th style="padding: 16px 20px;">Certification Date</th>
+                    <th style="padding: 16px 20px;">Current Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in certified %}
+                <tr style="border-bottom: 1px solid #f0f0f0; transition: background 0.2s;" onmouseover="this.style.background='#f9fdf9'" onmouseout="this.style.background='white'">
+                    <td style="padding: 14px 20px; font-weight: 600; color: #aaa; font-size: 0.9rem;">{{ loop.index }}</td>
+                    <td style="padding: 14px 20px;">
+                        <div style="font-weight: 700; color: #222;">{{ c.company_name }}</div>
+                        <div style="font-size: 0.8rem; color: #888;">{{ c.client_name }}</div>
+                    </td>
+                    <td style="padding: 14px 20px; font-weight: 600; color: var(--primary-green);">{{ c.program_type }}</td>
+                    <td style="padding: 14px 20px; font-size: 0.88rem; color: #555;">{{ c.scope or '—' }}</td>
+                    <td style="padding: 14px 20px; font-size: 0.88rem; color: #666;">
+                        {{ c.updated_at.strftime('%d %b %Y') if c.updated_at else 'N/A' }}
+                    </td>
+                    <td style="padding: 14px 20px;">
+                        {% set cs = c.current_status or 'Active' %}
+                        {% if cs == 'Active' %}
+                            <span style="background: #e9f5e8; color: #2d5a27; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">✔ Active</span>
+                        {% elif cs == 'Suspension' %}
+                            <span style="background: #fff3cd; color: #856404; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">⚠ Suspended</span>
+                        {% elif 'Cancellation' in cs %}
+                            <span style="background: #fdecea; color: #c0392b; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">✕ {{ cs }}</span>
+                        {% else %}
+                            <span style="background: #f0f0f0; color: #666; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">{{ cs }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <p style="text-align: center; margin-top: 20px; color: #aaa; font-size: 0.85rem;">
+        Showing {{ certified|length }} certified organization{{ 's' if certified|length != 1 else '' }}
+    </p>
+    {% else %}
+    <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+        <i class="fas fa-certificate" style="font-size: 3rem; color: #ddd; margin-bottom: 20px;"></i>
+        <p style="color: #999; font-size: 1.1rem;">No certified organizations to display yet.</p>
+    </div>
+    {% endif %}
 </section>
 {% endblock %}

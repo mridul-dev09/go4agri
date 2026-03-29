@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section-container" style="background-color: #fcfcfc;">
+    <h1 class="section-title">Enquire for Training</h1>
+    
+    <div style="max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        
+        <p style="text-align: center; color: #555; margin-bottom: 30px;">
+            Fill out the form below to register your interest or request a schedule for our professional training programs.
+        </p>
+
+        <form action="{{ url_for('submit_training_enquiry') }}" method="POST" class="auth-form">
+            <div class="form-group">
+                <label for="name">Full Name *</label>
+                <input type="text" id="name" name="name" required class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address *</label>
+                <input type="email" id="email" name="email" required class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number *</label>
+                <input type="tel" id="phone" name="phone" required class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="training_type">Training Program *</label>
+                <select id="training_type" name="training_type" required class="form-control">
+                    <option value="" disabled {% if not selected_type %}selected{% endif %}>Select a Training Program</option>
+                    <option value="Organic Standards Training" {% if selected_type == 'Organic Standards Training' %}selected{% endif %}>Organic Standards Training</option>
+                    <option value="GLOBALG.A.P. Awareness Training" {% if selected_type == 'GLOBALG.A.P. Awareness Training' %}selected{% endif %}>GLOBALG.A.P. Awareness Training</option>
+                    <option value="Food Safety & Quality Training" {% if selected_type == 'Food Safety & Quality Training' %}selected{% endif %}>Food Safety & Quality Training</option>
+                    <option value="Quality & Management System Training" {% if selected_type == 'Quality & Management System Training' %}selected{% endif %}>Quality & Management System Training</option>
+                    <option value="GMP (Good Manufacturing Practices)" {% if selected_type == 'GMP (Good Manufacturing Practices)' %}selected{% endif %}>GMP (Good Manufacturing Practices)</option>
+                    <option value="General Open Training" {% if selected_type == 'General Open Training' %}selected{% endif %}>General / Open Training</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="message">Message / Details</label>
+                <textarea id="message" name="message" rows="4" class="form-control" placeholder="Specify your company size, preferred training timeline, or specific modules required."></textarea>
+            </div>
+
+            <button type="submit" class="premium-submit-btn">Submit Enquiry <i class="fas fa-paper-plane"></i></button>
+        </form>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="{{ url_for('training') }}" style="color: var(--primary-green); text-decoration: none; font-size: 0.95rem;">
+                <i class="fas fa-arrow-left"></i> Back to Training Hub
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

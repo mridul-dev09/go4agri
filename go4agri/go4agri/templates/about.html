@@ -1,8 +1,17 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
-<section class='section-container'>
-    <h2 class='section-title'>About</h2>
-    <p>This is the about page. Content coming soon.</p>
+<section class='section-container' style="max-width: 900px; margin: 0 auto; text-align: left;">
+    <h2 class='section-title' style="text-align: center; margin-bottom: 50px;">{{ _t('about_title') }}</h2>
+    
+    <div class="about-tagline" style="margin-bottom: 40px; text-align: center;">
+        {{ _t('about_tagline') }}
+    </div>
+
+    <div class="about-content" style="font-size: 1.1rem; color: #444; line-height: 1.8;">
+        <p style="margin-bottom: 20px;">{{ _t('about_p1') }}</p>
+        <p style="margin-bottom: 20px;">{{ _t('about_p2') }}</p>
+        <p>{{ _t('about_p3') }}</p>
+    </div>
 </section>
 {% endblock %}

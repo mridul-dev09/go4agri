@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="section-container">
+    <div style="max-width: 1000px; margin: 0 auto;">
+        <h2 class="section-title">GLOBALG.A.P. Certification</h2>
+        
+        <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); margin-bottom: 40px;">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <img src="{{ url_for('static', filename='images/globalgap_logo.png') }}" alt="GLOBALG.A.P." style="height: 100px;">
+                <h3 style="color: var(--primary-green); margin-top: 20px;">Certification Services (Under Development)</h3>
+            </div>
+
+
+            <div class="scheme-details" style="color: #444; line-height: 1.8;">
+                <p>GO4AGRI Certification Pvt. Ltd. is in the process of expanding its certification scope to include <strong>GLOBALG.A.P.</strong> certification services, one of the world’s leading standards for Good Agricultural Practices (G.A.P.).</p>
+                
+                <p>GLOBALG.A.P. certification provides assurance that agricultural products are produced in compliance with internationally recognized requirements for food safety, traceability, environmental sustainability, and worker welfare.</p>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Applicable Standards</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>GLOBALG.A.P. IFA Version 6 (SMART / GFS)</li>
+                    <li>Control Points and Compliance Criteria (CPCC)</li>
+                    <li>GLOBALG.A.P. General Regulations</li>
+                </ul>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Proposed Scope</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Producer (Option 1)</li>
+                    <li>Producer Groups (Option 2)</li>
+                </ul>
+
+                <h4 style="color: var(--primary-green); margin-top: 15px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Add-ons</h4>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>GRASP</strong> – Social compliance and worker welfare assessment</li>
+                    <li><strong>SPRING</strong> – Sustainable water use and irrigation practices</li>
+                </ul>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Certification Approach</h4>
+                <p>Certification will be conducted through application review, inspection, certification decision, and surveillance in accordance with ISO/IEC 17065 principles.</p>
+            </div>
+
+            <div style="margin-top: 50px; text-align: center; border-top: 1px solid #eee; padding-top: 30px;">
+                <a href="{{ url_for('apply', program='GLOBALGAP') }}" class="btn-primary" style="padding: 15px 40px; font-size: 1.2rem;">APPLY FOR GLOBALG.A.P. CERTIFICATION</a>
+                <div style="margin-top: 20px;">
+                    <a href="{{ url_for('certification_schemes') }}" class="btn-outline">Back to Schemes</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

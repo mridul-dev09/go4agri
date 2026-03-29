@@ -1,15 +1,13 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
-<section class="section-container"
-    style="max-width: 800px; margin: 40px auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
-    <h2 class="section-title" style="text-align: center; margin-bottom: 30px;">Apply for Certification</h2>
+<section class="section-container form-container">
+    <h2 class="section-title">{{ _t('apply_title') }}</h2>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     {% for category, message in messages %}
-    <div
-        style="padding: 15px; margin-bottom: 20px; border-radius: 5px; background: {% if category == 'error' %}#f8d7da{% else %}#d4edda{% endif %}; color: {% if category == 'error' %}#721c24{% else %}#155724{% endif %};">
+    <div class="flash-item {{ category }}">
         {{ message }}
     </div>
     {% endfor %}
@@ -17,32 +15,128 @@
     {% endwith %}
 
     <form action="/submit-application" method="POST">
-        <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Company Name</label>
-            <input type="text" name="company_name" required
-                style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px;">
+        {% if not session.get('user_id') or session.get('designation') != 'Client' %}
+        <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" name="full_name" required>
+        </div>
+        <div class="form-group">
+            <label>Email Address *</label>
+            <input type="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label>Phone Number *</label>
+            <input type="tel" name="phone" required>
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label>{{ _t('company_name') }} *</label>
+            <input type="text" name="company_name" required>
         </div>
 
-        <div style="margin-bottom: 30px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Choose Certification
-                Program</label>
-            <select name="program_type" required
-                style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; background: white;">
-                <option value="">Select a Program</option>
-                <option value="NPOP Organic">NPOP (National Programme for Organic Production)</option>
-                <option value="USDA-NOP">USDA-NOP (United States Department of Agriculture)</option>
-                <option value="OFIS">OFIS (Organic Food Information System)</option>
-                <option value="INCT">INCT (International Certification & Training)</option>
+        <div class="form-group">
+            <label>{{ _t('choose_program') }} *</label>
+            <select name="program_type" id="programSelect" required onchange="updateScopes()">
+                <option value="">{{ _t('select_program') }}</option>
+                <option value="NPOP" {% if request.args.get('program') == 'NPOP' %}selected{% endif %}>{{ _t('scheme_npop') }} (National Programme for Organic Production)</option>
+                <option value="COR" {% if request.args.get('program') == 'COR' %}selected{% endif %}>{{ _t('scheme_cor') }} (Canada Organic Regime)</option>
+                <option value="EU" {% if request.args.get('program') == 'EU' or request.args.get('program') == 'EU Organic' %}selected{% endif %}>{{ _t('scheme_eu') }} (EU Regulation 2018/848)</option>
+                <option value="NOP" {% if request.args.get('program') == 'NOP' %}selected{% endif %}>NOP Certification (USDA Organic)</option>
+                <option value="GLOBALG.A.P." {% if request.args.get('program') in ['GLOBALGAP', 'GLOBALG.A.P.'] %}selected{% endif %}>GLOBALG.A.P. Certification</option>
             </select>
         </div>
 
-        <button type="submit" class="btn-gold"
-            style="width: 100%; padding: 15px; font-size: 1.1rem; border: none; cursor: pointer;">SUBMIT
-            APPLICATION</button>
+        <div class="form-group" id="scopeGroup" style="display: none;">
+            <label>Choose Scope *</label>
+            <select name="scope" id="scopeSelect" required>
+                <option value="">Select a scope</option>
+            </select>
+        </div>
+
+        <button type="submit" class="premium-submit-btn">{{ _t('submit_application') }} <i class="fas fa-paper-plane"></i></button>
     </form>
 
     <p style="text-align: center; margin-top: 20px; color: #666; font-size: 0.9rem;">
-        Note: You must be logged in as a Client to submit an application.
+        {{ _t('login_notice') }}
     </p>
 </section>
+
+<script>
+    const scopesByProgram = {
+        "NPOP": [
+            "Crop Production",
+            "Food Processing & Handling",
+            "Livestock Management",
+            "Beekeeping & Honey",
+            "Wild Harvest Collection"
+        ],
+        "COR": [
+            "Crop Production",
+            "Livestock Production",
+            "Specialized Production (Wild Crops)",
+            "Processed Products",
+            "Trading of Organic Products",
+            "Grower Group Certification"
+        ],
+        "EU": [
+            "D: Processed agricultural products, including aquaculture products, for use as food",
+            "E: Feed"
+        ],
+        "NOP": [
+            "Crop Production",
+            "Livestock Production",
+            "Handling / Processing",
+            "Wild Collection",
+            "Trading / Export"
+        ],
+        "GLOBALG.A.P.": [
+            "Producer (Option 1)",
+            "Producer Groups (Option 2)",
+            "GRASP - Social Compliance",
+            "SPRING - Sustainable Water Use"
+        ]
+    };
+    
+    function updateScopes() {
+        const programSelect = document.getElementById("programSelect");
+        const scopeSelect = document.getElementById("scopeSelect");
+        const scopeGroup = document.getElementById("scopeGroup");
+        const selectedProgram = programSelect.value;
+        
+        // Clear existing options
+        scopeSelect.innerHTML = '<option value="">Select a Scope</option>';
+        
+        if (selectedProgram && scopesByProgram[selectedProgram]) {
+            scopeGroup.style.display = 'block'; // Show the dropdown
+            scopesByProgram[selectedProgram].forEach(function(scope) {
+                const option = document.createElement("option");
+                option.value = scope;
+                option.text = scope;
+                scopeSelect.appendChild(option);
+            });
+        } else {
+            scopeGroup.style.display = 'none'; // Hide if no valid program selected
+            // If they pick something that has no defined scopes, maybe we just don't show the scope field?
+            // But we made it required. For robustness, if they pick an unknown program, 
+            // we should ideally add a general scope or remove the required attribute.
+            // In this setup, all defined programs have scopes.
+            if(selectedProgram) {
+               scopeGroup.style.display = 'block';
+               const option = document.createElement("option");
+               option.value = "General Scope";
+               option.text = "General Scope";
+               scopeSelect.appendChild(option);
+               scopeSelect.value = "General Scope";
+            }
+        }
+    }
+    
+    // Initialize on page load (in case request.args.get preselected a program)
+    document.addEventListener('DOMContentLoaded', function() {
+        if(document.getElementById("programSelect").value) {
+            updateScopes();
+        }
+    });
+</script>
 {% endblock %}

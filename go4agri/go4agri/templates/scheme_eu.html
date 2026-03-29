@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="section-container">
+    <div style="max-width: 1000px; margin: 0 auto;">
+        <h2 class="section-title">EU Organic Certification (Regulation (EU) 2018/848)</h2>
+        
+        <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); margin-bottom: 40px;">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <div style="background: #f0f4f9; padding: 30px; border-radius: 12px; border: 1px dashed #1a3c17; display: inline-block;">
+                    <h3 style="color: #1a3c17; margin: 0;">EU Organic Certification</h3>
+                    <p style="color: #666; font-size: 1.1rem; margin: 5px 0 0;">Coming Soon</p>
+                </div>
+                <h3 style="color: var(--primary-green); margin-top: 20px;">Accredited Certification Services</h3>
+            </div>
+
+            <div class="scheme-details" style="color: #444; line-height: 1.8;">
+                <p>GO4AGRI Certification Pvt. Ltd. is accredited by the International Organic Accreditation Service (IOAS) under ISO/IEC 17065 for certification activities in accordance with Regulation (EU) 2018/848 on organic production and labelling of organic products and its relevant delegated and implementing acts.</p>
+                
+                <p><strong>GO4AGRI is currently under recognition by the European Union for the purpose of offering certification services under this regulation.</strong></p>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Applicable Standard</h4>
+                <p>Regulation (EU) 2018/848 on organic production and labelling of organic products and relevant delegated and implementing acts.</p>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Accreditation Details</h4>
+                <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-top: 15px;">
+                    <p><strong>Accreditation Body:</strong> IOAS</p>
+                    <p><strong>Standard:</strong> ISO/IEC 17065</p>
+                    <p><strong>Contract Number:</strong> 310</p>
+                    <p><strong>Geographical Scope:</strong> India</p>
+                </div>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Scope of Certification</h4>
+                <p>GO4AGRI is accredited under the following categories:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>D:</strong> Processed agricultural products, including aquaculture products, for use as food</li>
+                    <li><strong>E:</strong> Feed</li>
+                </ul>
+                <p style="margin-top: 10px;"><strong>Geographical Scope:</strong> India</p>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Certification Approach</h4>
+                <p>GO4AGRI conducts certification through a structured process including application review, evaluation of documentation, on-site inspection, certification decision by competent personnel, and surveillance and re-certification.</p>
+                <p>All certification activities are carried out in accordance with ISO/IEC 17065 principles, ensuring impartiality, consistency, and credibility.</p>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Regulatory Status</h4>
+                <p>Certification services under Regulation (EU) 2018/848 will be offered subject to formal recognition by the European Commission.</p>
+            </div>
+
+            <div style="margin-top: 50px; text-align: center; border-top: 1px solid #eee; padding-top: 30px;">
+                <a href="{{ url_for('apply', program='EU') }}" class="btn-primary" style="padding: 15px 40px; font-size: 1.2rem;">APPLY FOR EU CERTIFICATION</a>
+                <div style="margin-top: 20px;">
+                    <a href="{{ url_for('certification_schemes') }}" class="btn-outline">Back to Schemes</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

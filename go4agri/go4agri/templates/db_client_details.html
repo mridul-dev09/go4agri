@@ -1,0 +1,182 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Certification Activity{% endblock %}
+
+{% block dashboard_content %}
+<div class="portal-header">
+    <i class="fas fa-certificate"></i> Certification Activity - {{ client.full_name }}
+</div>
+
+<div class="db-card" style="border-radius: 0 0 10px 10px; padding: 30px;">
+    <div
+        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px;">
+        <div>
+            <h2 style="color: #0072bc; margin: 0; font-size: 1.8rem;">Client Profile: {{ client.full_name }}</h2>
+            <p style="color: #666; margin: 5px 0 0 0;"><i class="fas fa-envelope"></i> {{ client.email }} &nbsp; |
+                &nbsp; <strong>USR-{{ "%04d" | format(client.id) }}</strong></p>
+        </div>
+        <div style="text-align: right; font-size: 0.9rem; color: #666;">
+            <div
+                style="background: #f4faf4; border: 1px solid #d4edda; color: #155724; padding: 10px 15px; border-radius: 5px; font-weight: bold;">
+                Total Applications: {{ applications|length }}
+            </div>
+        </div>
+    </div>
+
+    <div class="tabs-container">
+        <div class="tabs-header">
+            {% for app in applications %}
+            <button class="tab-btn {% if loop.first %}active{% endif %}" onclick="openTab(event, 'App-{{ app.id }}')">{{
+                app.program_type }} (PRG-{{ "%04d" | format(app.id) }})</button>
+            {% endfor %}
+            <button class="tab-btn {% if not applications %}active{% endif %}"
+                onclick="openTab(event, 'AllDocuments')">All Documents</button>
+        </div>
+
+        {% for app in applications %}
+        <div id="App-{{ app.id }}" class="tab-content {% if loop.first %}active{% endif %}">
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: var(--accent-gold); margin: 0; font-size: 1.2rem;">Activity Status: {{
+                    app.status.replace('_', ' ') if app.status else 'Pending' }}</h3>
+                <p style="color: #666; margin: 5px 0 0 0;">Company: <strong>{{ app.company_name }}</strong> &nbsp; |
+                    &nbsp; Activity: <strong>ACTY-2025-{{ "%06d" | format(app.id) }}</strong></p>
+            </div>
+
+            <h4 style="color: #0072bc; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;"><i
+                    class="fas fa-info-circle"></i> Activity Details</h4>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">On-site Days:</span>
+                    <span class="info-value">3.00</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Reporting:</span>
+                    <span class="info-value">Internal Staff</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Off-site Days:</span>
+                    <span class="info-value">1.50</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Type of Audit:</span>
+                    <span class="info-value">Full Audit</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Audit Window From Date:</span>
+                    <span class="info-value">{{ app.audit_start_date if app.audit_start_date else '15-Nov-2025'
+                        }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Billing Status:</span>
+                    <span class="info-value">Not Invoiced</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Audit Window To Date:</span>
+                    <span class="info-value">{{ app.audit_end_date if app.audit_end_date else '15-Nov-2025' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Un-announced:</span>
+                    <span class="info-value">Yes</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Due Date:</span>
+                    <span class="info-value" style="color: #d9534f;">03-Dec-2025</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Remote Audit:</span>
+                    <span class="info-value">No</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                <p style="font-size: 0.9rem; color: #666;"><strong>Client Info Confirmed:</strong> {{
+                    app.created_at.strftime('%d-%b-%Y') if app.created_at else 'N/A' }} by {{ app.lead_auditor_name if
+                    app.lead_auditor_name else
+                    'Admin' }} <i class="far fa-comment"></i></p>
+            </div>
+
+            <h4
+                style="color: #0072bc; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <i class="fas fa-history"></i> Event Tracking
+            </h4>
+            <div style="padding: 10px 20px;">
+                <div style="border-left: 2px solid #0072bc; padding-left: 20px; position: relative;">
+                    <div style="margin-bottom: 30px; position: relative;">
+                        <div
+                            style="width: 12px; height: 12px; background: #0072bc; border-radius: 50%; position: absolute; left: -26px; top: 5px; border: 3px solid white;">
+                        </div>
+                        <div style="font-weight: 700; color: #333;">Application Submitted</div>
+                        <div style="font-size: 0.85rem; color: #666;">{{ app.created_at.strftime('%d-%b-%Y %H:%M') if
+                            app.created_at else 'N/A' }}
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 30px; position: relative;">
+                        <div
+                            style="width: 12px; height: 12px; background: #dfb100; border-radius: 50%; position: absolute; left: -26px; top: 5px; border: 3px solid white;">
+                        </div>
+                        <div style="font-weight: 700; color: #333;">Status Updated: {{ app.status.replace('_', ' ') if
+                            app.status else 'Pending' }}
+                        </div>
+                        <div style="font-size: 0.85rem; color: #666;">{{ app.updated_at.strftime('%d-%b-%Y %H:%M') if
+                            app.updated_at else 'N/A' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- All Documents Tab -->
+        <div id="AllDocuments" class="tab-content {% if not applications %}active{% endif %}">
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+                <a href="/download-all-documents/{{ client.id }}" class="btn-primary" style="text-decoration: none; padding: 8px 15px; border-radius: 5px; font-size: 0.85rem;"><i class="fas fa-file-archive" style="margin-right: 5px;"></i> Download All as ZIP</a>
+            </div>
+            <div class="folder-view">
+                {% set categories = [] %}
+                {% for doc in documents %}
+                {% if doc.category not in categories %}
+                {% set _ = categories.append(doc.category) %}
+                {% endif %}
+                {% endfor %}
+
+                {% if documents %}
+                {% for cat in categories %}
+                <div class="folder-item">
+                    <div class="folder-title">
+                        <i class="fas fa-folder folder-icon"></i> {{ cat }} ({{ documents | selectattr("category",
+                        "equalto", cat) | list | length }})
+                    </div>
+                    <div class="file-list">
+                        {% for doc in documents if doc.category == cat %}
+                        <div class="file-item">
+                            <span><i class="far fa-file-pdf" style="color: #d9534f; margin-right: 8px;"></i> {{
+                                doc.filename }}</span>
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <span style="font-size: 0.8rem; color: #999;">Uploaded: {{
+                                    doc.uploaded_at.strftime('%d-%b-%Y') if doc.uploaded_at else 'N/A' }}</span>
+                                <a href="/download-document/{{ doc.id }}"
+                                    style="color: #0072bc; text-decoration: none;"><i class="fas fa-download"></i></a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div style="text-align: center; padding: 40px; color: #999;">
+                    <i class="fas fa-folder-open"
+                        style="font-size: 3rem; opacity: 0.2; margin-bottom: 20px; display: block;"></i>
+                    <p>No documents uploaded yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+        <a href="/dashboard" class="btn-primary"
+            style="padding: 8px 20px; text-decoration: none; border-radius: 4px; background: #666; color: white;">Back
+            to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

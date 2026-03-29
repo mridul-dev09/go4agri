@@ -1,0 +1,28 @@
+CREATE TABLE `applications` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `client_id` int NOT NULL,
+  `company_name` varchar(255) NOT NULL,
+  `program_type` varchar(100) NOT NULL,
+  `status` varchar(100) DEFAULT 'PENDING_INITIAL_REVIEW',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `lead_auditor_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `client_id` (`client_id`),
+  KEY `lead_auditor_id` (`lead_auditor_id`),
+  CONSTRAINT `applications_ibfk_1` FOREIGN KEY (`client_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `applications_ibfk_2` FOREIGN KEY (`lead_auditor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+CREATE TABLE `enquiries` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `company_name` varchar(255) DEFAULT NULL,
+  `email` varchar(255) NOT NULL,
+  `phone` varchar(20) NOT NULL,
+  `program_type` varchar(100) NOT NULL,
+  `message` text,
+  `status` varchar(50) DEFAULT 'NEW',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci

@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="section-container">
+    <div style="max-width: 1000px; margin: 0 auto;">
+        <h2 class="section-title">COR Certification (Canada Organic Regime)</h2>
+        
+        <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); margin-bottom: 40px;">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <img src="{{ url_for('static', filename='images/canada_organic.jpg') }}" alt="COR" style="height: 100px;">
+                <h3 style="color: var(--primary-green); margin-top: 20px;">Accredited Certification Services</h3>
+            </div>
+
+            <div class="scheme-details" style="color: #444; line-height: 1.8;">
+                <p>GO4AGRI Certification Pvt. Ltd. is an accredited certification body under the Canada Organic Regime (COR), approved by the Canadian Food Inspection Agency (CFIA) on the recommendation of IOAS.</p>
+                
+                <p>The certification activities are conducted in accordance with:</p>
+                <ul style="margin-left: 20px; margin-bottom: 20px;">
+                    <li>CAN/CGSB-32.310 — Organic Production Systems: General Principles and Management Standards</li>
+                    <li>CAN/CGSB-32.311 — Permitted Substances Lists</li>
+                </ul>
+
+                <p>GO4AGRI is authorized to certify organic agricultural and food commodities and to issue certificates for production, processing, packaging, and labeling activities, in compliance with Part 13 of the Safe Food for Canadians Regulations (SFCR) and the Canada Organic Regime Operating Manual.</p>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Accreditation Details</h4>
+                <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-top: 15px;">
+                    <p><strong>Accreditation Number:</strong> COR02602071</p>
+                    <p><strong>Accreditation Authority:</strong> Canadian Food Inspection Agency (CFIA)</p>
+                    <p><strong>Recommendation by:</strong> IOAS</p>
+                    <p><strong>Accreditation Validity:</strong> Up to February 5, 2031</p>
+                    <p><strong>Geographical Scope:</strong> India</p>
+                </div>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Scope of Certification</h4>
+                <p>GO4AGRI is accredited to certify the following categories under COR:</p>
+                <ol style="margin-left: 20px; margin-top: 10px;">
+                    <li>Crop Production</li>
+                    <li>Livestock Production</li>
+                    <li>Specialized Production (Wild Crops)</li>
+                    <li>Processed Products</li>
+                    <li>Trading of Organic Products</li>
+                    <li>Grower Group Certification</li>
+                </ol>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Certification Approach</h4>
+                <p>GO4AGRI conducts certification through a structured process including application review, evaluation of documentation, on-site inspection, certification decision by competent personnel, and surveillance and re-certification. All activities are carried out in accordance with ISO/IEC 17065 principles, ensuring impartiality, consistency, and credibility.</p>
+
+                <h4 style="color: var(--primary-green); margin-top: 30px; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">Recognition & Market Access</h4>
+                <p>COR certification issued by GO4AGRI enables operators to market products as organic within Canada, access international markets under equivalence arrangements, and demonstrate compliance with globally recognized organic standards.</p>
+            </div>
+
+            <div style="margin-top: 50px; text-align: center; border-top: 1px solid #eee; padding-top: 30px;">
+                <a href="{{ url_for('apply', program='COR') }}" class="btn-primary" style="padding: 15px 40px; font-size: 1.2rem;">APPLY FOR COR CERTIFICATION</a>
+                <div style="margin-top: 20px;">
+                    <a href="{{ url_for('certification_schemes') }}" class="btn-outline">Back to Schemes</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

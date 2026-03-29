@@ -1,8 +1,62 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
-<section class='section-container'>
-    <h2 class='section-title'>Careers</h2>
-    <p>This is the careers page. Content coming soon.</p>
-</section>
+<div class="db-card"
+    style="max-width: 800px; margin: 40px auto; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+    <h2 style="color: var(--primary-green); margin-bottom: 10px; text-align: center;">Join Our Team</h2>
+    <p style="color: #666; text-align: center; margin-bottom: 30px;">Fuel your passion for agriculture and innovation.
+        Apply for a position at Go4Agri today.</p>
+
+    <form action="/submit-job-application" method="POST" enctype="multipart/form-data">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div class="form-group">
+                <label style="font-weight: 600; margin-bottom: 8px; display: block;">Full Name</label>
+                <input type="text" name="full_name" placeholder="Full Name" required
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
+            </div>
+            <div class="form-group">
+                <label style="font-weight: 600; margin-bottom: 8px; display: block;">Email Address</label>
+                <input type="email" name="email" placeholder="email@example.com" required
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div class="form-group">
+                <label style="font-weight: 600; margin-bottom: 8px; display: block;">Phone Number</label>
+                <input type="tel" name="phone" placeholder="Phone Number" required
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;">
+            </div>
+            <div class="form-group">
+                <label style="font-weight: 600; margin-bottom: 8px; display: block;">Position Applied For</label>
+                <select name="position" required
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; background: white;">
+                    <option value="">-- Select Position --</option>
+                    <option value="Auditor">Field Auditor</option>
+                    <option value="Reviewer">Documentation Reviewer</option>
+                    <option value="Certification Officer">Certification Officer</option>
+                    <option value="Operations">Operations Manager</option>
+                    <option value="Technical">Technical Expert</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group"
+            style="margin-bottom: 30px; border: 2px dashed #eee; padding: 30px; border-radius: 10px; text-align: center; background: #fafafa;">
+            <label style="font-weight: 700; color: #555; display: block; margin-bottom: 10px;">
+                <i class="fas fa-file-upload"
+                    style="font-size: 2rem; color: var(--primary-green); display: block; margin-bottom: 10px;"></i>
+                Upload Your Resume
+            </label>
+            <p style="font-size: 0.85rem; color: #888; margin-bottom: 15px;">No file type or size restrictions</p>
+            <input type="file" name="resume" required style="margin: 0 auto; display: block;">
+        </div>
+
+        <button type="submit" class="btn-gold"
+            style="width: 100%; padding: 15px; font-size: 1.1rem; border: none; font-weight: 700; transition: all 0.3s;">
+            SUBMIT APPLICATION
+        </button>
+    </form>
+</div>
 {% endblock %}

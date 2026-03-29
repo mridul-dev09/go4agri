@@ -35,6 +35,20 @@ def send_async_email(app, msg):
         except Exception as e:
             print(f"Async email sending failed: {e}")
 
+DEPARTMENT_EMAILS = {
+    'Admin': 'Apply@go4agri.co.in',
+    'Accounts': 'Finance@go4agri.co.in',
+    'Initial reviewer': 'Review@go4agri.co.in',
+    'Inspection planner': 'Review@go4agri.co.in',
+    'Auditor': 'Review@go4agri.co.in',
+    'Technical reviewer': 'Review@go4agri.co.in',
+    'Certifier': 'Certification@go4agri.co.in',
+    'CEO': 'Certification@go4agri.co.in',
+    'QA': 'Quality@go4agri.co.in',
+    'Quality': 'Quality@go4agri.co.in',
+    'HR': 'HR@go4agri.co.in'
+}
+
 # Document Upload Configuration
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -80,11 +94,11 @@ def log_activity(user_id, action, details):
         print(f"Logging error: {e}")
 
 def send_system_message(receiver_designation, subject, body):
-    """Sends a system message to all users of a specific designation."""
+    """Sends a system message to all users of a specific designation and department email."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        # Find all users with this designation (except 'Client' unless specifically intended)
+        # Find all users with this designation
         cursor.execute("SELECT id FROM users WHERE designation = %s", (receiver_designation,))
         receivers = cursor.fetchall()
         
@@ -98,6 +112,14 @@ def send_system_message(receiver_designation, subject, body):
         conn.commit()
         cursor.close()
         conn.close()
+        
+        # Send Email to Department
+        dept_email = DEPARTMENT_EMAILS.get(receiver_designation)
+        if dept_email:
+            msg = Message(subject, recipients=[dept_email])
+            msg.body = body
+            Thread(target=send_async_email, args=(app, msg)).start()
+            
     except Exception as e:
         print(f"System Message Error: {e}")
 
@@ -125,7 +147,25 @@ def downloads():
 
 @app.route('/clients')
 def clients():
-    return render_template('clients.html')
+    certified = []
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT a.id, a.company_name, a.program_type, a.scope, a.current_status,
+                   a.created_at, a.updated_at,
+                   u.full_name as client_name
+            FROM applications a
+            JOIN users u ON a.client_id = u.id
+            WHERE a.status = 'CERTIFICATE_ISSUED'
+            ORDER BY a.updated_at DESC
+        """)
+        certified = cursor.fetchall()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error fetching certified clients: {e}")
+    return render_template('clients.html', certified=certified)
 
 @app.route('/updates')
 def updates():
@@ -138,6 +178,45 @@ def appeal():
 @app.route('/complaints')
 def complaints():
     return render_template('complaints.html')
+
+@app.route('/update-current-status/<int:app_id>', methods=['POST'])
+def update_current_status(app_id):
+    if 'user_id' not in session:
+        return redirect(url_for('home'))
+    designation = session.get('designation')
+    if designation not in ['Admin', 'CEO', 'Quality']:
+        flash('You are not authorized to perform this action.', 'error')
+        return redirect(url_for('dashboard'))
+
+    allowed_statuses = [
+        'Active',
+        'Suspension',
+        'Cancellation (Voluntary Withdrawal)',
+        'Cancellation (Change of CB)',
+        'Cancellation'
+    ]
+    new_status = request.form.get('current_status')
+    if new_status not in allowed_statuses:
+        flash('Invalid status value.', 'error')
+        return redirect(url_for('dashboard'))
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE applications SET current_status = %s WHERE id = %s AND status = 'CERTIFICATE_ISSUED'",
+            (new_status, app_id)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        log_activity(session['user_id'], 'UPDATE_CURRENT_STATUS', f"Set current_status='{new_status}' for app {app_id}")
+        flash(f'Certification status updated to "{new_status}" successfully.', 'success')
+    except Exception as e:
+        print(f"Error updating current status: {e}")
+        flash('Error updating certification status.', 'error')
+
+    return redirect(url_for('dashboard'))
 
 @app.route('/careers')
 def careers():
@@ -163,9 +242,197 @@ def scheme_cor():
 def scheme_eu():
     return render_template('scheme_eu.html')
 
+@app.route('/scheme-nop')
+def scheme_nop():
+    return render_template('scheme_nop.html')
+
+@app.route('/scheme-globalgap')
+def scheme_globalgap():
+    return render_template('scheme_globalgap.html')
+
+
 @app.route('/certification-process')
 def certification_process():
     return redirect('/#certification-process')
+
+TRAINING_DATA = {
+    'organic-standards': {
+        'title': 'Organic Standards Training',
+        'icon': 'fas fa-seedling',
+        'gradient': 'linear-gradient(135deg, #2d5a27 0%, #4caf50 100%)',
+        'sections': [
+            {
+                'title': 'Standards Covered',
+                'points': [
+                    'NPOP (India Organic Standards)',
+                    'NOP (USDA Organic – 7 CFR Part 205)',
+                    'EU Organic Regulation (EU) 2018/848',
+                    'COR (Canada Organic Regime)'
+                ]
+            },
+            {
+                'title': 'Key Topics Covered',
+                'points': [
+                    'Regulatory framework and compliance requirements',
+                    'Scope of certification (production, processing, trading)',
+                    'Traceability and record-keeping requirements',
+                    'Inspection and certification process'
+                ]
+            }
+        ]
+    },
+    'globalgap': {
+        'title': 'GLOBALG.A.P. Awareness Training',
+        'icon': 'fas fa-globe-europe',
+        'gradient': 'linear-gradient(135deg, #1f4037 0%, #99f2c8 100%)',
+        'sections': [
+            {
+                'title': 'Main Framework',
+                'points': [
+                    'GLOBALG.A.P. IFA v6 (SMART / GFS)',
+                    'Control Points & Compliance Criteria (CPCC)',
+                    'Option 1 & Option 2 (QMS) overview'
+                ]
+            },
+            {
+                'title': 'Add-ons',
+                'points': [
+                    'GRASP – Social practices and worker welfare',
+                    'SPRING – Sustainable water management'
+                ]
+            }
+        ]
+    },
+    'food-safety': {
+        'title': 'Food Safety & Quality Training',
+        'icon': 'fas fa-shield-alt',
+        'gradient': 'linear-gradient(135deg, #283c86 0%, #45a247 100%)',
+        'sections': [
+            {
+                'title': 'HACCP (Codex Alimentarius)',
+                'points': [
+                    'Hazard identification and risk assessment',
+                    'CCP determination and monitoring',
+                    'Validation and verification'
+                ]
+            },
+            {
+                'title': 'BRCGS Awareness Training',
+                'points': [
+                    'BRCGS Food Safety Issue 9 requirements',
+                    'Fundamental clauses and compliance expectations',
+                    'Audit preparation and system understanding'
+                ]
+            },
+            {
+                'title': 'FSSC 22000 Awareness Training',
+                'points': [
+                    'ISO-based food safety management system',
+                    'PRPs, OPRPs, HACCP integration',
+                    'Certification structure and audit approach'
+                ]
+            },
+            {
+                'title': 'ISO 22000 Training',
+                'points': [
+                    'Food Safety Management System requirements',
+                    'Risk-based thinking and process approach',
+                    'Documentation and implementation framework'
+                ]
+            }
+        ]
+    },
+    'qms': {
+        'title': 'Quality & Management System Training',
+        'icon': 'fas fa-award',
+        'gradient': 'linear-gradient(135deg, #c4a006 0%, #e8c63f 100%)',
+        'sections': [
+            {
+                'title': 'ISO 9001 Awareness Training',
+                'points': [
+                    'Quality Management Principles',
+                    'Process-based approach',
+                    'Risk-based thinking'
+                ]
+            },
+            {
+                'title': 'Internal Auditor Training (ISO 19011)',
+                'points': [
+                    'Audit principles and methodology',
+                    'Planning and conducting audits',
+                    'Reporting and follow-up'
+                ]
+            }
+        ]
+    },
+    'gmp': {
+        'title': 'GMP (Good Manufacturing Practices)',
+        'icon': 'fas fa-pump-soap',
+        'gradient': 'linear-gradient(135deg, #009fff 0%, #ec2F4B 100%)',
+        'sections': [
+            {
+                'title': 'Key Topics Covered',
+                'points': [
+                    'Hygiene and sanitation practices',
+                    'Personnel hygiene requirements',
+                    'Facility and operational controls'
+                ]
+            }
+        ]
+    }
+}
+
+@app.route('/training')
+def training():
+    return render_template('training.html', training_data=TRAINING_DATA)
+
+@app.route('/training/<area_id>')
+def training_detail(area_id):
+    if area_id not in TRAINING_DATA:
+        flash('Training area not found.', 'error')
+        return redirect(url_for('training'))
+    
+    training_info = TRAINING_DATA[area_id]
+    return render_template('training_detail.html', area_id=area_id, training=training_info)
+
+@app.route('/enquire-training')
+def enquire_training():
+    selected_type = request.args.get('type', '')
+    return render_template('enquire_training.html', selected_type=selected_type)
+
+@app.route('/submit-training-enquiry', methods=['POST'])
+def submit_training_enquiry():
+    name = request.form.get('name')
+    email = request.form.get('email')
+    phone = request.form.get('phone')
+    training_type = request.form.get('training_type')
+    message = request.form.get('message')
+    
+    if not all([name, email, phone, training_type]):
+        flash('Please fill in all required fields.', 'error')
+        return redirect(url_for('enquire_training'))
+
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            sql = """
+                INSERT INTO training_enquiries 
+                (name, email, phone, training_type, message) 
+                VALUES (%s, %s, %s, %s, %s)
+            """
+            cursor.execute(sql, (name, email, phone, training_type, message))
+            connection.commit()
+            
+        flash(f'Thank you, {name}! Your enquiry for {training_type} has been submitted successfully.', 'success')
+        return redirect(url_for('training'))
+        
+    except Exception as e:
+        print(f"Error submitting training enquiry: {e}")
+        flash('An error occurred. Please try again later.', 'error')
+        return redirect(url_for('enquire_training'))
+    finally:
+        if 'connection' in locals() and connection.is_connected():
+            connection.close()
 
 @app.route('/apply')
 def apply():
@@ -213,6 +480,9 @@ def login():
             session['designation'] = user['designation']
             session['full_name'] = user['full_name']
             
+            # Add profile_picture to session if the column exists
+            session['profile_picture'] = user.get('profile_picture')
+            
             log_activity(user['id'], 'LOGIN', f"User logged in as {user['designation']}")
             return redirect(url_for('dashboard'))
         else:
@@ -241,7 +511,8 @@ def dashboard():
         'Inspection planner': 'db_employee.html',
         'Auditor': 'db_employee.html',
         'Technical reviewer': 'db_employee.html',
-        'Certifier': 'db_employee.html'
+        'Certifier': 'db_employee.html',
+        'Recruiter': 'db_recruiter.html'
     }
     print(f"DEBUG: Dashboard requested for {designation}")
     template = template_map.get(designation, 'db_base.html')
@@ -249,11 +520,14 @@ def dashboard():
     
     enquiries = []
     apps = []
+    all_applications = []
     activities = []
     tasks = []
     employees = []
     documents = []
     registered_clients = []
+    job_applications = []
+    auditors = []
     
     try:
         conn = get_db_connection()
@@ -337,6 +611,8 @@ def dashboard():
                     ORDER BY a.created_at DESC
                 """)
                 apps = cursor.fetchall()
+                cursor.execute("SELECT id, full_name, email FROM users WHERE designation = 'Auditor'")
+                auditors = cursor.fetchall()
             elif designation == 'Auditor':
                 cursor.execute("""
                     SELECT a.*, u.full_name as lead_auditor_name 
@@ -379,6 +655,31 @@ def dashboard():
             enquiries = cursor.fetchall()
             cursor.execute("SELECT id, full_name, email, created_at FROM users WHERE designation = 'Client' ORDER BY created_at DESC")
             registered_clients = cursor.fetchall()
+            cursor.execute("""
+                SELECT a.*, u.full_name as lead_auditor_name
+                FROM applications a
+                LEFT JOIN users u ON a.lead_auditor_id = u.id
+                ORDER BY a.created_at DESC
+            """)
+            all_applications = cursor.fetchall()
+
+        if designation == 'Recruiter':
+            cursor.execute("SELECT * FROM job_applications ORDER BY created_at DESC")
+            job_applications = cursor.fetchall()
+            
+            if designation == 'Recruiter':
+                cursor.execute("SELECT * FROM job_applications ORDER BY created_at DESC")
+                job_applications = cursor.fetchall()
+            cursor.execute("SELECT id, full_name, email, created_at FROM users WHERE designation = 'Client' ORDER BY created_at DESC")
+            registered_clients = cursor.fetchall()
+            # Fetch ALL applications (all statuses) for the Registered Clients dropdown
+            cursor.execute("""
+                SELECT a.*, u.full_name as lead_auditor_name
+                FROM applications a
+                LEFT JOIN users u ON a.lead_auditor_id = u.id
+                ORDER BY a.created_at DESC
+            """)
+            all_applications = cursor.fetchall()
 
         # Fetch Documents based on role
         if designation in ['CEO', 'Admin', 'QA']:
@@ -410,19 +711,20 @@ def dashboard():
     except Exception as e:
         print(f"DEBUG: Error fetching dashboard data: {e}")
         
-    return render_template(template, user=session, applications=apps, enquiries=enquiries, activities=activities, tasks=tasks, employees=employees, documents=documents, registered_clients=registered_clients, unread_count=unread_count)
+    return render_template(template, user=session, applications=apps, all_applications=all_applications, enquiries=enquiries, activities=activities, tasks=tasks, employees=employees, documents=documents, registered_clients=registered_clients, unread_count=unread_count, job_applications=job_applications, auditors=auditors)
 
 @app.route('/submit-application', methods=['POST'])
 def submit_application():
     company_name = request.form.get('company_name')
     program_type = request.form.get('program_type')
+    scope = request.form.get('scope')
     
     # Check if user is logged in
     is_client = 'user_id' in session and session.get('designation') == 'Client'
     
     if is_client:
-        if not company_name or not program_type:
-            flash('Please fill all fields.', 'error')
+        if not company_name or not program_type or not scope:
+            flash('Please fill all fields, including the scope.', 'error')
             return redirect(url_for('apply'))
             
         try:
@@ -438,8 +740,8 @@ def submit_application():
                 return redirect(url_for('apply'))
                 
             cursor.execute(
-                "INSERT INTO applications (client_id, company_name, program_type, status) VALUES (%s, %s, %s, 'PENDING_CONTRACT_QUOTATION')",
-                (session['user_id'], company_name, program_type)
+                "INSERT INTO applications (client_id, company_name, program_type, scope, status) VALUES (%s, %s, %s, %s, 'PENDING_CONTRACT_QUOTATION')",
+                (session['user_id'], company_name, program_type, scope)
             )
             conn.commit()
             cursor.close()
@@ -457,21 +759,27 @@ def submit_application():
         email = request.form.get('email')
         phone = request.form.get('phone')
         
-        if not name or not email or not phone or not company_name or not program_type:
-            flash('Please fill all required fields.', 'error')
+        if not name or not email or not phone or not company_name or not program_type or not scope:
+            flash('Please fill all required fields, including the scope.', 'error')
             return redirect(url_for('apply'))
             
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO enquiries (name, company_name, email, phone, program_type, message, status) VALUES (%s, %s, %s, %s, %s, 'Submitted via application form', 'NEW')",
-                (name, company_name, email, phone, program_type)
+                "INSERT INTO enquiries (name, company_name, email, phone, program_type, scope, message, status) VALUES (%s, %s, %s, %s, %s, %s, 'Submitted via application form', 'NEW')",
+                (name, company_name, email, phone, program_type, scope)
             )
             conn.commit()
             cursor.close()
             conn.close()
             log_activity(None, 'APPLICATION_ENQUIRY', f"New enquiry/app from guest {name} for {company_name}")
+            
+            # Notify Apply@go4agri.co.in
+            msg = Message('New Guest Application Received', recipients=['Apply@go4agri.co.in'])
+            msg.body = f"New application from guest:\nName: {name}\nEmail: {email}\nCompany: {company_name}\nProgram: {program_type}\nScope: {scope}"
+            Thread(target=send_async_email, args=(app, msg)).start()
+            
             flash('Your application/enquiry has been submitted! Our team will review it and contact you to set up your account.', 'success')
             return redirect(url_for('home'))
         except Exception as e:
@@ -612,6 +920,11 @@ def submit_enquiry():
         conn.close()
         flash('Thank you for your enquiry! Our team will contact you soon.', 'success')
         log_activity(None, 'ENQUIRY', f"New enquiry from {name} for {program_type}")
+        
+        # Notify Apply@go4agri.co.in
+        msg = Message('New Enquiry Received', recipients=['Apply@go4agri.co.in'])
+        msg.body = f"New enquiry from {name}:\nEmail: {email}\nPhone: {phone}\nProgram: {program_type}\nMessage: {message}"
+        Thread(target=send_async_email, args=(app, msg)).start()
     except Exception as e:
         print(f"Error submitting enquiry: {e}")
         flash('An error occurred. Please try again later.', 'error')
@@ -693,6 +1006,11 @@ def update_application_status(app_id):
             if not plan_file or plan_file.filename == '':
                 flash('Planning document is mandatory for submission.', 'error')
                 return redirect(url_for('dashboard'))
+                
+            auditor_id = request.form.get('auditor_id')
+            if not auditor_id:
+                flash('Assigning an auditor is mandatory.', 'error')
+                return redirect(url_for('dashboard'))
             
             filename = secure_filename(f"planning_doc_{app_id}_{plan_file.filename}")
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -708,6 +1026,9 @@ def update_application_status(app_id):
                     "INSERT INTO documents (client_id, application_id, filename, filepath, category) VALUES (%s, %s, %s, %s, 'PLANNING_DOCUMENT')",
                     (client_id, app_id, filename, filename)
                 )
+                
+            # Update application with assigned auditor
+            cursor.execute("UPDATE applications SET lead_auditor_id = %s WHERE id = %s", (auditor_id, app_id))
         
         cursor.execute(
             "UPDATE applications SET status = %s WHERE id = %s",
@@ -1163,8 +1484,8 @@ def messages():
                 cursor.execute("UPDATE messages SET is_read = TRUE WHERE id = %s", (msg_id,))
                 conn.commit()
                 
-        # Fetch contacts (all employees, and clients if CEO/Admin)
-        if session['designation'] in ['CEO', 'Admin']:
+        # Fetch contacts (all employees, and clients if CEO/Admin/Recruiter)
+        if session['designation'] in ['CEO', 'Admin', 'Recruiter']:
             cursor.execute("SELECT id, full_name, designation FROM users WHERE id != %s", (user_id,))
         else:
             cursor.execute("SELECT id, full_name, designation FROM users WHERE designation != 'Client' AND id != %s", (user_id,))
@@ -1217,26 +1538,53 @@ def update_settings():
     full_name = request.form.get('full_name')
     new_password = request.form.get('new_password')
     confirm_password = request.form.get('confirm_password')
+    profile_picture = request.files.get('profile_picture')
     
     if new_password and new_password != confirm_password:
         flash('Passwords do not match.', 'error')
         return redirect(url_for('settings'))
         
+    new_pic_filename = None
+    if profile_picture and profile_picture.filename != '':
+        from werkzeug.utils import secure_filename
+        from datetime import datetime
+        import os
+        filename = secure_filename(f"profile_{session['user_id']}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{profile_picture.filename}")
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        profile_picture.save(filepath)
+        new_pic_filename = filename
+        
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Check if profile_picture column exists, if not, add it
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN profile_picture VARCHAR(255) DEFAULT NULL")
+            conn.commit()
+        except:
+            pass # Column likely already exists
+            
         if new_password:
             hashed_pw = generate_password_hash(new_password)
-            cursor.execute("UPDATE users SET full_name = %s, password = %s WHERE id = %s", (full_name, hashed_pw, session['user_id']))
+            if new_pic_filename:
+                cursor.execute("UPDATE users SET full_name = %s, password = %s, profile_picture = %s WHERE id = %s", (full_name, hashed_pw, new_pic_filename, session['user_id']))
+            else:
+                cursor.execute("UPDATE users SET full_name = %s, password = %s WHERE id = %s", (full_name, hashed_pw, session['user_id']))
         else:
-            cursor.execute("UPDATE users SET full_name = %s WHERE id = %s", (full_name, session['user_id']))
+            if new_pic_filename:
+                cursor.execute("UPDATE users SET full_name = %s, profile_picture = %s WHERE id = %s", (full_name, new_pic_filename, session['user_id']))
+            else:
+                cursor.execute("UPDATE users SET full_name = %s WHERE id = %s", (full_name, session['user_id']))
             
         conn.commit()
         cursor.close()
         conn.close()
         
         session['full_name'] = full_name
+        if new_pic_filename:
+            session['profile_picture'] = new_pic_filename
+            
         log_activity(session['user_id'], 'UPDATE_SETTINGS', "Updated profile/password")
         flash('Settings updated successfully!', 'success')
     except Exception as e:
@@ -1244,6 +1592,78 @@ def update_settings():
         flash('Error updating settings.', 'error')
         
     return redirect(url_for('settings'))
+
+@app.route('/submit-job-application', methods=['POST'])
+def submit_job_application():
+    name = request.form.get('full_name')
+    email = request.form.get('email')
+    phone = request.form.get('phone')
+    position = request.form.get('position')
+    resume_file = request.files.get('resume')
+    
+    if not name or not email or not phone or not position or not resume_file:
+        flash('Please fill all fields and upload your resume.', 'error')
+        return redirect(url_for('careers'))
+        
+    try:
+        # Save resume with a unique name
+        filename = secure_filename(f"resume_{datetime.now().strftime('%Y%m%d%H%M%S')}_{resume_file.filename}")
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        resume_file.save(filepath)
+        
+        # Notify CEO (ID 7) Only (as requested: "messages only ceo")
+        system_user_id = 1
+        targets = [7] 
+        
+        subject = f"New Job Application: {position} - {name}"
+        body = f"""New job application received via careers page.
+
+Name: {name}
+Email: {email}
+Phone: {phone}
+Position: {position}
+Submitted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+You can download the resume here:
+{url_for('download_resume', filename=filename, _external=True)}
+"""
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Insert into job_applications table for Recruiter Dashboard
+        cursor.execute(
+            "INSERT INTO job_applications (full_name, email, phone, position, resume_path) VALUES (%s, %s, %s, %s, %s)",
+            (name, email, phone, position, filename)
+        )
+        
+        # Send message to CEO
+        for target_id in targets:
+            cursor.execute(
+                "INSERT INTO messages (sender_id, receiver_id, subject, body) VALUES (%s, %s, %s, %s)",
+                (system_user_id, target_id, subject, body)
+            )
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        log_activity(None, 'JOB_APPLICATION', f"New job application from {name} for {position}")
+        flash('Your application has been submitted successfully! Our team will review it and get back to you.', 'success')
+        return redirect(url_for('careers'))
+        
+    except Exception as e:
+        print(f"Error submitting job application: {e}")
+        flash('An error occurred while submitting your application. Please try again later.', 'error')
+        return redirect(url_for('careers'))
+
+@app.route('/download-resume/<filename>')
+def download_resume(filename):
+    if 'user_id' not in session or session.get('designation') == 'Client':
+        flash('Unauthorized access.', 'error')
+        return redirect(url_for('home'))
+        
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
 @app.route('/upload-document', methods=['GET', 'POST'])
 def upload_document():
     if 'user_id' not in session or session.get('designation') != 'Client':
@@ -1798,6 +2218,71 @@ def api_update_task_status(task_id):
     except Exception as e:
         print(f"Error updating task status API: {e}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/submit-client-feedback', methods=['POST'])
+def submit_client_feedback():
+    if 'user_id' not in session or session.get('designation') != 'Client':
+        flash('Unauthorized access.', 'error')
+        return redirect(url_for('home'))
+        
+    message = request.form.get('message')
+    if not message:
+        flash('Feedback message is required.', 'error')
+        return redirect(url_for('dashboard'))
+        
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO client_feedback (client_id, message) VALUES (%s, %s)",
+            (session['user_id'], message)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Thank you for your feedback!', 'success')
+    except Exception as e:
+        print(f"Error submitting feedback: {e}")
+        flash('Error submitting feedback.', 'error')
+        
+    return redirect(url_for('dashboard'))
+
+@app.route('/submit-client-appeal', methods=['POST'])
+def submit_client_appeal():
+    if 'user_id' not in session or session.get('designation') != 'Client':
+        flash('Unauthorized access.', 'error')
+        return redirect(url_for('home'))
+        
+    appeal_type = request.form.get('type')
+    subject = request.form.get('subject')
+    description = request.form.get('description')
+    
+    if not appeal_type or not subject or not description:
+        flash('All fields are required.', 'error')
+        return redirect(url_for('dashboard'))
+        
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO client_appeals (client_id, type, subject, description) VALUES (%s, %s, %s, %s)",
+            (session['user_id'], appeal_type, subject, description)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash(f'Your {appeal_type.lower()} has been submitted successfully.', 'success')
+    except Exception as e:
+        print(f"Error submitting appeal/complaint: {e}")
+        flash('Error submitting appeal or complaint.', 'error')
+        
+    return redirect(url_for('dashboard'))
+
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    if 'user_id' not in session:
+        return redirect(url_for('home'))
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':
     # Trigger hot reload for templates

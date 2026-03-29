@@ -70,6 +70,7 @@
                     <th style="padding: 15px; border-bottom: 2px solid #eee;">Company</th>
                     <th style="padding: 15px; border-bottom: 2px solid #eee;">Program</th>
                     <th style="padding: 15px; border-bottom: 2px solid #eee;">Status</th>
+                    <th style="padding: 15px; border-bottom: 2px solid #eee;">Current Status</th>
                     <th style="padding: 15px; border-bottom: 2px solid #eee;">Related Documents</th>
                     <th style="padding: 15px; border-bottom: 2px solid #eee;">Certificate</th>
                 </tr>
@@ -149,6 +150,22 @@
                         <span
                             style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: 700;">{{
                             app.status.replace('_', ' ') if app.status else 'Pending' }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 15px; border-bottom: 1px solid #eee;">
+                        {% set cs = app.current_status or 'Active' %}
+                        {% if app.status == 'CERTIFICATE_ISSUED' %}
+                            {% if cs == 'Active' %}
+                                <span style="background: #e9f5e8; color: #2d5a27; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">✔ Active</span>
+                            {% elif cs == 'Suspension' %}
+                                <span style="background: #fff3cd; color: #856404; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">⚠ Suspended</span>
+                            {% elif 'Cancellation' in cs %}
+                                <span style="background: #fdecea; color: #c0392b; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">✕ {{ cs }}</span>
+                            {% else %}
+                                <span style="background: #f0f0f0; color: #666; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem;">{{ cs }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="color: #ccc; font-size: 0.8rem;">Step 10 Pending</span>
                         {% endif %}
                     </td>
                     <td style="padding: 15px; border-bottom: 1px solid #eee;">
@@ -447,7 +464,7 @@
 
     {% if applications %}
     <div class="tabs-container">
-        <div class="tabs-header" style="justify-content: center; margin-bottom: 30px;">
+        <div class="tabs-header" style="justify-content: center; margin-bottom: 30px; flex-wrap: wrap; gap: 8px;">
             {% set active_procs = [] %}
             {% for app in applications %}
                 {% if app.status != 'CERTIFICATE_ISSUED' %}
@@ -462,7 +479,7 @@
         {% if active_procs %}
             {% for app in active_procs %}
             <div id="Process-{{ app.id }}" class="tab-content {% if loop.first %}active{% endif %}">
-            {# Map backend statuses to the 9 visual stages #}
+            {# Map backend statuses to the 10 visual stages #}
             {% set status_val = {
             'APPLICATION_RECEIVED': 0,
             'CLIENT_REGISTERED': 0,
@@ -475,20 +492,11 @@
             'TECHNICAL_REVIEW': 6,
             'FINAL_PAYMENT_PENDING': 7,
             'FINAL_PAYMENT_SUBMITTED': 7,
-            'FINAL_PAYMENT_VERIFIED': 7,
+            'FINAL_PAYMENT_VERIFIED': 8,
             'CERTIFICATE_ISSUED': 9
             }.get(app.status, 0) %}
 
-            <div class="progress-container">
-                {# Progress Line #}
-                <div class="progress-line">
-                    <div class="progress-line-fill"
-                        style="width: {{ 100 if status_val >= 9 else (status_val * 12.5) }}%;">
-                    </div>
-                </div>
-
-                {# Steps #}
-                {% set steps = [
+            {% set steps = [
                 {'name': 'Application', 'icon': '1'},
                 {'name': 'Contract & Quotation', 'icon': '2'},
                 {'name': 'Document Review', 'icon': '3'},
@@ -497,8 +505,17 @@
                 {'name': 'NC Follow Up', 'icon': '6'},
                 {'name': 'Technical Review & Decision', 'icon': '7'},
                 {'name': 'Final Payment Status', 'icon': '8'},
-                {'name': 'Certification Issued', 'icon': '9'}
-                ] %}
+                {'name': 'Certification Issued', 'icon': '9'},
+                {'name': 'Current Status', 'icon': '10'}
+            ] %}
+
+            <div class="progress-container">
+                {# Progress Line #}
+                <div class="progress-line">
+                    <div class="progress-line-fill"
+                        style="width: {{ 100 if status_val >= 9 else (status_val * 11.1) }}%;">
+                    </div>
+                </div>
 
                 {% for step in steps %}
                 {% set step_idx = loop.index0 %}
@@ -519,7 +536,7 @@
                             {% if status_val > step_idx %}
                             <i class="fas fa-check-circle"></i> Completed
                             {% elif status_val == step_idx %}
-                            <i class="fas fa-spinner fa-spin"></i> Pending
+                            <i class="fas fa-spinner fa-spin"></i> In Progress
                             {% else %}
                             Pending
                             {% endif %}
@@ -535,41 +552,27 @@
                 <h4 style="margin-top: 0; color: #2d5a27;"><i class="fas fa-info-circle"></i> Milestone Details</h4>
                 <p style="margin: 0; color: #555; font-size: 0.95rem; line-height: 1.5;">
                     {% if status_val == 0 %}
-                    Your <strong>Application</strong> is currently being reviewed by the CEO and Administrative team. We
-                    are
-                    verifying the basic eligibility and program requirements.
+                    Your <strong>Application</strong> is currently being reviewed by the CEO and Administrative team.
                     {% elif status_val == 1 %}
-                    Application received! We are now preparing the <strong>Contract & Quotation</strong> for your
-                    certification
-                    program. You will receive it shortly via email.
+                    Application received! We are preparing the <strong>Contract &amp; Quotation</strong> for your program.
                     {% elif status_val == 2 %}
-                    Contract signed! The <strong>Document Review</strong> stage has started. Our reviewers are checking
-                    your
-                    uploaded documents for compliance.
+                    Contract signed! The <strong>Document Review</strong> stage has begun.
                     {% elif status_val == 3 %}
-                    Document review complete! We are in the <strong>Inspection Planning</strong> phase — scheduling and
-                    coordinating the on-site inspection visit.
+                    Documents cleared! Now in <strong>Inspection Planning</strong> phase.
                     {% elif status_val == 4 %}
-                    Inspection planning done! An <strong>On-Site Inspection</strong> is being conducted. Our evaluators
-                    will
-                    verify your organic practices on the field.
+                    An <strong>On-Site Inspection</strong> is being coordinated by our audit team.
                     {% elif status_val == 5 %}
-                    Inspection complete. Our team is working on the <strong>NC Follow Up</strong> (Non-Compliance)
-                    report to
-                    address any findings from the field visit.
+                    Inspection complete. Working on <strong>NC Follow Up</strong> report.
                     {% elif status_val == 6 %}
-                    Compliance review underway. We are now in the <strong>Technical Review & Decision</strong> phase.
-                    Senior
-                    officers are performing a multi-level audit.
+                    In <strong>Technical Review &amp; Decision</strong> phase. Senior officers are reviewing.
                     {% elif status_val == 7 %}
-                    Technical review approved! Please complete the <strong>Final Payment</strong> to activate your
-                    official
-                    organic certificate.
-                    {% elif status_val >= 8 %}
-                    <strong>Process Complete!</strong> Your certification has been issued. You can download your
-                    official
-                    certificate from the table above.
+                    Technical review done! Please complete the <strong>Final Payment</strong>.
+                    {% elif status_val == 8 %}
+                    Payment submitted. Awaiting verification to finalize your <strong>Certification</strong>.
+                    {% elif status_val >= 9 %}
+                    <strong>Certification Issued!</strong> Your certificate is ready to download from the table above.
                     {% endif %}
+                </p>
             </div>
         </div>
         {% endfor %}
@@ -591,9 +594,63 @@
     </div>
     {% endif %}
 </div>
+
+
 {% endblock %}
 
+
 {% block extra_body %}
+<!-- Modal for Feedback -->
+<div id="feedbackModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; width: 90%; max-width: 500px; padding: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; animation: slideDown 0.3s ease-out;">
+        <div style="background: var(--accent-gold); color: #333; padding: 20px 25px; display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin: 0; font-size: 1.2rem;"><i class="fas fa-comment-dots"></i> Submit Feedback</h4>
+            <span onclick="document.getElementById('feedbackModal').style.display='none'" style="cursor: pointer; font-size: 1.8rem; line-height: 1;">&times;</span>
+        </div>
+        <form action="/submit-client-feedback" method="POST" style="padding: 25px;">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">Your Feedback</label>
+                <textarea name="message" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; min-height: 120px; font-family: inherit;" placeholder="Please share your experience..."></textarea>
+            </div>
+            <div style="text-align: right;">
+                <button type="button" onclick="document.getElementById('feedbackModal').style.display='none'" style="background: #f0f0f0; color: #666; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-right: 10px; font-weight: 600;">Cancel</button>
+                <button type="submit" class="btn-gold" style="padding: 10px 25px; border-radius: 6px; border: none; font-weight: 700;">Submit Feedback</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal for Appeals & Complaints -->
+<div id="appealsModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; width: 90%; max-width: 550px; padding: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; animation: slideDown 0.3s ease-out;">
+        <div style="background: #0072bc; color: white; padding: 20px 25px; display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin: 0; font-size: 1.2rem;"><i class="fas fa-balance-scale"></i> Appeal or Complaint</h4>
+            <span onclick="document.getElementById('appealsModal').style.display='none'" style="cursor: pointer; font-size: 1.8rem; line-height: 1;">&times;</span>
+        </div>
+        <form action="/submit-client-appeal" method="POST" style="padding: 25px;">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">Type</label>
+                <select name="type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    <option value="Appeal">Appeal</option>
+                    <option value="Complaint">Complaint</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">Subject</label>
+                <input type="text" name="subject" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="Brief subject...">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">Description</label>
+                <textarea name="description" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; min-height: 120px; font-family: inherit;" placeholder="Detailed description of your appeal or complaint..."></textarea>
+            </div>
+            <div style="text-align: right;">
+                <button type="button" onclick="document.getElementById('appealsModal').style.display='none'" style="background: #f0f0f0; color: #666; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-right: 10px; font-weight: 600;">Cancel</button>
+                <button type="submit" style="background: #0072bc; color: white; padding: 10px 25px; border-radius: 6px; border: none; font-weight: 700; cursor: pointer;">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Modal for Viewing Documents -->
 <div id="viewDocsModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px);">
     <div style="background: white; border-radius: 12px; width: 90%; max-width: 600px; margin: 5% auto; padding: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow: hidden; animation: slideDown 0.3s ease-out;">
