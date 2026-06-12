@@ -1,0 +1,246 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Document Repository{% endblock %}
+
+{% block dashboard_content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 30px;">
+    <!-- Main Content: Repository Table -->
+    <div style="flex: 1;">
+        <!-- Navigation Tabs -->
+        <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+            <button onclick="showTab('personal')" id="btn-personal" class="tab-btn active-tab">My Personal Files</button>
+            <button onclick="showTab('global')" id="btn-global" class="tab-btn">Company Policies & Forms</button>
+            <button onclick="showTab('obsolete')" id="btn-obsolete" class="tab-btn">Obsolete/History</button>
+        </div>
+
+        <!-- Personal Documents Section -->
+        <div id="tab-personal" class="repo-section active-section">
+            <div class="db-card" style="padding: 25px; border-top: 5px solid var(--accent-gold);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h4 style="margin: 0; color: var(--primary-green);"><i class="fas fa-user-shield"></i> 
+                        {% if show_archived %}Archived Personal Documents{% else %}My Personal Documents{% endif %}
+                    </h4>
+                    <div>
+                        {% if show_archived %}
+                        <a href="/repository" class="btn-primary" style="padding: 5px 12px; font-size: 0.8rem; text-decoration: none; border-radius: 4px; background: #666; color: white;">
+                            <i class="fas fa-arrow-left"></i> Back to Active
+                        </a>
+                        {% else %}
+                        <a href="/repository?archived=true" class="btn-primary" style="padding: 5px 12px; font-size: 0.8rem; text-decoration: none; border-radius: 4px; background: #666; color: white;">
+                            <i class="fas fa-archive"></i> View My Archive
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if files %}
+                <div class="table-responsive">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f4faf4; text-align: left;">
+                                <th style="padding: 12px; border-bottom: 2px solid #eee;">File Name</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #eee;">Uploaded On</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #eee; text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file in files %}
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 12px; font-weight: 500;">
+                                    <i class="fas fa-file-alt" style="color: #0072bc; margin-right: 8px;"></i>
+                                    {{ file.filename }}
+                                </td>
+                                <td style="padding: 12px; color: #666; font-size: 0.9rem;">
+                                    {{ file.uploaded_at.strftime('%Y-%m-%d %H:%M') }}
+                                </td>
+                                <td style="padding: 12px; text-align: right;">
+                                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                                        <a href="/repository-action/{{ file.id }}/download" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; text-decoration: none; border-radius: 4px; background: #0072bc; color: white;" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <a href="/messages?tab=inbox&employee_repo_file_id={{ file.id }}" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; text-decoration: none; border-radius: 4px; background: var(--accent-gold); color: white;" title="Send via Message">
+                                            <i class="fas fa-paper-plane"></i> Send
+                                        </a>
+                                        <a href="/repository-action/{{ file.id }}/archive" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; text-decoration: none; border-radius: 4px; background: #666; color: white;" title="{% if file.is_archived %}Unarchive{% else %}Archive{% endif %}">
+                                            <i class="fas fa-archive"></i>
+                                        </a>
+                                        <form action="/repository-action/{{ file.id }}/delete" method="POST" style="margin: 0; display: inline;" onsubmit="return confirm('Are you sure you want to permanently delete this file?');">
+                                            <button type="submit" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; border: none; border-radius: 4px; background: #e74c3c; color: white; cursor: pointer;" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div style="padding: 40px; text-align: center; color: #999;">
+                    <p>No personal documents found.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Global Documents Section -->
+        <div id="tab-global" class="repo-section" style="display: none;">
+            <div class="db-card" style="padding: 25px; border-top: 5px solid var(--primary-green);">
+                <h4 style="margin-bottom: 20px; color: var(--primary-green);"><i class="fas fa-building"></i> Official Company Documents</h4>
+                
+                {% if global_docs %}
+                <div class="table-responsive">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f4faf4; text-align: left;">
+                                <th style="padding: 12px; border-bottom: 2px solid #eee;">File Name</th>
+
+                                <th style="padding: 12px; border-bottom: 2px solid #eee; text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in global_docs %}
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 12px; font-weight: 600;">
+                                    <i class="fas fa-file-invoice" style="color: var(--primary-green); margin-right: 8px;"></i>
+                                    {{ doc.filename }}
+                                </td>
+
+                                <td style="padding: 12px; text-align: right;">
+                                    <a href="/download-global-doc/{{ doc.id }}" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; border-radius: 4px; background: #0072bc; color: white;">
+                                        <i class="fas fa-download"></i> Download
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div style="padding: 40px; text-align: center; color: #999;">
+                    <p>No official documents available at this time.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Obsolete Documents Section -->
+        <div id="tab-obsolete" class="repo-section" style="display: none;">
+            <div class="db-card" style="padding: 25px; border-top: 5px solid #e74c3c;">
+                <h4 style="margin-bottom: 20px; color: #e74c3c;"><i class="fas fa-history"></i> Obsolete / Archive History</h4>
+                <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">The documents listed below are no longer active and should be used for reference only.</p>
+                
+                {% if obsolete_docs %}
+                <div class="table-responsive">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #fff5f5; text-align: left;">
+                                <th style="padding: 12px; border-bottom: 2px solid #eee;">File Name</th>
+
+                                <th style="padding: 12px; border-bottom: 2px solid #eee;">Obsolete Since</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #eee; text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in obsolete_docs %}
+                            <tr style="border-bottom: 1px solid #eee; background: #fcfcfc;">
+                                <td style="padding: 12px; color: #888;">
+                                    <i class="fas fa-file-excel" style="margin-right: 8px;"></i>
+                                    {{ doc.filename }}
+                                </td>
+
+                                <td style="padding: 12px; color: #999; font-size: 0.85rem;">{{ doc.updated_at.strftime('%Y-%m-%d') }}</td>
+                                <td style="padding: 12px; text-align: right;">
+                                    {% if user.get('designation') == 'CEO' %}
+                                    <a href="/download-global-doc/{{ doc.id }}" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; border-radius: 4px; background: #666; color: white;">
+                                        <i class="fas fa-download"></i> Download
+                                    </a>
+                                    {% else %}
+                                    <span class="badge info" style="background: #eee; color: #888; padding: 6px 12px; font-size: 0.8rem; border-radius: 4px;">Download Restricted</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div style="padding: 40px; text-align: center; color: #999;">
+                    <p>No obsolete documents found.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar: Upload Form -->
+    <div style="width: 350px;">
+        <div class="db-card" style="padding: 25px; border-top: 5px solid var(--primary-green);">
+            <h4 style="margin-bottom: 20px; color: var(--primary-green);"><i class="fas fa-upload"></i> Upload My File</h4>
+            
+            <form action="/repository" method="POST" enctype="multipart/form-data">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #555;">Select File</label>
+                    <div style="border: 2px dashed #ddd; padding: 20px; text-align: center; border-radius: 5px; background: #fafafa;">
+                        <input type="file" name="file" id="repoFile" required style="width: 100%;">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-gold" style="width: 100%; border: none; padding: 12px; font-weight: bold; border-radius: 5px;">
+                    <i class="fas fa-cloud-upload-alt" style="margin-right: 5px;"></i> UPLOAD TO MY FILES
+                </button>
+            </form>
+        </div>
+        
+        <div class="db-card" style="padding: 20px; margin-top: 20px; background: #fdfdfd;">
+            <h5 style="color: #666; margin-bottom: 10px;"><i class="fas fa-info-circle"></i> Repository Help</h5>
+            <p style="font-size: 0.82rem; color: #777; line-height: 1.5;">
+                <strong>My Personal Files:</strong> Only you can see these.
+                <br><br>
+                <strong>Company Documents:</strong> Managed by the CEO. These include current policies and forms.
+                <br><br>
+                <strong>Obsolete:</strong> Older versions of company documents that are no longer in use.
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .tab-btn {
+        padding: 10px 20px;
+        border: none;
+        background: #eee;
+        cursor: pointer;
+        border-radius: 8px 8px 0 0;
+        font-weight: 600;
+        color: #666;
+        transition: all 0.2s;
+    }
+    .active-tab {
+        background: var(--primary-green) !important;
+        color: white !important;
+    }
+    .repo-section {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<script>
+    function showTab(tabId) {
+        // Hide all sections
+        document.querySelectorAll('.repo-section').forEach(s => s.style.display = 'none');
+        // Show selected section
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        
+        // Update button styles
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
+        document.getElementById('btn-' + tabId).classList.add('active-tab');
+    }
+</script>
+
+{% endblock %}

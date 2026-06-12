@@ -11,9 +11,9 @@
     <div
         style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px;">
         <div>
-            <h2 style="color: #0072bc; margin: 0; font-size: 1.8rem;">Client Profile: {{ client.full_name }}</h2>
+            <h2 style="color: var(--primary-green); margin: 0; font-size: 1.8rem;">Client Profile: {{ client.full_name }}</h2>
             <p style="color: #666; margin: 5px 0 0 0;"><i class="fas fa-envelope"></i> {{ client.email }} &nbsp; |
-                &nbsp; <strong>USR-{{ "%04d" | format(client.id) }}</strong></p>
+                &nbsp; <strong>{{ client.client_code if client.client_code else 'USR-' ~ '%04d'|format(client.id) }}</strong></p>
         </div>
         <div style="text-align: right; font-size: 0.9rem; color: #666;">
             <div
@@ -23,11 +23,34 @@
         </div>
     </div>
 
+    {% if session.designation in ['CEO', 'Quality Manager', 'Qulaity Manager', 'Dy. Quality Manager'] %}
+    {% if assigned_staff %}
+    <div style="margin-bottom: 25px; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid var(--primary-green); padding: 20px; border-radius: 8px;">
+        <h4 style="margin: 0 0 15px 0; color: #333; display: flex; align-items: center; gap: 8px; font-size: 1.05rem;">
+            <i class="fas fa-users-cog" style="color: var(--primary-green);"></i> Assigned Auditors / Staff (QM Verification)
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+            {% for staff in assigned_staff %}
+            <div style="background: white; border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                <div style="font-weight: 700; color: #333; font-size: 0.95rem; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-user-circle" style="color: #666;"></i> {{ staff.employee_name }}
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: #555;">
+                    <div>• <strong>Role:</strong> {{ staff.assigned_role or 'Not Assigned' }}</div>
+                    <div>• <strong>Scheme:</strong> {{ staff.assigned_scheme or 'Not Assigned' }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
     <div class="tabs-container">
         <div class="tabs-header">
             {% for app in applications %}
             <button class="tab-btn {% if loop.first %}active{% endif %}" onclick="openTab(event, 'App-{{ app.id }}')">{{
-                app.program_type }} (PRG-{{ "%04d" | format(app.id) }})</button>
+                app.program_type }} ({{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }})</button>
             {% endfor %}
             <button class="tab-btn {% if not applications %}active{% endif %}"
                 onclick="openTab(event, 'AllDocuments')">All Documents</button>
@@ -42,7 +65,7 @@
                     &nbsp; Activity: <strong>ACTY-2025-{{ "%06d" | format(app.id) }}</strong></p>
             </div>
 
-            <h4 style="color: #0072bc; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;"><i
+            <h4 style="color: var(--primary-green); margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;"><i
                     class="fas fa-info-circle"></i> Activity Details</h4>
             <div class="info-grid">
                 <div class="info-item">
@@ -95,15 +118,47 @@
                     'Admin' }} <i class="far fa-comment"></i></p>
             </div>
 
+            {% if app.lead_auditor_name or app.auditor_team %}
+            <div style="margin-top: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid var(--primary-green); padding: 15px 20px; border-radius: 6px;">
+                <div style="margin-bottom: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <span style="font-weight: 600; color: #333; font-size: 0.95rem;"><i class="fas fa-users" style="color: var(--primary-green); margin-right: 5px;"></i> Allocated Auditor Team:</span>
+                    {% if app.lead_auditor_name %}
+                    <span style="background: #e8f5e9; color: #2e7d32; font-size: 0.82rem; padding: 3px 10px; border-radius: 12px; font-weight: 600;">Lead: {{ app.lead_auditor_name }}</span>
+                    {% endif %}
+                    {% if app.auditor_team %}
+                        {% for aud in app.auditor_team %}
+                            {% if aud.role == 'Co-Auditor' %}
+                            <span style="background: #e3edf7; color: #0072bc; font-size: 0.82rem; padding: 3px 10px; border-radius: 12px; font-weight: 600;">Co-Auditor: {{ aud.full_name }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                {% if session.designation in ['CEO', 'Quality Manager', 'Qulaity Manager', 'Dy. Quality Manager'] and app.lead_auditor_name %}
+                <div>
+                    <span style="font-weight: 600; color: #333; font-size: 0.9rem; display: block; margin-bottom: 6px;">Auditor Assignment Scope:</span>
+                    {% if app.auditor_assigned_role or app.auditor_assigned_scheme or app.auditor_assigned_client_name %}
+                        <div style="padding: 12px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.88rem; color: #475569; display: flex; flex-direction: column; gap: 4px;">
+                            {% if app.auditor_assigned_role %}<div>• <strong>Role:</strong> {{ app.auditor_assigned_role }}</div>{% endif %}
+                            {% if app.auditor_assigned_scheme %}<div>• <strong>Scheme:</strong> {{ app.auditor_assigned_scheme }}</div>{% endif %}
+                            {% if app.auditor_assigned_client_name %}<div>• <strong>Client:</strong> {{ app.auditor_assigned_client_name }}</div>{% endif %}
+                        </div>
+                    {% else %}
+                        <div style="padding: 12px; background: white; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 0.85rem; color: #555; white-space: pre-wrap; line-height: 1.5;">{{ app.auditor_job_description or 'No specific roles and responsibilities assigned to this auditor yet.' }}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
             <h4
-                style="color: #0072bc; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                style="color: var(--primary-green); margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
                 <i class="fas fa-history"></i> Event Tracking
             </h4>
             <div style="padding: 10px 20px;">
-                <div style="border-left: 2px solid #0072bc; padding-left: 20px; position: relative;">
+                <div style="border-left: 2px solid var(--accent-gold); padding-left: 20px; position: relative;">
                     <div style="margin-bottom: 30px; position: relative;">
                         <div
-                            style="width: 12px; height: 12px; background: #0072bc; border-radius: 50%; position: absolute; left: -26px; top: 5px; border: 3px solid white;">
+                            style="width: 12px; height: 12px; background: var(--accent-gold); border-radius: 50%; position: absolute; left: -26px; top: 5px; border: 3px solid white;">
                         </div>
                         <div style="font-weight: 700; color: #333;">Application Submitted</div>
                         <div style="font-size: 0.85rem; color: #666;">{{ app.created_at.strftime('%d-%b-%Y %H:%M') if
@@ -155,7 +210,7 @@
                                 <span style="font-size: 0.8rem; color: #999;">Uploaded: {{
                                     doc.uploaded_at.strftime('%d-%b-%Y') if doc.uploaded_at else 'N/A' }}</span>
                                 <a href="/download-document/{{ doc.id }}"
-                                    style="color: #0072bc; text-decoration: none;"><i class="fas fa-download"></i></a>
+                                    style="color: var(--primary-green); text-decoration: none;"><i class="fas fa-download"></i></a>
                             </div>
                         </div>
                         {% endfor %}

@@ -14,6 +14,9 @@
                 <label>{{ _t('password_label') }}</label>
                 <input type="password" name="password" placeholder="{{ _t('enter_password') }}" required>
             </div>
+            <div class="forgot-password-link-wrapper" style="margin-bottom: 20px; text-align: right;">
+                <a href="{{ url_for('forgot_password', type='client') }}" class="forgot-link" style="color: #4caf50; text-decoration: none; font-size: 0.9rem;">{{ _t('forgot_password_link') }}</a>
+            </div>
             <button type="submit" class="premium-submit-btn">{{ _t('login_btn') }} <i class="fas fa-sign-in-alt"></i></button>
         </form>
     </div>

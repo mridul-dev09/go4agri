@@ -3,12 +3,17 @@
 {% block content %}
 <section class="section-container">
     <div style="max-width: 1000px; margin: 0 auto;">
-        <h2 class="section-title" style="margin-bottom: 5px;">NOP Certification (USDA Organic)</h2>
+        <style>
+            .nop-title::after { display: none !important; }
+        </style>
+        <h2 class="section-title nop-title" style="margin-bottom: 5px;">NOP Certification (USDA Organic)</h2>
         <p style="text-align: center; color: var(--accent-gold); font-size: 1.1rem; font-weight: 600; margin-bottom: 30px;">in collaboration with STC</p>
+
         
         <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); margin-bottom: 40px;">
             <div style="text-align: center; margin-bottom: 40px;">
-                <img src="{{ url_for('static', filename='images/nop_logo.png') }}" alt="NOP Organic" style="height: 100px;">
+                <h3 style="color: #33691e; margin: 0; font-size: 1.8rem;">USDA NOP Certification</h3>
+                <p style="color: #666; font-size: 1.1rem; margin: 5px 0 0;">in collaboration with STC</p>
                 <h3 style="color: var(--primary-green); margin-top: 20px;">Certification Services through Recognized Certification Body</h3>
             </div>
 

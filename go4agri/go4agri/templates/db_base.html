@@ -24,10 +24,31 @@
                         <i class="fas fa-th-large"></i> Dashboard
                     </a>
                 </li>
-                {% if user.designation in ['CEO', 'Admin'] %}
+                {% if user.designation != 'Client' %}
+                <li>
+                    <a href="/profile" class="{% if request.path == '/profile' %}active{% endif %}">
+                        <i class="fas fa-user-tie"></i> My Profile
+                    </a>
+                </li>
+                {% endif %}
+                {% if user.designation in ['CEO', 'Admin', 'Quality Manager', 'Qulaity Manager', 'Dy. Quality Manager'] %}
                 <li>
                     <a href="/dashboard#registered-clients">
                         <i class="fas fa-users"></i> Registered Clients
+                    </a>
+                </li>
+                {% endif %}
+                {% if user.designation in ['Quality Manager', 'Qulaity Manager', 'Dy. Quality Manager'] %}
+                <li>
+                    <a href="/quality-manager/employee-profiles" class="{% if '/quality-manager/employee-profiles' in request.path %}active{% endif %}">
+                        <i class="fas fa-id-badge"></i> Employee Profiles
+                    </a>
+                </li>
+                {% endif %}
+                {% if user.designation in ['Auditor', 'Trainee Auditor', 'Witness Auditor'] %}
+                <li>
+                    <a href="/auditor/audit-list" class="{% if '/auditor/audit-list' in request.path %}active{% endif %}">
+                        <i class="fas fa-clipboard-list"></i> Audit List
                     </a>
                 </li>
                 {% endif %}
@@ -39,6 +60,13 @@
                         {% endif %}
                     </a>
                 </li>
+                {% if user.designation != 'Client' %}
+                <li>
+                    <a href="/repository" class="{% if request.path == '/repository' %}active{% endif %}">
+                        <i class="fas fa-folder-open"></i> Repository
+                    </a>
+                </li>
+                {% endif %}
                 <li>
                     <a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}">
                         <i class="fas fa-cog"></i> Settings
@@ -163,4 +191,6 @@
         day: 'numeric'
     });
 </script>
+
+{% block extra_body %}{% endblock %}
 {% endblock %}

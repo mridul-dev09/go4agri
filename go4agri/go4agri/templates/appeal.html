@@ -1,8 +1,150 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 
 {% block content %}
-<section class='section-container'>
-    <h2 class='section-title'>{{ _t('nav_appeals') }}</h2>
-    <p>{{ _t('placeholder_text') }}</p>
+<section class="section-container" style="text-align: left;">
+    <div style="width: 100%; padding: 0 2%;">
+        <h2 class="section-title" style="text-align: center; margin-left: 0;">Register a Complaint or Appeal a Certification Decision</h2>
+        
+        <div class="info-box" style="background: #f9f9f9; padding: 25px; border-radius: 8px; margin-bottom: 30px; border-left: 5px solid var(--primary-green); text-align: left;">
+            <p style="margin-bottom: 15px; text-align: left;">Go4Agri is committed to maintaining the highest standards of integrity. If you have concerns regarding certification decisions, misrepresentation of organic status, or staff conduct, please use the form below to lodge a formal complaint or appeal.</p>
+            
+            <h3 style="color: var(--primary-green); margin-bottom: 15px; text-align: left;">What can be lodged?</h3>
+            <ul style="list-style: disc; margin-left: 20px; margin-bottom: 15px; text-align: left;">
+                <li style="margin-bottom: 8px;"><strong>Misrepresentation:</strong> Of organic status or use of Go4Agri logos.</li>
+                <li style="margin-bottom: 8px;"><strong>Staff Conduct:</strong> Concerns regarding the behavior or professionalism of Go4Agri personnel.</li>
+                <li style="margin-bottom: 8px;"><strong>Certification Decisions:</strong> Appeals against specific decisions made by the certification department.</li>
+            </ul>
+            
+            <p style="font-size: 0.95rem; color: #666; text-align: left; margin-top: 15px;">Note: For certification appeals, an Appeals Committee consisting of three persons will be appointed. No person involved in the original decision will be part of this committee.</p>
+        </div>
+
+        <form action="/submit-appeal" method="POST" enctype="multipart/form-data" class="premium-form-full">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-bottom: 25px;">
+                <div class="form-group" style="text-align: left;">
+                    <label style="display: block; text-align: left;">First Name *</label>
+                    <input type="text" name="first_name" required style="width: 100%;">
+                </div>
+                <div class="form-group" style="text-align: left;">
+                    <label style="display: block; text-align: left;">Last Name *</label>
+                    <input type="text" name="last_name" required style="width: 100%;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-bottom: 25px;">
+                <div class="form-group" style="text-align: left;">
+                    <label style="display: block; text-align: left;">Phone *</label>
+                    <input type="tel" name="phone" required style="width: 100%;">
+                </div>
+                <div class="form-group" style="text-align: left;">
+                    <label style="display: block; text-align: left;">Email *</label>
+                    <input type="email" name="email" required style="width: 100%;">
+                </div>
+            </div>
+
+            <div class="form-group" style="text-align: left; margin-bottom: 25px;">
+                <label style="display: block; text-align: left;">Name of the Product / Subject of Concern *</label>
+                <input type="text" name="product_name" required placeholder="Enter the product name or subject" style="width: 100%;">
+            </div>
+
+            <div class="form-group" style="text-align: left; margin-bottom: 25px;">
+                <label style="display: block; text-align: left;">Name of Manufacturer / Owner / Entity Involved *</label>
+                <input type="text" name="manufacturer_name" required style="width: 100%;">
+            </div>
+
+            <div class="form-group" style="text-align: left; margin-bottom: 25px;">
+                <label style="display: block; text-align: left;">Are you aware of any products claiming 'Certified Organic' or 'Organic' without certification details? *</label>
+                <select name="uncertified_claims" required style="width: 100%;">
+                    <option value="">Select option</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="text-align: left; margin-bottom: 25px;">
+                <label style="display: block; text-align: left;">Where did the misrepresentation occur? (Select all that apply) *</label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 10px;">
+                    <label style="font-weight: normal; display: flex; align-items: center; gap: 8px; text-align: left;">
+                        <input type="checkbox" name="source" value="Print Media"> Print Media
+                    </label>
+                    <label style="font-weight: normal; display: flex; align-items: center; gap: 8px; text-align: left;">
+                        <input type="checkbox" name="source" value="Print Advertising"> Print Advertising
+                    </label>
+                    <label style="font-weight: normal; display: flex; align-items: center; gap: 8px; text-align: left;">
+                        <input type="checkbox" name="source" value="Other Advertising"> Other Advertising
+                    </label>
+                    <label style="font-weight: normal; display: flex; align-items: center; gap: 8px; text-align: left;">
+                        <input type="checkbox" name="source" value="Website"> Website
+                    </label>
+                    <label style="font-weight: normal; display: flex; align-items: center; gap: 8px; text-align: left;">
+                        <input type="checkbox" name="source" value="On Products"> On Products
+                    </label>
+                    <label style="font-weight: normal; display: flex; align-items: center; gap: 8px; text-align: left;">
+                        <input type="checkbox" name="source" value="Other"> Other
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" style="text-align: left; margin-bottom: 25px;">
+                <label style="display: block; text-align: left;">Photo Evidence / Supporting Documents *</label>
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">Max 5MB. A photo or document is required to follow up on this concern.</p>
+                <input type="file" name="evidence" required accept="image/*,.pdf,.doc,.docx" style="width: 100%;">
+            </div>
+
+            <div class="form-group" style="text-align: left; margin-bottom: 25px;">
+                <label style="display: block; text-align: left;">Other Complaints / Details (Optional)</label>
+                <textarea name="details" rows="5" placeholder="Provide any additional information here..." style="width: 100%;"></textarea>
+            </div>
+
+            <div class="form-group" style="text-align: left; margin-bottom: 30px;">
+                <label style="display: block; text-align: left;">Do you wish to be contacted to further explain the information you have provided? *</label>
+                <div style="margin-top: 12px; display: flex; gap: 30px;">
+                    <label style="font-weight: normal; display: flex; align-items: center; gap: 10px; text-align: left;">
+                        <input type="radio" name="contact_permission" value="Yes" required> Yes
+                    </label>
+                    <label style="font-weight: normal; display: flex; align-items: center; gap: 10px; text-align: left;">
+                        <input type="radio" name="contact_permission" value="No"> No
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; text-align: left;">
+                <button type="submit" class="premium-submit-btn" style="width: 250px; font-size: 1.1rem; padding: 15px;">Submit Request <i class="fas fa-paper-plane"></i></button>
+            </div>
+        </form>
+    </div>
 </section>
-{% endblock %}
+
+<style>
+    .premium-form-full {
+        background: white;
+        padding: 40px 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    .form-group label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="tel"],
+    .form-group select,
+    .form-group textarea {
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 1rem;
+    }
+    .form-group input[type="checkbox"], .form-group input[type="radio"] {
+        width: 18px;
+        height: 18px;
+        margin: 0;
+    }
+    @media (max-width: 768px) {
+        .premium-form-full {
+            padding: 20px 0;
+        }
+    }
+</style>
+{% endblock %}

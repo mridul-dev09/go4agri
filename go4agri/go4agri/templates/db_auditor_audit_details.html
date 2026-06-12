@@ -1,0 +1,384 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Audit Details{% endblock %}
+
+{% block dashboard_content %}
+<style>
+    /* === DNV-Style Audit Overview Panel === */
+    .ao-header {
+        background: linear-gradient(135deg, var(--primary-green), #1b4e1b);
+        color: #fff;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        border-radius: 8px 8px 0 0;
+    }
+    .ao-header-item { display: flex; flex-direction: column; gap: 2px; }
+    .ao-label { font-size: 0.62rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+    .ao-val { font-size: 0.85rem; font-weight: 700; color: #fff; }
+    .ao-sep { width: 1px; height: 36px; background: rgba(255,255,255,0.15); flex-shrink: 0; }
+    .ao-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+    .ao-badge-primary { background: var(--primary-green); color: #fff; }
+    .ao-badge-gold { background: #856404; color: #fff; }
+    .ao-badge-green { background: #27ae60; color: #fff; }
+    .ao-badge-gray { background: #6c757d; color: #fff; }
+    .ao-action-btn { padding: 7px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; cursor: pointer; border: none; }
+    .ao-action-btn.ao-btn-gold { background: var(--accent-gold); color: #222; }
+    .ao-action-btn.ao-btn-gold:hover { background: #e5a93b; color: #222; }
+    /* Tabs */
+    .ao-tabs-bar { background: #f0f4f0; border-bottom: 2px solid #e0eee0; display: flex; padding: 0 16px; overflow-x: auto; }
+    .ao-tab { background: none; border: none; border-bottom: 3px solid transparent; padding: 12px 20px; font-size: 0.85rem; font-weight: 600; color: #666; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s; white-space: nowrap; margin-bottom: -2px; }
+    .ao-tab:hover { color: var(--primary-green); background: rgba(0,0,0,0.03); }
+    .ao-tab.active { color: var(--primary-green); border-bottom-color: var(--primary-green); background: #fff; }
+    /* Section grids */
+    .ao-sections-grid { display: grid; background: #fff; }
+    .ao-grid-4col { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    .ao-grid-2col { grid-template-columns: 1fr 1fr; }
+    .ao-grid-3col { grid-template-columns: 1fr 1fr 1fr; }
+    .ao-section { border-right: 1px solid #e8f0e8; min-height: 90px; }
+    .ao-section:last-child { border-right: none; }
+    .ao-section-header { background: #cce8cc; color: #2d5a27; padding: 6px 16px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+    .ao-section-body { padding: 12px 16px; }
+    .ao-field-title { font-size: 0.84rem; font-weight: 700; color: #333; margin-bottom: 3px; }
+    .ao-field-sub { font-size: 0.75rem; color: #666; line-height: 1.5; }
+    .ao-dot-indicator { width: 8px; height: 8px; background: var(--primary-green); border-radius: 50%; margin-top: 10px; display: inline-block; }
+    .ao-kv-pair { display: flex; gap: 6px; align-items: center; margin-top: 5px; }
+    .ao-kv-key { font-size: 0.7rem; color: #888; font-weight: 600; white-space: nowrap; }
+    .ao-kv-val { font-size: 0.78rem; color: #333; font-weight: 700; }
+    /* Days ring */
+    .ao-days-ring { width: 65px; height: 65px; border-radius: 50%; border: 5px solid var(--primary-green); display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; background: #fff; box-shadow: 0 0 0 3px #eaf6ea; }
+    .ao-days-num { font-size: 1.1rem; font-weight: 900; color: var(--primary-green); line-height: 1; }
+    .ao-days-lbl { font-size: 0.58rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.3px; }
+    .ao-legend-item { font-size: 0.72rem; color: #666; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .ao-legend-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex-shrink: 0; }
+    /* Findings */
+    .ao-findings-label { font-size: 0.7rem; font-weight: 700; color: #555; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .ao-no-data { font-size: 0.78rem; color: #aaa; font-style: italic; }
+    .ao-nodata-chip { display: inline-flex; align-items: center; gap: 5px; background: #f5f5f5; color: #bbb; font-size: 0.72rem; padding: 3px 10px; border-radius: 12px; margin-top: 6px; }
+    .detail-form-group { display: flex; flex-direction: column; gap: 4px; }
+    .detail-form-group label { font-size: 0.7rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+    .detail-form-group input, .detail-form-group select, .detail-form-group textarea {
+        padding: 8px 12px; border: 1px solid #dde3e8; border-radius: 5px;
+        font-size: 0.85rem; color: #444; background: #fff; outline: none;
+    }
+    .detail-form-group input:focus, .detail-form-group select:focus { border-color: var(--primary-green); }
+    .action-btn {
+        padding: 8px 16px; border-radius: 6px; font-size: 0.82rem; font-weight: 600;
+        cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px;
+        text-decoration: none; transition: all 0.2s;
+    }
+    .action-btn.forward { background: #eaf6ea; color: #27ae60; border: 1px solid #b8e4b8; }
+    .action-btn.forward:hover { background: #27ae60; color: #fff; }
+    .action-btn.reject { background: #fdf0ee; color: #e74c3c; border: 1px solid #f5c6c0; }
+    .action-btn.reject:hover { background: #e74c3c; color: #fff; }
+    .action-btn.update { background: #e8eaf6; color: #3949ab; border: 1px solid #c5cae9; }
+    .action-btn.update:hover { background: #3949ab; color: #fff; }
+    
+    @media (max-width: 768px) {
+        .ao-grid-4col { grid-template-columns: 1fr 1fr; }
+        .ao-grid-2col { grid-template-columns: 1fr; }
+        .ao-grid-3col { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div style="margin-bottom: 20px;">
+    <a href="/auditor/audit-list" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px; background: #6c757d; text-decoration: none; color: white; padding: 8px 16px; border-radius: 6px; font-weight: 600;">
+        <i class="fas fa-arrow-left"></i> Back to Audit List
+    </a>
+</div>
+
+<div class="db-card" style="padding: 0; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-radius: 8px; border: 1px solid #e0eee0;">
+    <!-- AUDIT OVERVIEW HEADER -->
+    <div class="ao-header">
+        <div class="ao-header-item">
+            <div class="ao-label">Audit ID</div>
+            <div class="ao-val" style="font-family: monospace; font-size: 1rem;">{{ "%07d"|format(app.id) }}</div>
+        </div>
+        <div class="ao-sep"></div>
+        <div class="ao-header-item">
+            <div class="ao-label">Audit Status</div>
+            <div class="ao-val">
+                {% if app.status == 'AUDIT_IN_PROGRESS' %}<span class="ao-badge ao-badge-primary">In Progress</span>
+                {% elif app.status == 'TECHNICAL_REVIEW' %}<span class="ao-badge ao-badge-gold">Tech Review</span>
+                {% elif app.status == 'CERTIFICATE_ISSUED' %}<span class="ao-badge ao-badge-green">Certified</span>
+                {% else %}<span class="ao-badge ao-badge-gray">{{ app.status.replace('_',' ').title() }}</span>{% endif %}
+            </div>
+        </div>
+        <div class="ao-sep"></div>
+        <div class="ao-header-item">
+            <div class="ao-label">Project ID</div>
+            <div class="ao-val" style="font-family: monospace;">{{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }}</div>
+        </div>
+        <div class="ao-sep"></div>
+        <div class="ao-header-item" style="margin-right: auto;">
+            <div class="ao-label">Received On</div>
+            <div class="ao-val">{{ app.created_at.strftime('%Y/%m/%d %H:%M') if app.created_at else '—' }}</div>
+        </div>
+        <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" class="ao-action-btn ao-btn-gold">
+            <i class="fas fa-eye"></i> View Full Details
+        </a>
+    </div>
+
+    <!-- TABS BAR -->
+    <div class="ao-tabs-bar">
+        <button class="ao-tab active" onclick="switchAoTab('overview', this)">
+            <i class="fas fa-list-alt"></i> Current Audit Overview
+        </button>
+        <button class="ao-tab" onclick="switchAoTab('update', this)">
+            <i class="fas fa-pen"></i> Technical Summary
+        </button>
+        <button class="ao-tab" onclick="switchAoTab('submit', this)">
+            <i class="fas fa-file-signature"></i> Audit Completion
+        </button>
+        <button class="ao-tab" onclick="switchAoTab('review', this)">
+            <i class="fas fa-microscope"></i> Technical Review
+        </button>
+    </div>
+
+    <!-- TAB: Current Audit Overview -->
+    <div id="ao-overview" style="display: block;">
+        <!-- Row 1: Site Name | Contact | Team Members -->
+        <div class="ao-sections-grid ao-grid-4col">
+            <div class="ao-section">
+                <div class="ao-section-header">Site Name</div>
+                <div class="ao-section-body">
+                    <div class="ao-field-title">{{ app.company_name or 'N/A' }}</div>
+                    <div class="ao-field-sub">{{ app.company_name or 'N/A' }}</div>
+                    {% if app.scope %}<div class="ao-field-sub" style="margin-top: 3px;">{{ app.scope }}</div>{% endif %}
+                    <div class="ao-dot-indicator"></div>
+                </div>
+            </div>
+            <div class="ao-section">
+                <div class="ao-section-header">Contact</div>
+                <div class="ao-section-body">
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                        <i class="fas fa-user-circle" style="color:var(--primary-green);"></i>
+                        <span class="ao-field-title">{{ app.company_name or 'N/A' }}</span>
+                    </div>
+                    <div class="ao-field-sub">
+                        <i class="fas fa-id-badge" style="margin-right:4px;color:#aaa;"></i>
+                        {{ app.client_code or ('USR-' ~ '%04d'|format(app.client_id)) }}
+                    </div>
+                    <div class="ao-dot-indicator"></div>
+                </div>
+            </div>
+            <div class="ao-section" style="grid-column: span 2;">
+                <div class="ao-section-header">Team Members</div>
+                <div class="ao-section-body">
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                        <i class="fas fa-user-tie" style="color:var(--primary-green);"></i>
+                        <span class="ao-field-title">{{ app.lead_auditor_name or 'Not Assigned' }}</span>
+                    </div>
+                    {% if app.lead_auditor_name %}<div class="ao-field-sub">Lead Auditor</div>{% endif %}
+                    <div class="ao-dot-indicator"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Days | Audit Findings -->
+        <div class="ao-sections-grid ao-grid-2col" style="border-top:1px solid #dde8dd;">
+            <div class="ao-section">
+                <div class="ao-section-header">Days</div>
+                <div class="ao-section-body">
+                    <div style="display:flex;align-items:center;gap:20px;">
+                        <div class="ao-days-ring">
+                            <div class="ao-days-num">{% if app.audit_start_date and app.audit_end_date %}{{ (app.audit_end_date - app.audit_start_date).days + 1 }}{% else %}—{% endif %}</div>
+                            <div class="ao-days-lbl">Days</div>
+                        </div>
+                        <div>
+                            <div class="ao-legend-item"><span class="ao-legend-dot" style="background:var(--accent-gold);"></span> Confirmed Onsite Days</div>
+                            <div class="ao-legend-item"><span class="ao-legend-dot" style="background:var(--primary-green);"></span> Confirmed Offsite Mandays</div>
+                            <div class="ao-legend-item" style="margin-top: 6px;"><span class="ao-legend-dot" style="background:#0072bc;"></span> <strong>{{ app.plan_submission_days or 1 }}</strong>&nbsp;Audit Plan (Days)</div>
+                            <div class="ao-legend-item"><span class="ao-legend-dot" style="background:#e74c3c;"></span> <strong>{{ app.draft_asr_days or 15 }}</strong>&nbsp;Draft ASR (Days)</div>
+                        </div>
+                    </div>
+                    <div class="ao-dot-indicator" style="margin-top:12px;"></div>
+                </div>
+            </div>
+            <div class="ao-section">
+                <div class="ao-section-header">Audit Findings</div>
+                <div class="ao-section-body">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:10px;">
+                        <div>
+                            <div class="ao-findings-label">Historical Unclosed Nonconformities</div>
+                            <div class="ao-no-data">No data to display</div>
+                        </div>
+                        <div>
+                            <div class="ao-findings-label">Current Audit Findings</div>
+                            <div class="ao-no-data">No data to display</div>
+                        </div>
+                    </div>
+                    <div style="padding-top:8px;border-top:1px solid #f0f0f0;">
+                        <div class="ao-findings-label">Current Unclosed Non-Conformities</div>
+                        <div class="ao-no-data">No data to display</div>
+                        <div class="ao-nodata-chip"><i class="fas fa-minus"></i> No Data</div>
+                    </div>
+                    <div class="ao-dot-indicator" style="margin-top:10px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Audit Information | Certificates | Scope -->
+        <div class="ao-sections-grid ao-grid-3col" style="border-top:1px solid #dde8dd;">
+            <div class="ao-section">
+                <div class="ao-section-header">Audit Information</div>
+                <div class="ao-section-body">
+                    <div class="ao-field-title">{{ app.program_type or 'N/A' }}</div>
+                    {% if app.scope %}<div class="ao-field-sub">{{ app.scope }}</div>{% endif %}
+                    <div class="ao-kv-pair">
+                        <span class="ao-kv-key">Start Date:</span>
+                        <span class="ao-kv-val">{{ app.audit_start_date.strftime('%Y-%m-%d') if app.audit_start_date else (app.created_at.strftime('%Y-%m-%d') if app.created_at else '—') }}</span>
+                    </div>
+                    <div class="ao-kv-pair">
+                        <span class="ao-kv-key">End Date:</span>
+                        <span class="ao-kv-val">{{ app.audit_end_date.strftime('%Y-%m-%d') if app.audit_end_date else (app.created_at.strftime('%Y-%m-%d') if app.created_at else '—') }}</span>
+                    </div>
+                    <div class="ao-dot-indicator"></div>
+                </div>
+            </div>
+            <div class="ao-section">
+                <div class="ao-section-header">Certificates</div>
+                <div class="ao-section-body">
+                    <div class="ao-field-title">{{ app.project_code or ('PRG-' ~ '%04d'|format(app.id)) }}</div>
+                    <div class="ao-field-sub">{{ app.program_type or 'N/A' }} —
+                        <span style="color:{% if app.status == 'CERTIFICATE_ISSUED' %}var(--primary-green){% else %}#e67e22{% endif %};font-weight:700;">
+                        {% if app.status == 'CERTIFICATE_ISSUED' %}Issued/Current{% else %}In Process{% endif %}</span>
+                    </div>
+                    <div class="ao-field-sub" style="margin-top:4px;">Expiry: —</div>
+                    <div class="ao-field-sub">Extension: —</div>
+                    <div class="ao-dot-indicator"></div>
+                </div>
+            </div>
+            <div class="ao-section">
+                <div class="ao-section-header">Scope(s)</div>
+                <div class="ao-section-body">
+                    <div class="ao-field-title">
+                        {{ app.project_code or ('PRG-' ~ '%04d'|format(app.id)) }}
+                        {% if app.status == 'CERTIFICATE_ISSUED' %}
+                        <span style="color:var(--primary-green);font-size:0.68rem;font-weight:400;">(Issued/Current)</span>
+                        {% endif %}
+                    </div>
+                    <div class="ao-field-sub">{{ app.scope or 'Scope not specified' }}</div>
+                    <div class="ao-dot-indicator"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB: Technical Summary (Update Details) -->
+    <div id="ao-update" style="display: none;">
+        {% if session.designation == 'Auditor' and app.status == 'AUDIT_IN_PROGRESS' %}
+        <div style="padding: 24px;">
+            <h4 style="color:var(--primary-green);margin:0 0 16px 0;font-size:0.95rem;display:flex;align-items:center;gap:8px;">
+                <i class="fas fa-pen"></i> Update Audit Details
+            </h4>
+            <form id="audit-form" action="/update-audit-details/{{ app.id }}" method="POST"
+                  style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+                <div class="detail-form-group">
+                    <label>Audit Plan (Days)</label>
+                    <input type="number" name="plan_days" value="{{ app.plan_submission_days or 1 }}" style="width:90px;">
+                </div>
+                <div class="detail-form-group">
+                    <label>Draft ASR (Days)</label>
+                    <input type="number" name="asr_days" value="{{ app.draft_asr_days or 15 }}" style="width:90px;">
+                </div>
+
+                <button type="submit" class="action-btn update"><i class="fas fa-sync-alt"></i> Update Details</button>
+            </form>
+        </div>
+        {% else %}
+        <div style="padding:30px;text-align:center;color:#aaa;">
+            <i class="fas fa-lock" style="font-size:1.8rem;margin-bottom:10px;display:block;"></i>
+            <p style="font-size:0.9rem;">Update is only available during the active audit stage.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- TAB: Audit Completion -->
+    <div id="ao-submit" style="display: none;">
+        {% if session.designation == 'Auditor' and app.status == 'AUDIT_IN_PROGRESS' %}
+        <div style="padding: 24px;">
+            <h4 style="color:var(--primary-green);margin:0 0 16px 0;font-size:0.95rem;display:flex;align-items:center;gap:8px;">
+                <i class="fas fa-file-signature"></i> Submit Audit Report
+            </h4>
+            <form action="/update-application-status/{{ app.id }}" method="POST" enctype="multipart/form-data"
+                  style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+                <input type="hidden" name="current_status" value="{{ app.status }}">
+                <div class="detail-form-group">
+                    <label>Comment / Notes</label>
+                    <textarea name="comment" rows="3" style="min-width:250px;max-width:350px;" placeholder="Add audit completion notes..."></textarea>
+                </div>
+                <div class="detail-form-group">
+                    <label>Upload Audit Report *</label>
+                    <input type="file" name="audit_report" style="font-size:0.82rem;">
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-end;">
+                    <button type="submit" name="action" value="forward" class="action-btn forward">
+                        <i class="fas fa-file-contract"></i> Submit Audit Report
+                    </button>
+                    <button type="submit" name="action" value="reject" class="action-btn reject" formnovalidate>
+                        <i class="fas fa-times-circle"></i> Reject
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% else %}
+        <div style="padding:30px;text-align:center;">
+            {% if app.status in ['TECHNICAL_REVIEW', 'FINAL_PAYMENT_PENDING', 'FINAL_PAYMENT_VERIFIED', 'CERTIFICATE_ISSUED'] %}
+            <i class="fas fa-check-circle" style="font-size:1.8rem;margin-bottom:10px;display:block;color:#27ae60;"></i>
+            <p style="font-size:0.9rem;color:#27ae60;font-weight:600;">Audit report submitted successfully.</p>
+            <p style="font-size:0.8rem;color:#888;">Current Stage: <strong>{{ app.status.replace('_',' ').title() }}</strong></p>
+            {% else %}
+            <i class="fas fa-info-circle" style="font-size:1.8rem;margin-bottom:10px;display:block;color:#aaa;"></i>
+            <p style="font-size:0.9rem;color:#aaa;">No action available at this stage.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- TAB: Technical Review -->
+    <div id="ao-review" style="display: none;">
+        <div style="padding: 24px;">
+            {% if app.status == 'TECHNICAL_REVIEW' %}
+            <div style="background:#fff8e1;border:1px solid #ffe08d;border-radius:8px;padding:18px;display:flex;align-items:center;gap:15px;">
+                <i class="fas fa-microscope" style="color:#856404;font-size:1.8rem;"></i>
+                <div>
+                    <div style="font-weight:700;color:#856404;margin-bottom:4px;">Technical Review In Progress</div>
+                    <div style="font-size:0.85rem;color:#666;">This application is under technical review. Results will appear once completed.</div>
+                </div>
+            </div>
+            {% elif app.status in ['FINAL_PAYMENT_PENDING', 'FINAL_PAYMENT_VERIFIED', 'CERTIFICATE_ISSUED'] %}
+            <div style="background:#eaf6ea;border:1px solid #b8e4b8;border-radius:8px;padding:18px;display:flex;align-items:center;gap:15px;">
+                <i class="fas fa-check-circle" style="color:#27ae60;font-size:1.8rem;"></i>
+                <div>
+                    <div style="font-weight:700;color:#27ae60;margin-bottom:4px;">Technical Review Completed</div>
+                    <div style="font-size:0.85rem;color:#666;">Current Stage: <strong>{{ app.status.replace('_',' ').title() }}</strong></div>
+                </div>
+            </div>
+            {% else %}
+            <div style="text-align:center;padding:20px;color:#aaa;">
+                <i class="fas fa-clock" style="font-size:1.8rem;margin-bottom:10px;display:block;"></i>
+                <p style="font-size:0.9rem;">Technical review information will be available after audit completion.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchAoTab(tab, btn) {
+        // Deactivate all tabs in tab bar
+        var tabBar = btn.closest('.ao-tabs-bar');
+        tabBar.querySelectorAll('.ao-tab').forEach(function(t) { t.classList.remove('active'); });
+        btn.classList.add('active');
+        // Show selected tab content, hide others
+        var allTabs = ['overview', 'update', 'submit', 'review'];
+        allTabs.forEach(function(t) {
+            var el = document.getElementById('ao-' + t);
+            if (el) el.style.display = (t === tab) ? 'block' : 'none';
+        });
+    }
+</script>
+{% endblock %}

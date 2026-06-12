@@ -1,0 +1,58 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Take Training Assessment{% endblock %}
+
+{% block dashboard_content %}
+<div class="db-card" style="padding: 30px; border-top: 5px solid #4285f4; max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+    <div style="text-align: center; margin-bottom: 30px;">
+        <span style="background: #e8f0fe; color: #4285f4; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+            {{ assessment.training_type }}
+        </span>
+        <h2 style="margin-top: 15px; color: #333;">{{ assessment.title }}</h2>
+        <p style="color: #666;">Please complete all questions below. Your responses will be reviewed by the CEO.</p>
+    </div>
+
+    <form action="{{ url_for('take_assessment', assignment_id=assessment.id) }}" method="POST">
+        {% for q in assessment.questions %}
+        <div class="q-row" style="margin-bottom: 35px; padding-bottom: 20px; border-bottom: 1px solid #f0f0f0;">
+            <label style="font-weight: 600; font-size: 1.1rem; display: block; margin-bottom: 15px; color: #444;">
+                {{ loop.index }}. {{ q.text }}
+            </label>
+            
+            {% if q.type == 'text' %}
+            <textarea name="q{{ q.id }}" rows="3" required placeholder="Type your answer here..."
+                      style="width: 100%; padding: 12px; border: 1.5px solid #eee; border-radius: 8px; font-family: inherit; transition: border-color 0.3s;"></textarea>
+            {% elif q.type == 'mcq' %}
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                {% for opt in q.options %}
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; border: 1px solid #f0f0f0; border-radius: 6px; transition: background 0.2s;">
+                    <input type="radio" name="q{{ q.id }}" value="{{ opt }}" required style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="font-size: 1rem; color: #555;">{{ opt }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div style="display: flex; gap: 15px; margin-top: 20px;">
+            <button type="submit" class="btn-primary" style="flex: 2; padding: 15px; border: none; border-radius: 8px; background: #4285f4; color: white; font-weight: 600; cursor: pointer; font-size: 1.1rem;">
+                SUBMIT ASSESSMENT
+            </button>
+            <a href="{{ url_for('dashboard') }}" style="flex: 1; text-align: center; padding: 15px; border: 1.5px solid #eee; border-radius: 8px; text-decoration: none; color: #888; font-weight: 600;">
+                Save for Later
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .q-row textarea:focus {
+        border-color: #4285f4;
+        outline: none;
+    }
+    label:hover {
+        background: #f8faff;
+    }
+</style>
+{% endblock %}

@@ -3,10 +3,166 @@
 {% block dashboard_title %}Portal Dashboard - {{ session.designation }}{% endblock %}
 
 {% block dashboard_content %}
-<div class="portal-header">
+<style>
+    /* FullCalendar styling overrides to allow text wrapping */
+    .fc-event-title {
+        white-space: pre-wrap !important;
+    }
+    .fc-daygrid-event {
+        white-space: pre-wrap !important;
+    }
+    .fc-event-main {
+        word-wrap: break-word !important;
+        word-break: break-word !important;
+    }
+</style>
+<!-- Pending Assessments Section -->
+{% if pending_assessments %}
+<div class="db-card" style="margin-bottom: 25px; border-top: 5px solid #4285f4; padding: 20px; background: #fff;">
+    <h4 style="margin: 0 0 15px 0; color: #333; display: flex; align-items: center; gap: 10px;">
+        <i class="fas fa-clipboard-check" style="color: #4285f4;"></i> Pending Training Assessments
+    </h4>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+        {% for ass in pending_assessments %}
+        <div style="border: 1px solid #e8f0fe; border-radius: 10px; padding: 15px; background: #f8faff; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-weight: 700; color: #333; margin-bottom: 3px;">{{ ass.title }}</div>
+                <div style="font-size: 0.8rem; color: #666;">Module: <span class="badge info" style="font-size: 0.7rem;">{{ ass.training_type }}</span></div>
+            </div>
+            <a href="{{ url_for('take_assessment', assignment_id=ass.id) }}" class="btn-primary" style="padding: 8px 15px; border-radius: 6px; font-size: 0.85rem; background: #4285f4; text-decoration: none; color: white;">
+                Take Form
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+<!-- Document Repository Shortcut Card -->
+<div class="db-card" style="margin-bottom: 25px; border-top: 5px solid var(--accent-gold); padding: 20px; background: #fff;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h4 style="margin: 0; color: #333; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-folder-open" style="color: var(--accent-gold);"></i> Personal Document Repository
+        </h4>
+        <a href="/repository" class="btn-primary" style="padding: 8px 15px; border-radius: 6px; font-size: 0.85rem; background: var(--primary-green); text-decoration: none; color: white;">
+            Open Repository <i class="fas fa-external-link-alt" style="font-size: 0.7rem; margin-left: 5px;"></i>
+        </a>
+    </div>
+    <p style="margin: 10px 0 0 35px; color: #666; font-size: 0.85rem;">
+        Quickly access your saved files, archive old documents, or attach them to internal messages.
+    </p>
+</div>
+
+<!-- ===== Tab Navigation ===== -->
+<style>
+.emp-tabs-nav {
+    display: flex;
+    gap: 4px;
+    border-bottom: 3px solid var(--primary-green);
+    margin-bottom: 0;
+    flex-wrap: wrap;
+}
+.emp-tab-btn {
+    padding: 10px 22px;
+    border: none;
+    background: #f0f4f8;
+    color: #555;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #dde4eb;
+    border-bottom: none;
+    position: relative;
+    top: 3px;
+}
+.emp-tab-btn:hover {
+    background: #e3edf7;
+    color: var(--primary-green);
+}
+.emp-tab-btn.active {
+    background: white;
+    color: var(--primary-green);
+    border-color: var(--primary-green);
+    border-bottom: 3px solid white;
+}
+.emp-tab-btn .tab-badge {
+    background: var(--primary-green);
+    color: white;
+    border-radius: 999px;
+    padding: 1px 7px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    min-width: 20px;
+    text-align: center;
+}
+.emp-tab-btn.active .tab-badge {
+    background: var(--primary-green);
+}
+.emp-tab-panel {
+    display: none;
+    background: white;
+    border: 1px solid #dde4eb;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    padding: 24px;
+}
+.emp-tab-panel.active {
+    display: block;
+}
+/* History action buttons */
+.hist-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all 0.18s;
+    text-decoration: none;
+    background: none;
+}
+.hist-action-btn.view  { color: #0072bc; border-color: #0072bc; }
+.hist-action-btn.view:hover  { background: #0072bc; color: #fff; }
+.hist-action-btn.archive { color: #e67e22; border-color: #e67e22; }
+.hist-action-btn.archive:hover { background: #e67e22; color: #fff; }
+.hist-action-btn.del  { color: #e74c3c; border-color: #e74c3c; }
+.hist-action-btn.del:hover  { background: #e74c3c; color: #fff; }
+</style>
+
+<div class="portal-header" style="border-radius: 10px 10px 0 0; margin-bottom: 0;">
     <i class="fas fa-list-alt"></i> {{ session.designation }} Dashboard
 </div>
-<div class="db-card" style="border-radius: 0 0 10px 10px; padding: 20px;">
+
+<!-- Tab Nav -->
+<div class="emp-tabs-nav">
+    <button class="emp-tab-btn active" onclick="switchEmpTab('tab-active', this)" id="emp-tab-btn-active">
+        <i class="fas fa-tasks"></i> Active Tasks
+        <span class="tab-badge">{{ applications|length if applications else 0 }}</span>
+    </button>
+    <button class="emp-tab-btn" onclick="switchEmpTab('tab-history', this)" id="emp-tab-btn-history">
+        <i class="fas fa-history"></i> History
+        <span class="tab-badge" style="background:#3498db;">{{ processed_applications|length if processed_applications else 0 }}</span>
+    </button>
+    <button class="emp-tab-btn" onclick="switchEmpTab('tab-archived', this)" id="emp-tab-btn-archived">
+        <i class="fas fa-archive"></i> Archived
+        <span class="tab-badge" style="background:#e67e22;">{{ deleted_applications|length if deleted_applications else 0 }}</span>
+    </button>
+    {% if session.designation in ['Quality Manager', 'Qulaity Manager', 'Dy. Quality Manager'] %}
+    <button class="emp-tab-btn" onclick="switchEmpTab('tab-clients', this)" id="emp-tab-btn-clients">
+        <i class="fas fa-users"></i> Registered Clients
+        <span class="tab-badge" style="background:#8e44ad;">{{ registered_clients|length if registered_clients else 0 }}</span>
+    </button>
+    {% endif %}
+</div>
+<!-- ===== TAB 1: Active Tasks ===== -->
+<div id="tab-active" class="emp-tab-panel active">
     {% if session.designation == 'Auditor' %}
     <!-- Calendar Section for Auditor -->
     <div style="margin-bottom: 20px;">
@@ -29,7 +185,7 @@
     <div id="taskModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
         <div style="background:#fff; width:400px; margin:10% auto; padding:20px; border-radius:8px; position:relative;">
             <span onclick="closeTaskModal()" style="position:absolute; right:15px; top:10px; cursor:pointer; font-size:20px;">&times;</span>
-            <h3 id="modalTaskTitle" style="margin-top:0; color:#0072bc;"></h3>
+            <h3 id="modalTaskTitle" style="margin-top:0; color:var(--primary-green);"></h3>
             <p><strong>Company:</strong> <span id="modalTaskCompany"></span></p>
             <p><strong>Status:</strong> <span id="modalTaskStatus"></span></p>
             <input type="hidden" id="modalTaskId">
@@ -82,6 +238,10 @@
                         .catch(err => failureCallback(err));
                 },
                 eventClick: function(info) {
+                    if (info.event.extendedProps.type === 'audit') {
+                        window.location.href = '/auditor/audit-details/' + info.event.extendedProps.app_id;
+                        return;
+                    }
                     // Populate and show modal
                     document.getElementById('modalTaskId').value = info.event.id;
                     document.getElementById('modalTaskTitle').textContent = info.event.extendedProps.raw_title;
@@ -89,7 +249,7 @@
                     document.getElementById('modalTaskStatus').textContent = info.event.extendedProps.status;
                     
                     var btnComplete = document.getElementById('btnCompleteTask');
-                    if (info.event.extendedProps.status === 'COMPLETED' || info.event.extendedProps.status === 'CANCELLED') {
+                    if (info.event.extendedProps.type === 'audit' || info.event.extendedProps.status === 'COMPLETED' || info.event.extendedProps.status === 'CANCELLED' || info.event.extendedProps.status === 'Certificate Issued') {
                         btnComplete.style.display = 'none';
                     } else {
                         btnComplete.style.display = 'inline-block';
@@ -160,6 +320,55 @@
     <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
     {% endif %}
 
+    {% if session.designation in ['Auditor', 'Trainee Auditor', 'Witness Auditor'] %}
+    <!-- Auditor: Quick Summary Cards linking to Audit List -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 25px;">
+        <a href="/auditor/audit-list" style="text-decoration: none;">
+            <div style="background: #fff; border-radius: 12px; padding: 22px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); border-left: 5px solid var(--primary-green); display: flex; align-items: center; gap: 16px; transition: box-shadow 0.2s, transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,0.12)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(0,0,0,0.07)'">
+                <div style="width: 50px; height: 50px; background: #eef6ee; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-clipboard-list" style="font-size: 1.3rem; color: var(--primary-green);"></i>
+                </div>
+                <div>
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #222;">{{ applications|length }}</div>
+                    <div style="font-size: 0.78rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Active Audits</div>
+                </div>
+            </div>
+        </a>
+        <a href="/auditor/audit-list" style="text-decoration: none;">
+            <div style="background: #fff; border-radius: 12px; padding: 22px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); border-left: 5px solid #0072bc; display: flex; align-items: center; gap: 16px; transition: box-shadow 0.2s, transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,0.12)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(0,0,0,0.07)'">
+                <div style="width: 50px; height: 50px; background: #e8f4fc; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-search" style="font-size: 1.3rem; color: #0072bc;"></i>
+                </div>
+                <div>
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #222;">{{ applications | selectattr('status', 'equalto', 'AUDIT_IN_PROGRESS') | list | length }}</div>
+                    <div style="font-size: 0.78rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">In Progress</div>
+                </div>
+            </div>
+        </a>
+        <a href="/auditor/audit-list" style="text-decoration: none;">
+            <div style="background: #fff; border-radius: 12px; padding: 22px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); border-left: 5px solid var(--accent-gold); display: flex; align-items: center; gap: 16px; transition: box-shadow 0.2s, transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,0.12)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(0,0,0,0.07)'">
+                <div style="width: 50px; height: 50px; background: #fff8e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-calendar-check" style="font-size: 1.3rem; color: var(--accent-gold);"></i>
+                </div>
+                <div>
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #222;">{{ applications | selectattr('audit_start_date') | list | length }}</div>
+                    <div style="font-size: 0.78rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Scheduled</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <!-- Open Audit List Banner -->
+    <div style="background: linear-gradient(135deg, var(--primary-green) 0%, #1a7a2e 100%); border-radius: 12px; padding: 24px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 16px rgba(0,100,0,0.15); margin-bottom: 10px;">
+        <div>
+            <h3 style="margin: 0; color: white; font-size: 1.1rem;"><i class="fas fa-clipboard-list" style="margin-right: 10px; opacity: 0.85;"></i>Your Audit List</h3>
+            <p style="margin: 6px 0 0 0; color: rgba(255,255,255,0.75); font-size: 0.85rem;">View all assigned audits, update details, and submit audit reports.</p>
+        </div>
+        <a href="/auditor/audit-list" style="background: var(--accent-gold); color: #222; font-weight: 800; padding: 10px 22px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;">
+            <i class="fas fa-external-link-alt"></i> Open Audit List
+        </a>
+    </div>
+
+    {% else %}
     <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px; color: #666; font-size: 0.9rem;">
         <i class="fas fa-minus-square"></i> Basic search options
     </div>
@@ -180,18 +389,19 @@
                     <th>Time for CA Review</th>
                     <th>Audit Start Date</th>
                     <th>Audit End Date</th>
+                    <th style="width: 70px; text-align: center;">Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% if applications %}
                 {% for app in applications %}
                 <!-- Main Row -->
-                <tr class="portal-row" onclick="toggleDetails('details-{{ app.id }}', 'icon-{{ app.id }}')">
+                <tr class="portal-row" id="emp-row-{{ app.id }}" onclick="toggleDetails('details-{{ app.id }}', 'icon-{{ app.id }}')">
                     <td style="text-align: center; color: #0072bc; cursor: pointer;">
                         <i id="icon-{{ app.id }}" class="fas fa-caret-right"></i>
                     </td>
-                    <td style="font-weight: 600; color: #555;">USR-{{ "%04d" | format(app.client_id) }}</td>
-                    <td style="font-weight: 600; color: var(--primary-green);">PRG-{{ "%04d" | format(app.id) }}</td>
+                    <td style="font-weight: 600; color: #555;">{{ app.client_code if app.client_code else 'USR-' ~ '%04d'|format(app.client_id) }}</td>
+                    <td style="font-weight: 600; color: var(--primary-green);">{{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }}</td>
                     <td>
                         <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}"
                             style="text-decoration: none; color: #0072bc; font-weight: 600;">
@@ -208,16 +418,37 @@
                     <td style="text-align: center;">{{ app.draft_asr_days | default('15') }} <i class="fas fa-flag"
                             style="color: #d9534f;"></i></td>
                     <td style="text-align: center;">{{ app.ca_review_days if app.ca_review_days else 'N/A' }}</td>
-                    <td>{{ app.audit_start_date if app.audit_start_date else '15-Nov-2025' }}</td>
-                    <td>{{ app.audit_end_date if app.audit_end_date else '15-Nov-2025' }}</td>
+                    <td style="text-align: center;">
+                        {% if app.audit_start_date %}
+                            <span style="font-weight: 600; color: #333;">{{ app.audit_start_date.strftime('%Y-%m-%d') }}</span>
+                        {% else %}
+                            <span style="color: #999; font-style: italic;">TBD</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        {% if app.audit_end_date %}
+                            <span style="font-weight: 600; color: #333;">{{ app.audit_end_date.strftime('%Y-%m-%d') }}</span>
+                        {% else %}
+                            <span style="color: #999; font-style: italic;">TBD</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;" onclick="event.stopPropagation();">
+                        <button onclick="dismissRow('{{ app.id }}')"
+                                style="background:none;border:1px solid #e74c3c;color:#e74c3c;border-radius:4px;padding:4px 9px;cursor:pointer;font-size:0.75rem;display:inline-flex;align-items:center;gap:4px;transition:all 0.2s;"
+                                onmouseover="this.style.background='#e74c3c';this.style.color='#fff';"
+                                onmouseout="this.style.background='none';this.style.color='#e74c3c';"
+                                title="Remove from view">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </button>
+                    </td>
                 </tr>
 
                 <!-- Expandable Details/Actions Row -->
                 <tr id="details-{{ app.id }}" class="details-row" style="display: none; background: #fdfdfd;">
                     <td></td>
-                    <td colspan="11" style="padding: 0;">
+                    <td colspan="12" style="padding: 0;">
                         <div
-                            style="padding: 10px 15px; border-left: 2px solid #0072bc; display: flex; gap: 15px; align-items: center; background: #f8fafc;">
+                            style="padding: 10px 15px; border-left: 2px solid #0072bc; display: flex; gap: 15px; align-items: center; background: #f8fafc; flex-wrap: wrap;">
 
                             <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" class="action-menu-link">
                                 <i class="fas fa-eye"></i> View Details / Documents
@@ -225,77 +456,226 @@
 
                             <span style="color: #ccc;">|</span>
 
-                            <form action="/update-application-status/{{ app.id }}" method="POST" enctype="multipart/form-data"
-                                style="margin: 0; display: flex; gap: 15px; align-items: center;">
-                                <input type="hidden" name="current_status" value="{{ app.status }}">
-                                
-                                <!-- Common Comment Area for Rejection -->
-                                <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px;">
-                                    <textarea name="comment" placeholder="Add comments (Mandatory if Rejecting)" rows="2" style="font-size: 0.75rem; border: 1px solid #ddd; padding: 4px; border-radius: 3px; min-width: 200px;"></textarea>
-                                </div>
-                                <div style="display: flex; gap: 10px; align-items: center; border-left: 1px solid #ddd; padding-left: 15px;">
-                                    {% if session.designation == 'Initial reviewer' %}
-                                    <button type="submit" name="action" value="forward" class="action-menu-btn"><i class="fas fa-check-circle"></i> FORWARD TO INSPECTION PLANNER</button>
-                                    <button type="submit" name="action" value="reject" class="action-menu-btn" style="color: #d9534f; border-color: #d9534f;"><i class="fas fa-times-circle"></i> REJECT</button>
-                                    {% elif session.designation == 'Inspection planner' %}
-                                    <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px;">
-                                        <label style="font-size: 0.7rem; color: #666; font-weight: 600;">Assign Auditor *</label>
-                                        <select name="auditor_id" required style="font-size: 0.75rem; border: 1px solid #ddd; padding: 4px; border-radius: 3px;">
-                                            <option value="">-- Select Auditor --</option>
-                                            {% for auditor in auditors %}
-                                            <option value="{{ auditor.id }}">{{ auditor.full_name }}</option>
+                            {% if session.designation == 'Initial reviewer' and app.status == 'DOCUMENT_REVIEW' %}
+                                <!-- Sub-flow 1: Initial Reviewer uploads templates to Client -->
+                                <div style="display: flex; flex-direction: column; gap: 15px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; width: 100%;">
+                                    <div style="font-weight: 700; color: var(--primary-green); font-size: 0.85rem;"><i class="fas fa-file-upload"></i> Step 3a: Upload &amp; Send Review Templates to Client</div>
+                                    <form action="/upload-review-templates/{{ app.id }}" method="POST" enctype="multipart/form-data" onsubmit="return validateReviewerUploadForm(this);" style="margin: 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                        <input type="file" name="review_templates" multiple style="font-size: 0.75rem; border: 1px solid #ddd; padding: 4px; border-radius: 5px; background: white;">
+                                        <button type="submit" name="submit_action" value="upload_and_send" class="action-menu-btn" style="background: var(--accent-gold); color: #222; border: none; font-weight: 700; padding: 6px 12px; border-radius: 4px;"><i class="fas fa-paper-plane"></i> Upload &amp; Send</button>
+                                    </form>
+
+                                    <!-- List already uploaded templates -->
+                                    <div style="border-top: 1px dashed #ddd; padding-top: 10px; margin-top: 5px;">
+                                        <div style="font-size: 0.75rem; font-weight: bold; color: #555; margin-bottom: 5px;">Uploaded Templates for Client:</div>
+                                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                                            {% set ns = namespace(t_found=false) %}
+                                            {% for doc in documents %}
+                                                {% if doc.application_id == app.id and doc.category == 'REVIEW_TEMPLATE' %}
+                                                    {% set ns.t_found = true %}
+                                                    <div style="display: flex; justify-content: space-between; align-items: center; background: white; border: 1px solid #e2e8f0; padding: 6px 10px; border-radius: 5px; font-size: 0.75rem;">
+                                                        <span><i class="far fa-file-alt" style="color: var(--accent-gold); margin-right: 6px;"></i>{{ doc.filename }}</span>
+                                                        <a href="/uploads/{{ doc.filename }}" target="_blank" style="color: #0072bc; text-decoration: none; font-weight: 600;">View</a>
+                                                    </div>
+                                                {% endif %}
                                             {% endfor %}
-                                        </select>
-                                    </div>
-                                    <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px;">
-                                        <label style="font-size: 0.7rem; color: #666; font-weight: 600;">Upload Planning Doc (PDF/Image) *</label>
-                                        <input type="file" name="planning_doc" required style="font-size: 0.75rem; border: 1px solid #ddd; padding: 2px; border-radius: 3px;">
-                                    </div>
-                                    <button type="submit" name="action" value="forward" class="action-menu-btn"><i class="fas fa-calendar-check"></i> START AUDIT PROCESS</button>
-                                    <button type="submit" name="action" value="reject" class="action-menu-btn" formnovalidate style="color: #d9534f; border-color: #d9534f;"><i class="fas fa-times-circle"></i> REJECT</button>
-                                    {% elif session.designation == 'Auditor' %}
-                                    <!-- Auditor Update Details Form -->
-                                    <div style="display: flex; gap: 10px; align-items: center; border-right: 1px solid #ddd; padding-right: 15px; margin-right: 15px;">
-                                        <div style="display: flex; flex-direction: column;">
-                                            <label style="font-size: 0.7rem; color: #666;">Audit Plan (Days)</label>
-                                            <input type="number" name="plan_days" form="audit-form-{{ app.id }}" value="{{ app.plan_submission_days }}" style="width: 55px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.8rem;">
-                                        </div>
-                                        <div style="display: flex; flex-direction: column;">
-                                            <label style="font-size: 0.7rem; color: #666;">Draft ASR (Days)</label>
-                                            <input type="number" name="asr_days" form="audit-form-{{ app.id }}" value="{{ app.draft_asr_days }}" style="width: 55px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.8rem;">
-                                        </div>
-                                        <div style="display: flex; flex-direction: column;">
-                                            <label style="font-size: 0.7rem; color: #666;">Start Date</label>
-                                            <input type="date" name="start_date" form="audit-form-{{ app.id }}" value="{{ app.audit_start_date }}" style="padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.75rem;">
-                                        </div>
-                                        <div style="display: flex; flex-direction: column;">
-                                            <label style="font-size: 0.7rem; color: #666;">End Date</label>
-                                            <input type="date" name="end_date" form="audit-form-{{ app.id }}" value="{{ app.audit_end_date }}" style="padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.75rem;">
-                                        </div>
-                                        <button type="submit" form="audit-form-{{ app.id }}" class="action-menu-btn" style="color: #0072bc; margin-top: 12px; border: 1px solid #0072bc;"><i class="fas fa-sync-alt"></i> UPDATE</button>
-                                    </div>
-                                    <div style="display: flex; flex-direction: column; gap: 5px;">
-                                        <label style="font-size: 0.7rem; color: #666; font-weight: 600;">Upload Audit Report (PDF/Image) *</label>
-                                        <input type="file" name="audit_report" style="font-size: 0.75rem; border: 1px solid #ddd; padding: 2px; border-radius: 3px;">
-                                        <div style="display: flex; gap: 5px;">
-                                            <button type="submit" name="action" value="forward" class="action-menu-btn"><i class="fas fa-file-contract"></i> SUBMIT AUDIT REPORT</button>
-                                            <button type="submit" name="action" value="reject" class="action-menu-btn" style="color: #d9534f; border-color: #d9534f;" formnovalidate><i class="fas fa-times-circle"></i> REJECT</button>
+                                            {% if not ns.t_found %}
+                                                <div style="font-size: 0.75rem; color: #999; font-style: italic;">No templates uploaded yet. Please upload above.</div>
+                                            {% endif %}
                                         </div>
                                     </div>
-                                    {% elif session.designation == 'Technical reviewer' %}
-                                    <button type="submit" name="action" value="forward" class="action-menu-btn"><i class="fas fa-microscope"></i> COMPLETE TECHNICAL REVIEW</button>
-                                    <button type="submit" name="action" value="reject" class="action-menu-btn" style="color: #d9534f; border-color: #d9534f;"><i class="fas fa-times-circle"></i> REJECT</button>
-                                    {% elif session.designation == 'Certifier' %}
-                                    <button type="submit" name="action" value="forward" class="action-menu-btn" style="color: #27ae60;"><i class="fas fa-award"></i> GRANT CERTIFICATION</button>
-                                    <button type="submit" name="action" value="reject" class="action-menu-btn" style="color: #d9534f; border-color: #d9534f;"><i class="fas fa-times-circle"></i> REJECT</button>
-                                    {% else %}
-                                    <span style="color: #999; font-size: 0.85rem;"><i class="fas fa-info-circle"></i> No specific action required.</span>
-                                    {% endif %}
                                 </div>
-                            </form>
+                            {% elif session.designation == 'Initial reviewer' and app.status == 'CLIENT_DOCUMENT_SUBMISSION_PENDING' %}
+                                <!-- Sub-flow 2: Waiting for client -->
+                                <div style="display: flex; flex-direction: column; gap: 10px; background: #fffbeb; border: 1px solid #fde68a; padding: 15px; border-radius: 8px; width: 100%;">
+                                    <div style="font-weight: 700; color: #b45309; font-size: 0.85rem;"><i class="fas fa-hourglass-half"></i> Step 3b: Awaiting Client Document Submission</div>
+                                    <p style="margin: 0; font-size: 0.8rem; color: #555;">The client has been notified. They are downloading the templates, filling them, and will upload and submit them back for your review.</p>
+                                    
+                                    <div style="font-size: 0.75rem; font-weight: bold; color: #555; margin-top: 5px;">Sent Templates:</div>
+                                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                                        {% for doc in documents if doc.application_id == app.id and doc.category == 'REVIEW_TEMPLATE' %}
+                                            <div style="font-size: 0.75rem; color: #666;"><i class="far fa-file-alt" style="margin-right: 5px;"></i>{{ doc.filename }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% else %}
+                                <form action="/update-application-status/{{ app.id }}" method="POST" enctype="multipart/form-data"
+                                    style="margin: 0; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                                    <input type="hidden" name="current_status" value="{{ app.status }}">
+                                    
+                                    <!-- Common Comment Area for Rejection -->
+                                    <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px;">
+                                        <textarea name="comment" placeholder="Add comments (Mandatory if Rejecting)" rows="2" style="font-size: 0.75rem; border: 1px solid #ddd; padding: 4px; border-radius: 3px; min-width: 200px;"></textarea>
+                                    </div>
+                                    <div style="display: flex; gap: 10px; align-items: center; border-left: 1px solid #ddd; padding-left: 15px;">
+                                        {% if session.designation == 'Initial reviewer' %}
+                                            {% if app.status == 'CLIENT_DOCUMENT_SUBMITTED' %}
+                                                <!-- Sub-flow 3: Client submitted, Reviewer acts -->
+                                                <div style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
+                                                    <div style="background: #e6fffa; border: 1px solid #b2f5ea; padding: 12px; border-radius: 8px; font-size: 0.82rem; color: #008080; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                                        <i class="fas fa-check-circle" style="color: #008080;"></i> Client has submitted the filled documents. Please review and assign auditors.
+                                                    </div>
+
+                                                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                                                        <!-- Submitted files list -->
+                                                        <div style="flex: 1; min-width: 250px;">
+                                                            <div style="font-size: 0.8rem; font-weight: 700; color: #333; margin-bottom: 8px;"><i class="fas fa-paperclip"></i> Submitted Files:</div>
+                                                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                                                                {% for doc in documents if doc.application_id == app.id and doc.category == 'CLIENT_FILLED_DOCUMENT' %}
+                                                                    <div style="display: flex; justify-content: space-between; align-items: center; background: white; border: 1px solid #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 0.75rem;">
+                                                                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;"><i class="far fa-file-alt" style="color: var(--primary-green); margin-right: 6px;"></i>{{ doc.filename }}</span>
+                                                                        <a href="/uploads/{{ doc.filename }}" target="_blank" style="color: #0072bc; text-decoration: none; font-weight: 600;">View</a>
+                                                                    </div>
+                                                                {% endfor %}
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Unified Auditor Selector Widget -->
+                                                        <div style="flex: 1.5; min-width: 320px;">
+                                                            <div class="auditor-selection-widget" data-app-id="{{ app.id }}" style="display: flex; flex-direction: column; gap: 8px; position: relative;">
+                                                                <label style="font-size: 0.8rem; color: #333; font-weight: 700;">
+                                                                    <i class="fas fa-users-cog" style="color: var(--primary-green); margin-right: 5px;"></i> Select Auditor Team
+                                                                </label>
+                                                                
+                                                                <!-- Hidden inputs for form submission -->
+                                                                <input type="hidden" name="lead_auditor_id" id="lead_auditor_id_{{ app.id }}" required>
+                                                                <select name="co_auditor_ids" id="co_auditor_ids_{{ app.id }}" multiple style="display: none;">
+                                                                    {% for auditor in auditors %}
+                                                                    <option value="{{ auditor.id }}">{{ auditor.full_name }}</option>
+                                                                    {% endfor %}
+                                                                </select>
+
+                                                                <!-- Custom Trigger -->
+                                                                <div class="custom-select-trigger" onclick="toggleAuditorDropdown('{{ app.id }}', event)" style="padding: 10px 14px; border: 1px solid #cce0cc; border-radius: 8px; background: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); transition: border-color 0.2s;">
+                                                                    <span id="selected_auditors_label_{{ app.id }}" style="font-size: 0.85rem; color: #777;">Choose Auditor(s)...</span>
+                                                                    <i class="fas fa-chevron-down" style="font-size: 0.75rem; color: #888;"></i>
+                                                                </div>
+
+                                                                <!-- Custom Dropdown Panel -->
+                                                                <div id="auditor_dropdown_panel_{{ app.id }}" class="auditor-dropdown-panel" style="display: none; position: absolute; background: white; border: 1px solid #ccd6cc; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 320px; z-index: 100; max-height: 250px; overflow-y: auto; padding: 10px; margin-top: 45px;">
+                                                                    <div style="position: sticky; top: 0; background: white; padding-bottom: 8px; border-bottom: 1px solid #f0f0f0; margin-bottom: 8px;">
+                                                                        <input type="text" placeholder="Search auditor..." onkeyup="filterAuditors('{{ app.id }}', this.value)" style="width: 100%; padding: 6px 10px; border-radius: 5px; border: 1px solid #ddd; font-size: 0.8rem; box-sizing: border-box;" onclick="event.stopPropagation();">
+                                                                    </div>
+                                                                    <div class="auditor-options-list" style="display: flex; flex-direction: column; gap: 4px;">
+                                                                        {% for auditor in auditors %}
+                                                                        <label class="auditor-option-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 4px; cursor: pointer; transition: background 0.15s; font-size: 0.85rem; color: #333;" onmouseover="this.style.background='#f4faf4'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation();">
+                                                                            <input type="checkbox" value="{{ auditor.id }}" data-name="{{ auditor.full_name }}" onchange="handleAuditorCheck('{{ app.id }}', this)" style="cursor: pointer; accent-color: var(--primary-green);">
+                                                                            <span>{{ auditor.full_name }}</span>
+                                                                        </label>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                </div>
+
+                                                                <!-- Selected Auditors Display Area -->
+                                                                <div id="selected_auditors_display_{{ app.id }}" style="display: flex; flex-direction: column; gap: 6px; margin-top: 5px;">
+                                                                    <!-- Selected auditors with lead allocation control will render here dynamically -->
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div style="display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid #eee; padding-top: 10px; margin-top: 5px;">
+                                                        <button type="submit" name="action" value="forward" class="action-menu-btn" style="background: var(--primary-green); color: white; border: none; padding: 6px 12px; border-radius: 4px;"><i class="fas fa-check-circle"></i> FORWARD TO INSPECTION PLANNER</button>
+                                                        <button type="submit" name="action" value="reject" class="action-menu-btn" formnovalidate style="color: #d9534f; border-color: #d9534f; padding: 6px 12px; border-radius: 4px;"><i class="fas fa-times-circle"></i> REJECT</button>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        {% elif session.designation == 'Inspection planner' %}
+                                        <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px;">
+                                            <label style="font-size: 0.7rem; color: #666; font-weight: 600;">Upload Planning Doc (PDF/Image) *</label>
+                                            <input type="file" name="planning_doc" required style="font-size: 0.75rem; border: 1px solid #ddd; padding: 2px; border-radius: 3px;">
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px;">
+                                            <label style="font-size: 0.7rem; color: #666; font-weight: 600;">Audit Start Date *</label>
+                                            <input type="date" name="audit_start_date" required style="font-size: 0.75rem; border: 1px solid #ddd; padding: 2px; border-radius: 3px;">
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px;">
+                                            <label style="font-size: 0.7rem; color: #666; font-weight: 600;">Audit End Date *</label>
+                                            <input type="date" name="audit_end_date" required style="font-size: 0.75rem; border: 1px solid #ddd; padding: 2px; border-radius: 3px;">
+                                        </div>
+                                        <button type="submit" name="action" value="forward" style="background: var(--primary-green); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s; margin-right: 10px;"><i class="fas fa-calendar-check"></i> START AUDIT PROCESS</button>
+                                        <button type="submit" name="action" value="reject" formnovalidate style="background: white; color: #d9534f; border: 1px solid #d9534f; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"><i class="fas fa-times-circle"></i> REJECT</button>
+                                        {% elif session.designation == 'Auditor' %}
+                                        <!-- Auditor Update Details Form -->
+                                        <div style="display: flex; gap: 10px; align-items: center; border-right: 1px solid #ddd; padding-right: 15px; margin-right: 15px;">
+                                            <div style="display: flex; flex-direction: column;">
+                                                <label style="font-size: 0.7rem; color: #666;">Audit Plan (Days)</label>
+                                                <input type="number" name="plan_days" form="audit-form-{{ app.id }}" value="{{ app.plan_submission_days }}" style="width: 55px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.8rem;">
+                                            </div>
+                                            <div style="display: flex; flex-direction: column;">
+                                                <label style="font-size: 0.7rem; color: #666;">Draft ASR (Days)</label>
+                                                <input type="number" name="asr_days" form="audit-form-{{ app.id }}" value="{{ app.draft_asr_days }}" style="width: 55px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 0.8rem;">
+                                            </div>
+                                            <button type="submit" form="audit-form-{{ app.id }}" class="action-menu-btn" style="color: #0072bc; margin-top: 12px; border: 1px solid #0072bc;"><i class="fas fa-sync-alt"></i> UPDATE</button>
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                                            <label style="font-size: 0.7rem; color: #666; font-weight: 600;">Upload Audit Report (PDF/Image) *</label>
+                                            <input type="file" name="audit_report" style="font-size: 0.75rem; border: 1px solid #ddd; padding: 2px; border-radius: 3px;">
+                                            <div style="display: flex; gap: 5px;">
+                                                <button type="submit" name="action" value="forward" class="action-menu-btn"><i class="fas fa-file-contract"></i> SUBMIT AUDIT REPORT</button>
+                                                <button type="submit" name="action" value="reject" class="action-menu-btn" style="color: #d9534f; border-color: #d9534f;" formnovalidate><i class="fas fa-times-circle"></i> REJECT</button>
+                                            </div>
+                                        </div>
+                                        {% elif session.designation == 'Technical reviewer' %}
+                                        <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px;">
+                                            <label style="font-size: 0.7rem; color: #666; font-weight: 600;">Upload FMO23a (CDR) *</label>
+                                            <input type="file" name="fmo23a_doc" required style="font-size: 0.75rem; border: 1px solid #ddd; padding: 2px; border-radius: 3px;">
+                                        </div>
+                                        <button type="submit" name="action" value="forward" class="action-menu-btn"><i class="fas fa-microscope"></i> COMPLETE TECHNICAL REVIEW</button>
+                                        <button type="submit" name="action" value="reject" class="action-menu-btn" style="color: #d9534f; border-color: #d9534f;" formnovalidate><i class="fas fa-times-circle"></i> REJECT</button>
+                                        {% elif session.designation == 'Certifier' %}
+                                        <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px;">
+                                            <label style="font-size: 0.7rem; color: #666; font-weight: 600;">Upload FMO23a (CDR) *</label>
+                                            <input type="file" name="fmo23a_doc" required style="font-size: 0.75rem; border: 1px solid #ddd; padding: 2px; border-radius: 3px;">
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px;">
+                                            <label style="font-size: 0.7rem; color: #666; font-weight: 600;">Decision Letter Type *</label>
+                                            <select name="decision_type" required style="font-size: 0.75rem; border: 1px solid #ddd; padding: 4px; border-radius: 3px;">
+                                                <option value="">-- Select Decision --</option>
+                                                <option value="FMO09_Sanction">FMO09 (Sanction Letter - Positive)</option>
+                                                <option value="FMO23_Compliance">FMO23 (Compliance Letter - Positive)</option>
+                                                <option value="FMO21_Warning">FMO21 (Warning Letter - Negative)</option>
+                                                <option value="FMO24_Negative">FMO24 (Negative Decision Letter)</option>
+                                            </select>
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px;">
+                                            <label style="font-size: 0.7rem; color: #666; font-weight: 600;">Upload Decision Letter *</label>
+                                            <input type="file" name="decision_letter" required style="font-size: 0.75rem; border: 1px solid #ddd; padding: 2px; border-radius: 3px;">
+                                        </div>
+                                        <button type="submit" name="action" value="forward" class="action-menu-btn" style="color: #27ae60;"><i class="fas fa-award"></i> GRANT CERTIFICATION</button>
+                                        <button type="submit" name="action" value="reject" class="action-menu-btn" style="color: #d9534f; border-color: #d9534f;" formnovalidate><i class="fas fa-times-circle"></i> REJECT</button>
+                                        {% else %}
+                                        <span style="color: #999; font-size: 0.85rem;"><i class="fas fa-info-circle"></i> No specific action required.</span>
+                                        {% endif %}
+                                    </div>
+                                </form>
+                            {% endif %}
                             
                             {% if session.designation == 'Auditor' %}
                             <form id="audit-form-{{ app.id }}" action="/update-audit-details/{{ app.id }}" method="POST" style="display:none;"></form>
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ddd; width: 100%;">
+                                <label style="font-size: 0.75rem; color: #666; font-weight: 600;"><i class="fas fa-paperclip"></i> Upload & Send Audit Plan (FMO19)</label>
+                                <form action="/send-audit-plan/{{ app.id }}" method="POST" enctype="multipart/form-data" style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                    <input type="file" name="fmo19_doc" required style="font-size: 0.75rem; border: 1px solid #ddd; padding: 2px; border-radius: 3px;">
+                                    <button type="submit" class="action-menu-btn" style="background: #27ae60; color: white; border: none; padding: 4px 10px; border-radius: 4px;"><i class="fas fa-paper-plane"></i> SEND FMO19 TO CLIENT</button>
+                                </form>
+                            </div>
+                            {% endif %}
+                            
+                            {% if session.designation in ['Admin', 'Certifier', 'CEO'] and app.status == 'CERTIFICATE_ISSUED' %}
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ddd; width: 100%;">
+                                <label style="font-size: 0.75rem; color: #666; font-weight: 600;"><i class="fas fa-tasks"></i> Update Post-Certification Status</label>
+                                <form action="/update-post-cert-status/{{ app.id }}" method="POST" style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                                    <select name="post_cert_status" required style="font-size: 0.75rem; border: 1px solid #ddd; padding: 4px; border-radius: 3px;">
+                                        <option value="">-- Select Status --</option>
+                                        <option value="Active" {% if app.post_cert_status == 'Active' %}selected{% endif %}>Active</option>
+                                        <option value="Surrender" {% if app.post_cert_status == 'Surrender' %}selected{% endif %}>Surrender</option>
+                                        <option value="Withdraw" {% if app.post_cert_status == 'Withdraw' %}selected{% endif %}>Withdraw</option>
+                                        <option value="Suspended" {% if app.post_cert_status == 'Suspended' %}selected{% endif %}>Suspended</option>
+                                    </select>
+                                    <button type="submit" class="action-menu-btn" style="background: #0072bc; color: white; border: none; padding: 4px 10px; border-radius: 4px;"><i class="fas fa-save"></i> UPDATE STATUS</button>
+                                </form>
+                            </div>
                             {% endif %}
 
                         </div>
@@ -326,7 +706,336 @@
         </div>
         <div>{{ applications|length }} items in 1 pages</div>
     </div>
+    {% endif %}
 </div>
+<!-- end tab-active -->
+
+
+<!-- ===== TAB 2: History ===== -->
+<div id="tab-history" class="emp-tab-panel">
+    <p style="color: #666; font-size: 0.85rem; margin: 0 0 20px 0; padding: 12px 16px; background: #f0f7ff; border-left: 4px solid #3498db; border-radius: 4px;">
+        <i class="fas fa-info-circle" style="color: #3498db;"></i>
+        This section lists all applications you have processed or are assigned to. Use <strong>Archive</strong> to move completed items to the Archive tab.
+    </p>
+
+    <div class="audit-table-wrapper table-responsive" style="width: 100%; border-radius: 4px; border: 1px solid #eee; margin-bottom: 20px;">
+        <table class="audit-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px;"></th>
+                    <th>User ID</th>
+                    <th>Program ID</th>
+                    <th>Company Name</th>
+                    <th>Activity #</th>
+                    <th>Status</th>
+                    <th>Lead Auditor</th>
+                    <th>Audit Dates</th>
+                    <th style="text-align: center; min-width: 200px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if processed_applications %}
+                {% for app in processed_applications %}
+                <tr class="portal-row" id="hist-row-{{ app.id }}" onclick="toggleDetails('proc-details-{{ app.id }}', 'proc-icon-{{ app.id }}')">
+                    <td style="text-align: center; color: #0072bc; cursor: pointer;">
+                        <i id="proc-icon-{{ app.id }}" class="fas fa-caret-right"></i>
+                    </td>
+                    <td style="font-weight: 600; color: #555;">{{ app.client_code if app.client_code else 'USR-' ~ '%04d'|format(app.client_id) }}</td>
+                    <td style="font-weight: 600; color: var(--primary-green);">{{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }}</td>
+                    <td>
+                        <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" style="text-decoration: none; color: #0072bc; font-weight: 600;" onclick="event.stopPropagation();">
+                            {{ app.company_name }}
+                        </a>
+                    </td>
+                    <td style="font-size: 0.82rem; color: #666;">{{ "ACTY-2025-%06d" | format(app.id) }}</td>
+                    <td><span style="background: #f0f8ff; padding: 3px 8px; border-radius: 4px; border: 1px solid #cce5ff; font-size: 0.78em; color: #0056b3; white-space: nowrap;">{{ app.status.replace('_', ' ') }}</span></td>
+                    <td style="font-size: 0.85rem;">{{ app.lead_auditor_name if app.lead_auditor_name else '—' }}</td>
+                    <td style="font-size: 0.82rem; color: #555; white-space: nowrap;">
+                        {{ app.audit_start_date if app.audit_start_date else '—' }}
+                        {% if app.audit_end_date %}<br><span style="color:#999;">to {{ app.audit_end_date }}</span>{% endif %}
+                    </td>
+                    <td style="text-align: center;" onclick="event.stopPropagation();">
+                        <div style="display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
+                            <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" class="hist-action-btn view" title="View Application">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <form action="/archive-application/{{ app.id }}" method="POST" style="margin:0;" onsubmit="return confirm('Archive this application from your history?')">
+                                <button type="submit" class="hist-action-btn archive" title="Archive this application">
+                                    <i class="fas fa-archive"></i> Archive
+                                </button>
+                            </form>
+                            {% if session.designation in ['CEO', 'Admin', 'Recruiter', 'Quality Manager', 'Qulaity Manager', 'Dy. Quality Manager', 'Initial reviewer', 'Inspection planner', 'Technical reviewer', 'Certifier'] %}
+                            <form action="/delete-application/{{ app.id }}" method="POST" style="margin:0;" onsubmit="return confirm('Permanently delete this application from your history? This cannot be undone.')">
+                                <button type="submit" class="hist-action-btn del" title="Delete application">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                <tr id="proc-details-{{ app.id }}" class="details-row" style="display: none; background: #fdfdfd;">
+                    <td></td>
+                    <td colspan="8" style="padding: 15px;">
+                        <div style="border-left: 3px solid #3498db; padding-left: 15px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                            <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" class="action-menu-link">
+                                <i class="fas fa-eye"></i> View Full Details / Documents
+                            </a>
+                            {% if app.scope %}
+                            <span style="color: #666; font-size: 0.85rem;"><strong>Scope:</strong> {{ app.scope }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 35px; color: #999;">
+                        <i class="fas fa-box-open" style="font-size: 1.8rem; margin-bottom: 10px; display: block; opacity: 0.4;"></i>
+                        No processed applications found in your history.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Locally Dismissed Section -->
+    <div style="border-top: 1px dashed #ddd; padding-top: 20px; margin-top: 10px;">
+        <button onclick="toggleDismissedSection()" style="background: #607d8b; border: none; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px;">
+            <i class="fas fa-eye-slash"></i> Show / Hide Locally Dismissed (Active Tab)
+        </button>
+        <div id="dismissedApplicationsSection" style="display: none; margin-top: 15px;">
+            <p style="color: #666; font-size: 0.8rem; margin-bottom: 12px;"><i class="fas fa-info-circle"></i> Applications dismissed from your Active Tasks view. Restore them to make them active again.</p>
+            <div class="audit-table-wrapper table-responsive" style="width: 100%; border-radius: 4px; border: 1px solid #eee;">
+                <table class="audit-table">
+                    <thead>
+                        <tr style="background: #fafafa;">
+                            <th>User ID</th>
+                            <th>Program ID</th>
+                            <th>Company Name</th>
+                            <th>Activity</th>
+                            <th style="text-align: center; width: 130px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dismissedTableBody">
+                        <!-- Populated via Javascript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- end tab-history -->
+
+
+<!-- ===== TAB 3: Archived ===== -->
+<div id="tab-archived" class="emp-tab-panel">
+    <p style="color: #666; font-size: 0.85rem; margin: 0 0 20px 0; padding: 12px 16px; background: #fff8f0; border-left: 4px solid #e67e22; border-radius: 4px;">
+        <i class="fas fa-archive" style="color: #e67e22;"></i>
+        These applications have been archived from your history. Use <strong>Restore</strong> to move them back to the History tab.
+    </p>
+    <div class="audit-table-wrapper table-responsive" style="width: 100%; border-radius: 4px; border: 1px solid #eee; margin-bottom: 20px;">
+        <table class="audit-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px;"></th>
+                    <th>User ID</th>
+                    <th>Program ID</th>
+                    <th>Company Name</th>
+                    <th>Activity #</th>
+                    <th>Status</th>
+                    <th>Lead Auditor</th>
+                    <th>Audit Dates</th>
+                    <th style="text-align: center; min-width: 180px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if deleted_applications %}
+                {% for app in deleted_applications %}
+                <tr class="portal-row" id="arch-row-{{ app.id }}" onclick="toggleDetails('arch-details-{{ app.id }}', 'arch-icon-{{ app.id }}')">
+                    <td style="text-align: center; color: #e67e22; cursor: pointer;">
+                        <i id="arch-icon-{{ app.id }}" class="fas fa-caret-right"></i>
+                    </td>
+                    <td style="font-weight: 600; color: #555;">{{ app.client_code if app.client_code else 'USR-' ~ '%04d'|format(app.client_id) }}</td>
+                    <td style="font-weight: 600; color: var(--primary-green);">{{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }}</td>
+                    <td>
+                        <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" style="text-decoration: none; color: #0072bc; font-weight: 600;" onclick="event.stopPropagation();">
+                            {{ app.company_name }}
+                        </a>
+                    </td>
+                    <td style="font-size: 0.82rem; color: #666;">{{ "ACTY-2025-%06d" | format(app.id) }}</td>
+                    <td><span style="background: #fff3e0; padding: 3px 8px; border-radius: 4px; border: 1px solid #ffe0b2; font-size: 0.78em; color: #e65100; white-space: nowrap;">Archived</span></td>
+                    <td style="font-size: 0.85rem;">{{ app.lead_auditor_name if app.lead_auditor_name else '—' }}</td>
+                    <td style="font-size: 0.82rem; color: #555; white-space: nowrap;">
+                        {{ app.audit_start_date if app.audit_start_date else '—' }}
+                        {% if app.audit_end_date %}<br><span style="color:#999;">to {{ app.audit_end_date }}</span>{% endif %}
+                    </td>
+                    <td style="text-align: center;" onclick="event.stopPropagation();">
+                        <div style="display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
+                            <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" class="hist-action-btn view" title="View Application">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <form action="/restore-application/{{ app.id }}" method="POST" style="margin:0;" onsubmit="return confirm('Restore this application to your history?')">
+                                <button type="submit" class="hist-action-btn" title="Restore to History" style="background:#27ae60; color:white; border:none; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.82rem; display:inline-flex; align-items:center; gap:4px;">
+                                    <i class="fas fa-undo"></i> Restore
+                                </button>
+                            </form>
+                            {% if session.designation in ['CEO', 'Admin', 'Recruiter', 'Quality Manager', 'Qulaity Manager', 'Dy. Quality Manager', 'Initial reviewer', 'Inspection planner', 'Technical reviewer', 'Certifier'] %}
+                            <form action="/delete-application/{{ app.id }}" method="POST" style="margin:0;" onsubmit="return confirm('Permanently delete this application? This cannot be undone.')">
+                                <button type="submit" class="hist-action-btn del" title="Delete permanently">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                <tr id="arch-details-{{ app.id }}" class="details-row" style="display: none; background: #fffaf5;">
+                    <td></td>
+                    <td colspan="8" style="padding: 15px;">
+                        <div style="border-left: 3px solid #e67e22; padding-left: 15px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                            <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" class="action-menu-link">
+                                <i class="fas fa-eye"></i> View Full Details / Documents
+                            </a>
+                            {% if app.scope %}
+                            <span style="color: #666; font-size: 0.85rem;"><strong>Scope:</strong> {{ app.scope }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 35px; color: #999;">
+                        <i class="fas fa-archive" style="font-size: 1.8rem; margin-bottom: 10px; display: block; opacity: 0.4;"></i>
+                        No archived applications found.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- end tab-archived -->
+
+
+{% if session.designation in ['Quality Manager', 'Qulaity Manager', 'Dy. Quality Manager'] %}
+<!-- ===== TAB 3: Registered Clients (Quality Managers only) ===== -->
+<div id="tab-clients" class="emp-tab-panel">
+    <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-users"></i> Registered Clients Overview</h3>
+    {% if registered_clients %}
+    <div class="table-responsive">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f4faf4; text-align: left;">
+                    <th style="width: 40px;"></th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">User ID</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Full Name</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Email</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Registered On</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in registered_clients %}
+                <tr class="portal-row" style="border-bottom: 1px solid #eee; cursor: pointer;" onclick="toggleDetails('client-details-{{ client.id }}', 'client-icon-{{ client.id }}')">
+                    <td style="text-align: center; color: #0072bc;"><i id="client-icon-{{ client.id }}" class="fas fa-caret-right"></i></td>
+                    <td style="padding: 12px; font-weight: 600; color: #555;">{{ client.client_code if client.client_code else 'USR-' ~ '%04d'|format(client.id) }}</td>
+                    <td style="padding: 12px; font-weight: 600;">
+                        <a href="/client-details/{{ client.id }}"
+                            style="color: var(--primary-green); text-decoration: none;" onclick="event.stopPropagation();">
+                            <i class="fas fa-user-circle" style="margin-right: 5px;"></i>{{ client.full_name }}
+                        </a>
+                    </td>
+                    <td style="padding: 12px; color: #666;"><i class="fas fa-envelope" style="width: 15px;"></i> {{
+                        client.email }}</td>
+                    <td style="padding: 12px; font-size: 0.85rem; color: #666;">{{
+                        client.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td style="padding: 12px;">
+                        <a href="/client-details/{{ client.id }}" class="btn-primary"
+                            style="padding: 5px 10px; font-size: 0.8rem; text-decoration: none; border: none; border-radius: 5px; background: #0072bc; color: white;" onclick="event.stopPropagation();">
+                            <i class="fas fa-eye"></i> View Profile
+                        </a>
+                    </td>
+                </tr>
+                <!-- Expandable Application Table -->
+                <tr id="client-details-{{ client.id }}" class="details-row" style="display: none; background: #fdfdfd;">
+                    <td></td>
+                    <td colspan="5" style="padding: 15px;">
+                        <div class="table-responsive" style="padding: 15px; border-left: 3px solid var(--primary-green); background: #f9fdf9; border-radius: 0 5px 5px 0;">
+                            <h4 style="color: var(--primary-green); margin-bottom: 10px; font-size: 0.9rem;"><i class="fas fa-certificate"></i> Certification Programs / Applications</h4>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                <thead>
+                                    <tr style="text-align: left; border-bottom: 1px solid #ddd;">
+                                        <th style="padding: 8px;">Program ID</th>
+                                        <th style="padding: 8px;">Program Type</th>
+                                        <th style="padding: 8px;">Activity #</th>
+                                        <th style="padding: 8px;">Status</th>
+                                        <th style="padding: 8px;">Audit Dates</th>
+                                        <th style="padding: 8px;">Current Status (Step 10)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set client_apps = all_applications | selectattr('client_id', 'equalto', client.id) | list %}
+                                    {% if client_apps %}
+                                        {% for app in client_apps %}
+                                        <tr style="border-bottom: 1px dotted #eee;">
+                                            <td style="padding: 8px; font-weight: 600; color: var(--primary-green);">{{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }}</td>
+                                            <td style="padding: 8px;">{{ app.program_type }}</td>
+                                            <td style="padding: 8px; color: #666;">ACTY-{{ "%06d" | format(app.id) }}</td>
+                                            <td style="padding: 8px;">
+                                                <span class="badge info" style="padding: 2px 8px; font-size: 0.7rem;">{{ app.status.replace('_', ' ') }}</span>
+                                                {% if app.status == 'FINAL_PAYMENT_VERIFIED' %}
+                                                <form action="/generate-certificate/{{ app.id }}" method="POST" style="display: inline; margin-left: 10px;">
+                                                    <button type="submit" class="btn-primary" style="padding: 2px 8px; font-size: 0.7rem; background: #27ae60; border: none; border-radius: 3px; color: white; cursor: pointer;">
+                                                        <i class="fas fa-certificate"></i> Generate Certificate
+                                                     </button>
+                                                </form>
+                                                {% endif %}
+                                            </td>
+                                            <td style="padding: 8px; font-size: 0.8rem; color: #555;">
+                                                {% if app.audit_start_date %}{{ app.audit_start_date }} to {{ app.audit_end_date }}{% else %}TBD{% endif %}
+                                            </td>
+                                            <td style="padding: 8px;">
+                                                {% if app.status == 'CERTIFICATE_ISSUED' %}
+                                                <form action="/update-current-status/{{ app.id }}" method="POST" style="display: flex; gap: 6px; align-items: center;">
+                                                    <select name="current_status" style="font-size: 0.78rem; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; max-width: 200px;">
+                                                        {% for opt in ['Active', 'Suspension', 'Cancellation (Voluntary Withdrawal)', 'Cancellation (Change of CB)', 'Cancellation'] %}
+                                                        <option value="{{ opt }}" {% if app.current_status == opt %}selected{% endif %}>{{ opt }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                    <button type="submit" style="background: #2d5a27; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Set</button>
+                                                </form>
+                                                {% else %}
+                                                <span style="color: #bbb; font-size: 0.78rem;">—</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="6" style="padding: 10px; text-align: center; color: #999;">No active certification programs found for this client.</td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 40px; color: #999;">
+        <p>No clients have been registered yet.</p>
+    </div>
+    {% endif %}
+</div>
+</div>
+<!-- end tab-clients -->
+{% endif %}
 
 <style>
     .portal-row:hover {
@@ -377,6 +1086,40 @@
 </style>
 
 <script>
+    // ===== Tab Navigation =====
+    function switchEmpTab(tabId, btn) {
+        // Hide all panels
+        document.querySelectorAll('.emp-tab-panel').forEach(function(p) {
+            p.classList.remove('active');
+        });
+        // Deactivate all buttons
+        document.querySelectorAll('.emp-tab-btn').forEach(function(b) {
+            b.classList.remove('active');
+        });
+        // Show selected panel
+        var panel = document.getElementById(tabId);
+        if (panel) panel.classList.add('active');
+        // Activate clicked button
+        if (btn) btn.classList.add('active');
+        // Persist active tab in sessionStorage
+        try { sessionStorage.setItem('empActiveTab', tabId); } catch(e){}
+    }
+
+    // Restore last active tab on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            var lastTab = sessionStorage.getItem('empActiveTab');
+            if (lastTab) {
+                var panel = document.getElementById(lastTab);
+                if (panel) {
+                    var btnId = 'emp-tab-btn-' + lastTab.replace('tab-', '');
+                    var btn = document.getElementById(btnId);
+                    switchEmpTab(lastTab, btn);
+                }
+            }
+        } catch(e) {}
+    });
+
     function toggleDetails(rowId, iconId) {
         var detailsRow = document.getElementById(rowId);
         var icon = document.getElementById(iconId);
@@ -391,5 +1134,343 @@
             icon.classList.add("fa-caret-right");
         }
     }
+
+    function dismissRow(appId) {
+        if (!confirm('Remove this application from your view?\nYou can restore it later from the local archive list at the bottom.')) return;
+        var row = document.getElementById('emp-row-' + appId);
+        var detail = document.getElementById('details-' + appId);
+        if (row) row.style.display = 'none';
+        if (detail) detail.style.display = 'none';
+        // Persist in localStorage so it stays hidden on refresh
+        try {
+            var dismissed = JSON.parse(localStorage.getItem('go4agri_dismissedApps') || '[]');
+            if (!dismissed.includes(String(appId))) dismissed.push(String(appId));
+            localStorage.setItem('go4agri_dismissedApps', JSON.stringify(dismissed));
+            populateDismissedTable();
+        } catch(e) {}
+    }
+
+    function restoreRow(appId) {
+        try {
+            var dismissed = JSON.parse(localStorage.getItem('go4agri_dismissedApps') || '[]');
+            dismissed = dismissed.filter(function(id) { return id !== String(appId); });
+            localStorage.setItem('go4agri_dismissedApps', JSON.stringify(dismissed));
+            
+            var row = document.getElementById('emp-row-' + appId);
+            if (row) row.style.display = 'table-row';
+            populateDismissedTable();
+            alert('Application restored to active view.');
+        } catch(e) {}
+    }
+
+    function toggleDismissedSection() {
+        var sec = document.getElementById('dismissedApplicationsSection');
+        if (sec.style.display === 'none') {
+            sec.style.display = 'block';
+            populateDismissedTable();
+        } else {
+            sec.style.display = 'none';
+        }
+    }
+
+    function populateDismissedTable() {
+        var tbody = document.getElementById('dismissedTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        try {
+            var dismissed = JSON.parse(localStorage.getItem('go4agri_dismissedApps') || '[]');
+            if (dismissed.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 15px; color: #999;">No locally dismissed applications.</td></tr>';
+                return;
+            }
+            
+            dismissed.forEach(function(appId) {
+                var row = document.getElementById('emp-row-' + appId);
+                if (row) {
+                    var userId = row.cells[1].innerText;
+                    var progId = row.cells[2].innerText;
+                    var company = row.cells[3].innerText;
+                    var activity = row.cells[5].innerText;
+                    
+                    var tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid #eee';
+                    tr.innerHTML = '<td>' + userId + '</td>' +
+                                   '<td>' + progId + '</td>' +
+                                   '<td>' + company + '</td>' +
+                                   '<td>' + activity + '</td>' +
+                                   '<td style="text-align: center;">' +
+                                   '  <button onclick="restoreRow(\'' + appId + '\')" class="btn-primary" style="padding: 4px 10px; font-size: 0.75rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">' +
+                                   '    <i class="fas fa-undo"></i> Restore' +
+                                   '  </button>' +
+                                   '</td>';
+                    tbody.appendChild(tr);
+                }
+            });
+        } catch(e) {
+            console.error('Error populating dismissed table:', e);
+        }
+    }
+
+    // On page load: restore dismissed rows
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            var dismissed = JSON.parse(localStorage.getItem('go4agri_dismissedApps') || '[]');
+            dismissed.forEach(function(appId) {
+                var row = document.getElementById('emp-row-' + appId);
+                var detail = document.getElementById('details-' + appId);
+                if (row) row.style.display = 'none';
+                if (detail) detail.style.display = 'none';
+            });
+            populateDismissedTable();
+        } catch(e) {}
+    });
+</script>
+
+<style>
+/* Custom style for Selected Auditor cards */
+.selected-auditor-card {
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.selected-auditor-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    transform: translateY(-1px);
+}
+.custom-select-trigger:hover {
+    border-color: var(--primary-green) !important;
+}
+.auditor-dropdown-panel {
+    display: none;
+    position: absolute;
+    background: white;
+    border: 1px solid #ccd6cc;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    width: 320px;
+    z-index: 100;
+    max-height: 250px;
+    overflow-y: auto;
+    padding: 10px;
+    margin-top: 5px;
+}
+.auditor-option-item:hover {
+    background: #f4faf4;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+<script>
+// State to track selection per application
+const auditorState = {};
+
+function toggleAuditorDropdown(appId, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    const panel = document.getElementById(`auditor_dropdown_panel_${appId}`);
+    if (!panel) return;
+    const isShowing = panel.style.display === 'block';
+    
+    // Close all other dropdowns
+    document.querySelectorAll('.auditor-dropdown-panel').forEach(p => p.style.display = 'none');
+    
+    panel.style.display = isShowing ? 'none' : 'block';
+}
+
+// Close panels on clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.auditor-selection-widget')) {
+        document.querySelectorAll('.auditor-dropdown-panel').forEach(p => p.style.display = 'none');
+    }
+});
+
+function filterAuditors(appId, query) {
+    const panel = document.getElementById(`auditor_dropdown_panel_${appId}`);
+    if (!panel) return;
+    const items = panel.querySelectorAll('.auditor-option-item');
+    const lowerQuery = query.toLowerCase();
+    items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(lowerQuery) ? 'flex' : 'none';
+    });
+}
+
+function handleAuditorCheck(appId, checkbox) {
+    const auditorId = checkbox.value;
+    const name = checkbox.dataset.name;
+    const checked = checkbox.checked;
+    
+    if (!auditorState[appId]) {
+        auditorState[appId] = {
+            selected: [],
+            leadId: null
+        };
+    }
+    
+    const state = auditorState[appId];
+    
+    if (checked) {
+        if (!state.selected.find(a => a.id === auditorId)) {
+            state.selected.push({ id: auditorId, name: name });
+        }
+        // If it's the first selected auditor, automatically make them the Lead
+        if (!state.leadId) {
+            state.leadId = auditorId;
+        }
+    } else {
+        state.selected = state.selected.filter(a => a.id !== auditorId);
+        if (state.leadId === auditorId) {
+            state.leadId = state.selected.length > 0 ? state.selected[0].id : null;
+        }
+    }
+    
+    updateAuditorDisplay(appId);
+}
+
+function selectLeadAuditor(appId, auditorId) {
+    if (auditorState[appId]) {
+        auditorState[appId].leadId = auditorId;
+        updateAuditorDisplay(appId);
+    }
+}
+
+function removeAuditor(appId, auditorId) {
+    // Uncheck checkbox in dropdown
+    const panel = document.getElementById(`auditor_dropdown_panel_${appId}`);
+    if (panel) {
+        const checkbox = panel.querySelector(`input[value="${auditorId}"]`);
+        if (checkbox) {
+            checkbox.checked = false;
+        }
+    }
+    
+    if (auditorState[appId]) {
+        const state = auditorState[appId];
+        state.selected = state.selected.filter(a => a.id !== auditorId);
+        if (state.leadId === auditorId) {
+            state.leadId = state.selected.length > 0 ? state.selected[0].id : null;
+        }
+        updateAuditorDisplay(appId);
+    }
+}
+
+function updateAuditorDisplay(appId) {
+    const state = auditorState[appId] || { selected: [], leadId: null };
+    const displayContainer = document.getElementById(`selected_auditors_display_${appId}`);
+    const label = document.getElementById(`selected_auditors_label_${appId}`);
+    
+    if (!displayContainer || !label) return;
+    
+    // Clear display
+    displayContainer.innerHTML = '';
+    
+    // Update label
+    if (state.selected.length === 0) {
+        label.textContent = 'Choose Auditor(s)...';
+        label.style.color = '#777';
+    } else {
+        label.textContent = `${state.selected.length} Auditor(s) Selected`;
+        label.style.color = '#333';
+    }
+    
+    // Update hidden inputs
+    const leadInput = document.getElementById(`lead_auditor_id_${appId}`);
+    if (leadInput) leadInput.value = state.leadId || '';
+    
+    const coSelect = document.getElementById(`co_auditor_ids_${appId}`);
+    if (coSelect) {
+        // Clear all selected options in co-auditors multiple select
+        Array.from(coSelect.options).forEach(opt => opt.selected = false);
+        
+        state.selected.forEach(aud => {
+            const isLead = state.leadId === aud.id;
+            
+            // Select option in hidden co-auditors select if not lead
+            if (!isLead) {
+                const opt = coSelect.querySelector(`option[value="${aud.id}"]`);
+                if (opt) opt.selected = true;
+            }
+            
+            const card = document.createElement('div');
+            card.className = 'selected-auditor-card';
+            card.style.cssText = `
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: ${isLead ? '#fffbeb' : '#f8fafc'};
+                border: 1px solid ${isLead ? '#fcd34d' : '#e2e8f0'};
+                border-left: 4px solid ${isLead ? '#d97706' : '#0072bc'};
+                padding: 8px 12px;
+                border-radius: 6px;
+                font-size: 0.82rem;
+                margin-top: 4px;
+            `;
+            
+            card.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: 600; color: #333;">${aud.name}</span>
+                    <span style="
+                        font-size: 0.65rem;
+                        font-weight: 700;
+                        padding: 2px 6px;
+                        border-radius: 4px;
+                        background: ${isLead ? '#fef3c7' : '#e0f2fe'};
+                        color: ${isLead ? '#b45309' : '#0369a1'};
+                    ">${isLead ? 'Lead Auditor' : 'Co-Auditor'}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    ${!isLead ? `
+                        <button type="button" onclick="selectLeadAuditor('${appId}', '${aud.id}')" style="
+                            background: transparent;
+                            border: 1px solid #d97706;
+                            color: #d97706;
+                            padding: 2px 6px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 0.7rem;
+                            font-weight: 600;
+                            transition: all 0.2s;
+                        " onmouseover="this.style.background='#d97706';this.style.color='#fff';" onmouseout="this.style.background='transparent';this.style.color='#d97706';">
+                            Make Lead
+                        </button>
+                    ` : ''}
+                    <i class="fas fa-times-circle" onclick="removeAuditor('${appId}', '${aud.id}')" style="
+                        color: #d9534f;
+                        cursor: pointer;
+                        font-size: 0.95rem;
+                        opacity: 0.8;
+                        transition: opacity 0.2s;
+                    " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'"></i>
+                </div>
+            `;
+            displayContainer.appendChild(card);
+        });
+    }
+}
+
+function validateReviewerUploadForm(form) {
+    const fileInput = form.querySelector('input[type="file"]');
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        alert('Please select at least one template document to upload.');
+        return false;
+    }
+    return true;
+}
+
+// Preserve scroll position on reload for forms inside db_employee.html
+window.addEventListener('beforeunload', () => {
+    sessionStorage.setItem('employee_scroll_pos', window.scrollY);
+});
+
+window.addEventListener('load', () => {
+    const scrollPos = sessionStorage.getItem('employee_scroll_pos');
+    if (scrollPos) {
+        window.scrollTo(0, parseInt(scrollPos, 10));
+        sessionStorage.removeItem('employee_scroll_pos');
+    }
+});
 </script>
 {% endblock %}

@@ -1,0 +1,581 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* Zoomer Styles */
+    .zoom-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 10px;
+        cursor: zoom-in;
+        background: #fbfbfb;
+        padding: 15px;
+        border: 1px solid #eee;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        display: inline-block;
+        width: 100%;
+        max-width: 650px;
+    }
+
+    .zoom-image {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 8px;
+        transition: transform 0.15s ease-out;
+        transform-origin: center center;
+    }
+
+    .zoom-hint-overlay {
+        position: absolute;
+        bottom: 25px;
+        right: 25px;
+        background: rgba(45, 90, 39, 0.85);
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        z-index: 10;
+        backdrop-filter: blur(2px);
+        font-weight: 500;
+        transition: opacity 0.3s;
+    }
+
+    .zoom-container:hover .zoom-hint-overlay {
+        opacity: 0;
+    }
+
+    /* Lightbox Modal Styles */
+    .lightbox-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.95);
+        backdrop-filter: blur(10px);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .lightbox-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .lightbox-content {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        border-radius: 8px;
+        transform-origin: center center;
+        cursor: grab;
+        user-select: none;
+        -webkit-user-drag: none;
+        transition: transform 0.1s ease-out;
+    }
+
+    .lightbox-content:active {
+        cursor: grabbing;
+    }
+
+    .lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 35px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.2s, transform 0.2s;
+        z-index: 10001;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+    }
+
+    .lightbox-close:hover {
+        color: var(--accent-gold);
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.05);
+    }
+
+    .lightbox-controls {
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(26, 60, 23, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 8px 24px;
+        border-radius: 30px;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        backdrop-filter: blur(5px);
+    }
+
+    .lightbox-controls button {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: #fff;
+        font-size: 1.1rem;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s, transform 0.2s;
+    }
+
+    .lightbox-controls button:hover {
+        background: var(--accent-gold);
+        color: var(--dark-green);
+        transform: scale(1.1);
+    }
+
+    .lightbox-hint {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.85rem;
+        margin-left: 10px;
+        border-left: 1px solid rgba(255, 255, 255, 0.2);
+        padding-left: 15px;
+        pointer-events: none;
+        white-space: nowrap;
+    }
+</style>
+
+<section class="section-container">
+    <div style="max-width: 1200px; margin: 0 auto; text-align: left;">
+        <h2 class="section-title" style="text-align: center;">{{ _t('nav_certification_process') }}</h2>
+        <p style="text-align: center; color: #666; max-width: 800px; margin: 0 auto 40px;">
+            A Continuous Commitment to Organic Integrity
+        </p>
+
+        <div
+            style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); margin-bottom: 40px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 40px; align-items: center; justify-content: center;">
+
+                <!-- Left column: Process Cycle Diagram with Zoomer -->
+                <div style="flex: 1; min-width: 320px; max-width: 650px; text-align: center;">
+                    <div class="zoom-container">
+                        <img src="{{ url_for('static', filename='images/certification_process_cyclic.png') }}"
+                            alt="Organic Certification Lifecycle" class="zoom-image" id="process-image">
+                        <div class="zoom-hint-overlay">
+                            <i class="fas fa-search-plus"></i> Hover to Zoom &bull; Click to Expand
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right column: Text & Information -->
+                <div style="flex: 1; min-width: 320px; color: #444; line-height: 1.8;">
+                    <h3
+                        style="color: var(--primary-green); margin-bottom: 20px; font-size: 1.8rem; border-bottom: 2px solid var(--accent-gold); display: inline-block; padding-bottom: 5px;">
+                        Our Certification Lifecycle</h3>
+
+                    <p style="font-size: 1.05rem; margin-bottom: 25px;">
+                        At GO4AGRI, certification is not just a one-time approval — it is a continuous cycle of
+                        assessment, verification, and improvement. Our process ensures compliance, builds trust, and
+                        supports your commitment to organic integrity from application to renewal.
+                    </p>
+
+                    <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 20px;">
+                        <div style="display: flex; gap: 15px; align-items: flex-start;">
+                            <div
+                                style="background: #e9f5e8; color: var(--primary-green); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: bold;">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div>
+                                <h4 style="margin: 0; color: var(--dark-green); font-size: 1.1rem;">End-to-End
+                                    Certification</h4>
+                                <p style="margin: 5px 0 0; color: #666; font-size: 0.95rem;">From application to
+                                    certification and renewal - a transparent and well-defined process.</p>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 15px; align-items: flex-start;">
+                            <div
+                                style="background: #e9f5e8; color: var(--primary-green); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: bold;">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div>
+                                <h4 style="margin: 0; color: var(--dark-green); font-size: 1.1rem;">Continuous
+                                    Surveillance</h4>
+                                <p style="margin: 5px 0 0; color: #666; font-size: 0.95rem;">Regular and unannounced
+                                    inspections, sampling, and record reviews ensure ongoing compliance.</p>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 15px; align-items: flex-start;">
+                            <div
+                                style="background: #e9f5e8; color: var(--primary-green); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: bold;">
+                                <i class="fas fa-globe"></i>
+                            </div>
+                            <div>
+                                <h4 style="margin: 0; color: var(--dark-green); font-size: 1.1rem;">Global Recognition
+                                </h4>
+                                <p style="margin: 5px 0 0; color: #666; font-size: 0.95rem;">Certification under NPOP,
+                                    NOP (USDA Organic), COR, and EU Organic standards for global markets.</p>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 15px; align-items: flex-start;">
+                            <div
+                                style="background: #e9f5e8; color: var(--primary-green); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: bold;">
+                                <i class="fas fa-balance-scale"></i>
+                            </div>
+                            <div>
+                                <h4 style="margin: 0; color: var(--dark-green); font-size: 1.1rem;">Integrity &
+                                    Transparency</h4>
+                                <p style="margin: 5px 0 0; color: #666; font-size: 0.95rem;">Impartial audits, strict
+                                    control measures, and internationally accredited procedures.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Detailed Steps of the Process -->
+            <div style="margin-top: 60px; border-top: 1px solid #eee; padding-top: 40px;">
+                <h3 style="color: var(--primary-green); text-align: center; margin-bottom: 40px; font-size: 1.8rem;">
+                    Organic Certification Lifecycle Details</h3>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                    <div
+                        style="background: #fdfdfd; border: 1px solid #eee; padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-gold);">
+                        <div
+                            style="font-weight: bold; color: var(--primary-green); font-size: 1.1rem; margin-bottom: 5px;">
+                            1. Inquiry & Application</div>
+                        <p style="color: #666; font-size: 0.9rem; margin: 0; line-height: 1.5;">Applicant submits the
+                            initial application form along with general basic information about the entity.</p>
+                    </div>
+
+                    <div
+                        style="background: #fdfdfd; border: 1px solid #eee; padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-gold);">
+                        <div
+                            style="font-weight: bold; color: var(--primary-green); font-size: 1.1rem; margin-bottom: 5px;">
+                            2. Contract & Quotation</div>
+                        <p style="color: #666; font-size: 0.9rem; margin: 0; line-height: 1.5;">We provide a service
+                            quotation and a formal contract, which the applicant signs to finalize the agreement.</p>
+                    </div>
+
+                    <div
+                        style="background: #fdfdfd; border: 1px solid #eee; padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-gold);">
+                        <div
+                            style="font-weight: bold; color: var(--primary-green); font-size: 1.1rem; margin-bottom: 5px;">
+                            3. Document Review</div>
+                        <p style="color: #666; font-size: 0.9rem; margin: 0; line-height: 1.5;">Thorough review of the
+                            Organic System Plan (OSP/OMP), standard documentation, and supporting records.</p>
+                    </div>
+
+                    <div
+                        style="background: #fdfdfd; border: 1px solid #eee; padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-gold);">
+                        <div
+                            style="font-weight: bold; color: var(--primary-green); font-size: 1.1rem; margin-bottom: 5px;">
+                            4. Inspection Planning</div>
+                        <p style="color: #666; font-size: 0.9rem; margin: 0; line-height: 1.5;">An inspection plan is
+                            prepared and coordinated based on initial risk assessment and category parameters.</p>
+                    </div>
+
+                    <div
+                        style="background: #fdfdfd; border: 1px solid #eee; padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-gold);">
+                        <div
+                            style="font-weight: bold; color: var(--primary-green); font-size: 1.1rem; margin-bottom: 5px;">
+                            5. On-Site Inspection</div>
+                        <p style="color: #666; font-size: 0.9rem; margin: 0; line-height: 1.5;">Detailed audit of
+                            operations, physical inspection of facilities, fields, processes, and verification of
+                            records.</p>
+                    </div>
+
+                    <div
+                        style="background: #fdfdfd; border: 1px solid #eee; padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-gold);">
+                        <div
+                            style="font-weight: bold; color: var(--primary-green); font-size: 1.1rem; margin-bottom: 5px;">
+                            6. Sampling & Testing</div>
+                        <p style="color: #666; font-size: 0.9rem; margin: 0; line-height: 1.5;">Collection and testing
+                            of product, soil, or water samples by Go4agri Auditors and/or an accredited labs (as
+                            required or risk-based)..</p>
+                    </div>
+
+                    <div
+                        style="background: #fdfdfd; border: 1px solid #eee; padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-gold);">
+                        <div
+                            style="font-weight: bold; color: var(--primary-green); font-size: 1.1rem; margin-bottom: 5px;">
+                            7. NC / CAPA Follow Up</div>
+                        <p style="color: #666; font-size: 0.9rem; margin: 0; line-height: 1.5;">Any identified
+                            non-conformities are addressed, and corrective action evidence is submitted for review.</p>
+                    </div>
+
+                    <div
+                        style="background: #fdfdfd; border: 1px solid #eee; padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-gold);">
+                        <div
+                            style="font-weight: bold; color: var(--primary-green); font-size: 1.1rem; margin-bottom: 5px;">
+                            8. Technical Review</div>
+                        <p style="color: #666; font-size: 0.9rem; margin: 0; line-height: 1.5;">The inspection file,
+                            findings, and corrective actions are thoroughly reviewed by technical experts.</p>
+                    </div>
+
+                    <div
+                        style="background: #fdfdfd; border: 1px solid #eee; padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-gold);">
+                        <div
+                            style="font-weight: bold; color: var(--primary-green); font-size: 1.1rem; margin-bottom: 5px;">
+                            9. Certification Decision</div>
+                        <p style="color: #666; font-size: 0.9rem; margin: 0; line-height: 1.5;">Impartial certification
+                            decision is officially taken by an authorized, competent certification body panel.</p>
+                    </div>
+
+                    <div
+                        style="background: #fdfdfd; border: 1px solid #eee; padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-gold);">
+                        <div
+                            style="font-weight: bold; color: var(--primary-green); font-size: 1.1rem; margin-bottom: 5px;">
+                            10. Certificate Issued</div>
+                        <p style="color: #666; font-size: 0.9rem; margin: 0; line-height: 1.5;">The formal scope
+                            certificate is issued, and the operator details are listed in the official directory.</p>
+                    </div>
+
+                    <div
+                        style="background: #fdfdfd; border: 1px solid #eee; padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-gold);">
+                        <div
+                            style="font-weight: bold; color: var(--primary-green); font-size: 1.1rem; margin-bottom: 5px;">
+                            11. Surveillance & Monitoring</div>
+                        <p style="color: #666; font-size: 0.9rem; margin: 0; line-height: 1.5;">Regular
+                            announced/unannounced surveillance inspections, sampling, and record audits ensure ongoing
+                            compliance.</p>
+                    </div>
+
+                    <div
+                        style="background: #fdfdfd; border: 1px solid #eee; padding: 20px; border-radius: 8px; border-left: 4px solid var(--accent-gold);">
+                        <div
+                            style="font-weight: bold; color: var(--primary-green); font-size: 1.1rem; margin-bottom: 5px;">
+                            12. Renewal / Re-certification</div>
+                        <p style="color: #666; font-size: 0.9rem; margin: 0; line-height: 1.5;">The cycle continues
+                            annually with renewal applications submitted prior to certificate expiration.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Integrity Controls Block -->
+            <div
+                style="margin-top: 50px; background: #f4f7f4; padding: 30px; border-radius: 8px; text-align: center; border: 1px solid #e2ece1;">
+                <h4 style="color: var(--primary-green); margin-bottom: 10px; font-size: 1.2rem; font-weight: bold;">
+                    <i class="fas fa-shield-halved" style="margin-right: 8px;"></i> Continuous Verification & Integrity
+                    Controls
+                </h4>
+                <p style="color: #555; max-width: 900px; margin: 0 auto; font-size: 0.95rem; line-height: 1.6;">
+                    To maintain strict organic integrity, our process is supported by unannounced inspections,
+                    risk-based verification, product sampling, investigation audits, complaint investigations,
+                    traceability & mass balance checks, market surveillance, and suspension/sanction controls.
+                </p>
+            </div>
+
+            <div style="margin-top: 40px; text-align: center;">
+                <a href="{{ url_for('apply') }}" class="btn-primary"
+                    style="padding: 15px 40px; font-size: 1.2rem;">APPLY FOR CERTIFICATION</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Lightbox Modal Overlay -->
+<div id="lightbox-modal" class="lightbox-modal">
+    <span class="lightbox-close">&times;</span>
+    <div class="lightbox-wrapper">
+        <img id="lightbox-img" class="lightbox-content"
+            src="{{ url_for('static', filename='images/certification_process_cyclic.png') }}"
+            alt="Certification Process Cyclic Fullsize">
+    </div>
+    <div class="lightbox-controls">
+        <button id="lightbox-zoom-out" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+        <button id="lightbox-reset" title="Reset Zoom"><i class="fas fa-sync-alt"></i></button>
+        <button id="lightbox-zoom-in" title="Zoom In"><i class="fas fa-search-plus"></i></button>
+        <span class="lightbox-hint"><i class="fas fa-hand-pointer"></i> Drag to pan when zoomed in</span>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 1. Desktop Hover Pan Zoom logic
+        const container = document.querySelector('.zoom-container');
+        const img = document.querySelector('.zoom-image');
+
+        if (container && img) {
+            container.addEventListener('mousemove', function (e) {
+                // Only trigger zoom on mouse hover on screens larger than 768px (desktop)
+                if (window.innerWidth > 768) {
+                    const rect = container.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    const xPercent = (x / rect.width) * 100;
+                    const yPercent = (y / rect.height) * 100;
+
+                    img.style.transformOrigin = `${xPercent}% ${yPercent}%`;
+                    img.style.transform = 'scale(2.5)';
+                }
+            });
+
+            container.addEventListener('mouseleave', function () {
+                img.style.transform = 'scale(1)';
+                img.style.transformOrigin = 'center center';
+            });
+        }
+
+        // 2. Lightbox Modal Zoom/Drag Logic
+        const lightbox = document.getElementById('lightbox-modal');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const closeBtn = document.querySelector('.lightbox-close');
+
+        const zoomInBtn = document.getElementById('lightbox-zoom-in');
+        const zoomOutBtn = document.getElementById('lightbox-zoom-out');
+        const resetBtn = document.getElementById('lightbox-reset');
+
+        let currentScale = 1;
+        let isDragging = false;
+        let startX = 0, startY = 0;
+        let translateX = 0, translateY = 0;
+
+        function updateTransform() {
+            if (lightboxImg) {
+                lightboxImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
+            }
+        }
+
+        if (container && lightbox) {
+            // Open Lightbox on Click
+            container.addEventListener('click', function () {
+                lightbox.style.display = 'flex';
+                // Reset scale and offsets when opened
+                currentScale = 1;
+                translateX = 0;
+                translateY = 0;
+                if (lightboxImg) {
+                    lightboxImg.style.transition = 'none';
+                }
+                updateTransform();
+            });
+
+            // Close Lightbox
+            closeBtn.addEventListener('click', function () {
+                lightbox.style.display = 'none';
+            });
+
+            lightbox.addEventListener('click', function (e) {
+                // Close only if clicking the background modal/wrapper and not the image/controls
+                if (e.target === lightbox || e.target.classList.contains('lightbox-wrapper')) {
+                    lightbox.style.display = 'none';
+                }
+            });
+
+            // Controls Zoom In
+            zoomInBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (lightboxImg) {
+                    lightboxImg.style.transition = 'transform 0.15s ease-out';
+                }
+                currentScale += 0.25;
+                if (currentScale > 4) currentScale = 4;
+                updateTransform();
+            });
+
+            // Controls Zoom Out
+            zoomOutBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (lightboxImg) {
+                    lightboxImg.style.transition = 'transform 0.15s ease-out';
+                }
+                currentScale -= 0.25;
+                if (currentScale < 0.5) currentScale = 0.5;
+                updateTransform();
+            });
+
+            // Controls Reset
+            resetBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (lightboxImg) {
+                    lightboxImg.style.transition = 'transform 0.2s ease-out';
+                }
+                currentScale = 1;
+                translateX = 0;
+                translateY = 0;
+                updateTransform();
+            });
+
+            // Mouse Dragging
+            lightboxImg.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                isDragging = true;
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+                lightboxImg.style.transition = 'none'; // Disable transition for drag fluidity
+            });
+
+            window.addEventListener('mousemove', function (e) {
+                if (!isDragging) return;
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+                updateTransform();
+            });
+
+            window.addEventListener('mouseup', function () {
+                if (isDragging) {
+                    isDragging = false;
+                    if (lightboxImg) {
+                        lightboxImg.style.transition = 'transform 0.1s ease-out';
+                    }
+                }
+            });
+
+            // Touch Dragging (for Mobile Support)
+            lightboxImg.addEventListener('touchstart', function (e) {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    startX = e.touches[0].clientX - translateX;
+                    startY = e.touches[0].clientY - translateY;
+                    if (lightboxImg) {
+                        lightboxImg.style.transition = 'none';
+                    }
+                }
+            }, { passive: true });
+
+            window.addEventListener('touchmove', function (e) {
+                if (!isDragging || e.touches.length !== 1) return;
+                translateX = e.touches[0].clientX - startX;
+                translateY = e.touches[0].clientY - startY;
+                updateTransform();
+            }, { passive: true });
+
+            window.addEventListener('touchend', function () {
+                if (isDragging) {
+                    isDragging = false;
+                    if (lightboxImg) {
+                        lightboxImg.style.transition = 'transform 0.1s ease-out';
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,455 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Employee Professional Profile{% endblock %}
+
+{% block dashboard_content %}
+<div style="display: flex; gap: 30px; align-items: flex-start;">
+    <!-- Left Sidebar: Profile Card -->
+    <div style="width: 300px; flex-shrink: 0;">
+        <div class="db-card" style="padding: 30px; text-align: center; border-top: 5px solid var(--primary-green);">
+            <div style="width: 120px; height: 120px; border-radius: 50%; overflow: hidden; margin: 0 auto 20px; border: 4px solid #f0f0f0;">
+                {% if user_info.profile_picture %}
+                <img src="/uploads/{{ user_info.profile_picture }}" style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                <i class="fas fa-user-circle" style="font-size: 120px; color: #ddd;"></i>
+                {% endif %}
+            </div>
+            <h3 style="margin: 0; color: #333;">{{ user_info.full_name }}</h3>
+            <p style="color: var(--primary-green); font-weight: 600; margin: 5px 0 15px;">{{ user_info.designation }}</p>
+            
+            <div style="text-align: left; margin-top: 25px; font-size: 0.9rem; color: #666;">
+                <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-envelope" style="width: 20px; color: #999;"></i> {{ user_info.email }}
+                </div>
+                {% if profile.contact_number %}
+                <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-phone" style="width: 20px; color: #999;"></i> {{ profile.contact_number }}
+                </div>
+                {% endif %}
+                {% if profile.address %}
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <i class="fas fa-map-marker-alt" style="width: 20px; color: #999; margin-top: 3px;"></i> {{ profile.address }}
+                </div>
+                {% endif %}
+                {% if profile.date_of_joining %}
+                <div style="margin-top: 12px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-calendar-alt" style="width: 20px; color: #999;"></i>
+                    <span>Joined: <strong>{{ profile.date_of_joining.strftime('%d %b %Y') if profile.date_of_joining else '' }}</strong></span>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if is_own_profile %}
+            <button onclick="toggleEdit()" class="btn-gold" style="width: 100%; margin-top: 25px; border: none; padding: 10px; border-radius: 5px; font-weight: 600;">
+                <i class="fas fa-edit"></i> Edit Professional Bio
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- CV Upload Card -->
+        <div class="db-card" style="padding: 25px; margin-top: 20px; border-top: 4px solid #4285f4;">
+            <h5 style="margin: 0 0 15px; color: #333; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-file-alt" style="color: #4285f4;"></i> Curriculum Vitae (CV)
+            </h5>
+
+            {% if profile.cv_path %}
+                <!-- CV Uploaded: show status & actions -->
+                <div style="margin-bottom: 12px;">
+                    {% if profile.cv_verified %}
+                    <span style="background: #e8f5e9; color: #2e7d32; font-size: 0.8rem; padding: 4px 12px; border-radius: 20px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-check-circle"></i> Verified
+                    </span>
+                    {% else %}
+                    <span style="background: #fff3e0; color: #e65100; font-size: 0.8rem; padding: 4px 12px; border-radius: 20px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-clock"></i> Pending Review
+                    </span>
+                    {% endif %}
+                </div>
+                <div style="font-size: 0.85rem; color: #555; margin-bottom: 12px; word-break: break-all;">
+                    <i class="fas fa-paperclip" style="color: #999;"></i>
+                    {{ profile.cv_filename or 'CV File' }}
+                </div>
+                {% if profile.cv_remarks %}
+                <div style="font-size: 0.8rem; background: #fff3e0; border-left: 3px solid #ff9800; padding: 8px 12px; border-radius: 4px; color: #5d4037; margin-bottom: 12px;">
+                    <strong>Remarks:</strong> {{ profile.cv_remarks }}
+                </div>
+                {% endif %}
+                <div style="display: flex; gap: 8px;">
+                    <a href="{{ url_for('download_cv', target_user_id=user_info.id) }}"
+                       style="flex: 1; text-align: center; padding: 8px; background: #4285f4; color: white; border-radius: 5px; text-decoration: none; font-size: 0.82rem; font-weight: 600;">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                    {% if is_own_profile %}
+                    <form action="{{ url_for('delete_cv') }}" method="POST" onsubmit="return confirm('Remove your uploaded CV?')" style="flex: 1;">
+                        <button type="submit" style="width: 100%; padding: 8px; background: #fff; border: 1px solid #d9534f; color: #d9534f; border-radius: 5px; font-size: 0.82rem; font-weight: 600; cursor: pointer;">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% if is_own_profile %}
+                <div style="margin-top: 12px; border-top: 1px dashed #eee; padding-top: 12px;">
+                    <p style="font-size: 0.78rem; color: #999; margin: 0 0 8px;">Replace existing CV:</p>
+                    <form action="{{ url_for('upload_cv') }}" method="POST" enctype="multipart/form-data">
+                        <input type="file" name="cv_file" accept=".pdf,.doc,.docx" required style="font-size: 0.78rem; width: 100%; margin-bottom: 8px;">
+                        <button type="submit" style="width: 100%; padding: 8px; background: var(--primary-green); color: white; border: none; border-radius: 5px; font-size: 0.82rem; font-weight: 600; cursor: pointer;">
+                            <i class="fas fa-sync-alt"></i> Replace CV
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+
+            {% elif is_own_profile %}
+                <!-- No CV yet: upload form -->
+                <p style="font-size: 0.85rem; color: #999; margin: 0 0 12px; font-style: italic;">No CV uploaded yet.</p>
+                <form action="{{ url_for('upload_cv') }}" method="POST" enctype="multipart/form-data">
+                    <input type="file" name="cv_file" accept=".pdf,.doc,.docx" required
+                           style="font-size: 0.82rem; width: 100%; margin-bottom: 10px;">
+                    <button type="submit"
+                            style="width: 100%; padding: 10px; background: #4285f4; color: white; border: none; border-radius: 5px; font-weight: 700; cursor: pointer;">
+                        <i class="fas fa-upload"></i> Upload CV
+                    </button>
+                </form>
+                <p style="font-size: 0.75rem; color: #bbb; margin: 8px 0 0;">Accepted: PDF, DOC, DOCX</p>
+
+            {% else %}
+                <!-- Viewing someone else's profile, no CV uploaded -->
+                <p style="font-size: 0.85rem; color: #999; font-style: italic;">
+                    <i class="fas fa-exclamation-triangle" style="color: #ff9800;"></i> No CV uploaded by this employee.
+                </p>
+            {% endif %}
+        </div>
+    </div>
+
+        <!-- Main Content: Resume Details -->
+    <div style="flex: 1; overflow-x: hidden;">
+        <!-- View Mode -->
+        <div id="profile-view" style="width: 100%;">
+            <!-- Quality Approved Responsibility -->
+            {% if profile.job_description %}
+            <div class="db-card" style="padding: 30px; margin-bottom: 25px; border-left: 5px solid var(--primary-green); background: linear-gradient(135deg, #fff 0%, #f4faf4 100%);">
+                <h4 style="margin-bottom: 15px; color: var(--primary-green); display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-briefcase"></i> Assigned Job Description &amp; Responsibilities
+                </h4>
+                <p style="line-height: 1.6; color: #333; font-weight: 500; font-size: 0.95rem; white-space: pre-wrap;">{{ profile.job_description }}</p>
+                <div style="margin-top: 12px; font-size: 0.76rem; color: #888; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-check-circle" style="color: var(--primary-green);"></i> Officially verified and assigned by Quality Management
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Professional Summary -->
+            <div class="db-card" style="padding: 30px; margin-bottom: 25px; border-left: 5px solid var(--accent-gold);">
+                <h4 style="margin-bottom: 15px; color: #444;"><i class="fas fa-quote-left" style="color: var(--accent-gold); margin-right: 10px;"></i> Professional Summary</h4>
+                <p style="line-height: 1.6; color: #555; white-space: pre-wrap;">{{ profile.bio or 'No professional summary added yet.' }}</p>
+            </div>
+
+            <!-- Detailed Resume Sections -->
+            <div style="display: flex; flex-direction: column; gap: 25px;">
+                <!-- Educational Qualifications -->
+                <div class="db-card" style="padding: 25px;">
+                    <h4 style="margin-bottom: 20px; color: var(--primary-green); border-bottom: 2px solid #f4faf4; padding-bottom: 10px;">
+                        <i class="fas fa-graduation-cap"></i> Educational Qualifications
+                    </h4>
+                    {% set edu_list = profile.education|from_json %}
+                    {% if edu_list and edu_list is iterable and edu_list|length > 0 %}
+                        {% for item in edu_list %}
+                        <div style="margin-bottom: 15px; padding-left: 15px; border-left: 3px solid #eee;">
+                            <div style="font-weight: 700; color: #333; font-size: 1.05rem;">{{ item.degree }}</div>
+                            <div style="color: #666;">{{ item.institution }} | <span style="color: var(--accent-gold); font-weight: 600;">{{ item.year }}</span></div>
+                            {% if item.grade %}<div style="font-size: 0.85rem; color: #888;">Result: {{ item.grade }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="color: #999; font-style: italic;">No education details added.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Training & Certifications -->
+                <div class="db-card" style="padding: 25px;">
+                    <h4 style="margin-bottom: 20px; color: var(--primary-green); border-bottom: 2px solid #f4faf4; padding-bottom: 10px;">
+                        <i class="fas fa-certificate"></i> Trainings & Certifications
+                    </h4>
+                    {% set training_list = profile.trainings|from_json %}
+                    {% if training_list and training_list is iterable and training_list|length > 0 %}
+                        {% for item in training_list %}
+                        <div style="margin-bottom: 15px; padding-left: 15px; border-left: 3px solid #eee;">
+                            <div style="font-weight: 700; color: #333;">{{ item.title }}</div>
+                            <div style="color: #666; font-size: 0.9rem;">{{ item.org }} | {{ item.year }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="color: #999; font-style: italic;">No training details added.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Work Experience -->
+                <div class="db-card" style="padding: 25px;">
+                    <h4 style="margin-bottom: 20px; color: var(--primary-green); border-bottom: 2px solid #f4faf4; padding-bottom: 10px;">
+                        <i class="fas fa-briefcase"></i> Work Experience
+                    </h4>
+                    {% set exp_list = profile.experience|from_json %}
+                    {% if exp_list and exp_list is iterable and exp_list|length > 0 %}
+                        {% for item in exp_list %}
+                        <div style="margin-bottom: 20px; padding-left: 15px; border-left: 3px solid #eee;">
+                            <div style="font-weight: 700; color: #333; font-size: 1.05rem;">{{ item.designation }}</div>
+                            <div style="color: var(--primary-green); font-weight: 600;">{{ item.company }}</div>
+                            <div style="font-size: 0.85rem; color: #999; margin-bottom: 5px;">{{ item.duration }}</div>
+                            <div style="font-size: 0.9rem; color: #555;">{{ item.desc }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="color: #999; font-style: italic;">No experience details added.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Skills & Expertise -->
+                <div class="db-card" style="padding: 25px;">
+                    <h4 style="margin-bottom: 20px; color: var(--primary-green); border-bottom: 2px solid #f4faf4; padding-bottom: 10px;">
+                        <i class="fas fa-tools"></i> Skills & Expertise
+                    </h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        {% set skill_list = profile.skills|from_json %}
+                        {% if skill_list and skill_list is iterable and skill_list|length > 0 %}
+                            {% for skill in skill_list %}
+                            <span style="background: #eef7ee; color: var(--primary-green); padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; border: 1px solid #d4e8d4;">
+                                {{ skill }}
+                            </span>
+                            {% endfor %}
+                        {% else %}
+                            <p style="color: #999; font-style: italic;">No skills added.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Mode -->
+        <div id="profile-edit" style="display: none;">
+            <div class="db-card" style="padding: 30px;">
+                <h3 style="margin-bottom: 25px; color: var(--primary-green); border-bottom: 2px solid #eee; padding-bottom: 15px;">
+                    <i class="fas fa-user-edit"></i> Systematic Profile Builder
+                </h3>
+                
+                <form id="profileForm" action="/profile/update" method="POST" onsubmit="return prepareData()">
+                    <!-- Basic Info -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Contact Number</label>
+                            <input type="text" name="contact_number" value="{{ profile.contact_number or '' }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Full Address</label>
+                            <input type="text" name="address" value="{{ profile.address or '' }}" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;"><i class="fas fa-calendar-alt" style="color: var(--primary-green);"></i> Date of Joining</label>
+                            <input type="date" name="date_of_joining"
+                                   value="{{ profile.date_of_joining.strftime('%Y-%m-%d') if profile.date_of_joining else '' }}"
+                                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 0.95rem;">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 30px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Professional Summary (Bio)</label>
+                        <textarea name="bio" rows="3" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px;" placeholder="Briefly describe your professional background...">{{ profile.bio or '' }}</textarea>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+
+                    <!-- Education Sections -->
+                    <div style="margin-bottom: 35px;">
+                        <h4 style="margin: 0 0 15px; color: #444;"><i class="fas fa-graduation-cap"></i> Education</h4>
+                        <div id="edu-container">
+                            <!-- Dynamic rows will be added here -->
+                        </div>
+                        <button type="button" onclick="addEntry('edu')" class="btn-primary" style="margin-top: 10px; width: 100%; padding: 10px; font-size: 0.9rem; background: #f0f7f0; color: var(--primary-green); border: 2px dashed var(--primary-green); border-radius: 6px; cursor: pointer; font-weight: 600;">
+                            <i class="fas fa-plus-circle"></i> ADD ANOTHER EDUCATION QUALIFICATION
+                        </button>
+                    </div>
+
+                    <!-- Training Sections -->
+                    <div style="margin-bottom: 35px;">
+                        <h4 style="margin: 0 0 15px; color: #444;"><i class="fas fa-certificate"></i> Trainings</h4>
+                        <div id="training-container">
+                        </div>
+                        <button type="button" onclick="addEntry('training')" class="btn-primary" style="margin-top: 10px; width: 100%; padding: 10px; font-size: 0.9rem; background: #f0f7f0; color: var(--primary-green); border: 2px dashed var(--primary-green); border-radius: 6px; cursor: pointer; font-weight: 600;">
+                            <i class="fas fa-plus-circle"></i> ADD ANOTHER TRAINING
+                        </button>
+                    </div>
+
+                    <!-- Experience Sections -->
+                    <div style="margin-bottom: 35px;">
+                        <h4 style="margin: 0 0 15px; color: #444;"><i class="fas fa-briefcase"></i> Experience</h4>
+                        <div id="exp-container">
+                        </div>
+                        <button type="button" onclick="addEntry('exp')" class="btn-primary" style="margin-top: 10px; width: 100%; padding: 10px; font-size: 0.9rem; background: #f0f7f0; color: var(--primary-green); border: 2px dashed var(--primary-green); border-radius: 6px; cursor: pointer; font-weight: 600;">
+                            <i class="fas fa-plus-circle"></i> ADD ANOTHER WORK EXPERIENCE
+                        </button>
+                    </div>
+
+                    <!-- Skills Section -->
+                    <div style="margin-bottom: 35px;">
+                        <h4 style="margin: 0 0 15px; color: #444;"><i class="fas fa-tools"></i> Skills</h4>
+                        <div id="skill-container" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        </div>
+                        <button type="button" onclick="addEntry('skill')" class="btn-primary" style="margin-top: 15px; padding: 8px 20px; font-size: 0.85rem; background: #f0f7f0; color: var(--primary-green); border: 1px dashed var(--primary-green); border-radius: 4px; cursor: pointer; font-weight: 600;">
+                            <i class="fas fa-plus"></i> ADD SKILL
+                        </button>
+                    </div>
+
+                    <!-- Hidden JSON inputs -->
+                    <input type="hidden" name="education_json" id="education_json">
+                    <input type="hidden" name="trainings_json" id="trainings_json">
+                    <input type="hidden" name="experience_json" id="experience_json">
+                    <input type="hidden" name="skills_json" id="skills_json">
+
+                    <div style="display: flex; gap: 15px; border-top: 1px solid #eee; padding-top: 25px;">
+                        <button type="submit" class="btn-gold" style="padding: 12px 40px; border: none; border-radius: 5px; font-weight: 700; cursor: pointer; background: var(--accent-gold); color: white; font-size: 1rem;">
+                            <i class="fas fa-save"></i> SAVE COMPLETE PROFILE
+                        </button>
+                        <button type="button" onclick="toggleEdit()" class="btn-primary" style="padding: 12px 30px; border: none; border-radius: 5px; font-weight: 600; cursor: pointer; background: #666; color: white;">
+                            CANCEL
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initial Data from Backend
+    const initialEdu = {{ (profile.education|from_json)|tojson if profile.education else '[]' }};
+    const initialTraining = {{ (profile.trainings|from_json)|tojson if profile.trainings else '[]' }};
+    const initialExp = {{ (profile.experience|from_json)|tojson if profile.experience else '[]' }};
+    const initialSkills = {{ (profile.skills|from_json)|tojson if profile.skills else '[]' }};
+
+    function toggleEdit() {
+        const view = document.getElementById('profile-view');
+        const edit = document.getElementById('profile-edit');
+        if (view.style.display === 'none') {
+            view.style.display = 'block';
+            edit.style.display = 'none';
+        } else {
+            view.style.display = 'none';
+            edit.style.display = 'block';
+            // Populate data if empty
+            if (document.getElementById('edu-container').children.length === 0) {
+                loadInitialData();
+            }
+        }
+    }
+
+    function addEntry(type, data = null) {
+        const container = document.getElementById(type + '-container');
+        const div = document.createElement('div');
+        div.className = 'entry-row ' + type + '-entry';
+        div.style.background = '#fcfcfc';
+        div.style.padding = '15px';
+        div.style.border = '1px solid #eee';
+        div.style.borderRadius = '5px';
+        div.style.marginBottom = '10px';
+        div.style.position = 'relative';
+
+        let html = '';
+        if (type === 'edu') {
+            html = `
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <input type="text" placeholder="Degree/Standard" class="degree" value="${data ? data.degree : ''}" style="flex: 2; min-width: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="text" placeholder="School/College" class="institution" value="${data ? data.institution : ''}" style="flex: 2; min-width: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="text" placeholder="Year" class="year" value="${data ? data.year : ''}" style="flex: 1; min-width: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="text" placeholder="Grade/%" class="grade" value="${data ? data.grade : ''}" style="flex: 1; min-width: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+            `;
+        } else if (type === 'training') {
+            html = `
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <input type="text" placeholder="Training Title" class="title" value="${data ? data.title : ''}" style="flex: 2; min-width: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="text" placeholder="Organization" class="org" value="${data ? data.org : ''}" style="flex: 2; min-width: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="text" placeholder="Year" class="year" value="${data ? data.year : ''}" style="flex: 1; min-width: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+            `;
+        } else if (type === 'exp') {
+            html = `
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" placeholder="Designation" class="designation" value="${data ? data.designation : ''}" style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="text" placeholder="Company Name" class="company" value="${data ? data.company : ''}" style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="text" placeholder="Duration (e.g. 2021-Present)" class="duration" value="${data ? data.duration : ''}" style="flex: 1; min-width: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <textarea placeholder="Key Responsibilities..." class="desc" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; height: 80px; resize: vertical;">${data ? data.desc : ''}</textarea>
+            `;
+        } else if (type === 'skill') {
+            div.style.padding = '5px 10px';
+            div.style.width = 'auto';
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+            div.style.gap = '8px';
+            html = `
+                <input type="text" placeholder="Skill" class="skill-name" value="${data || ''}" style="padding: 5px; border: 1px solid #ddd; border-radius: 4px; width: 150px;">
+            `;
+        }
+
+        html += `<button type="button" onclick="this.parentElement.remove()" style="background: #ff4d4d; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; position: absolute; top: -8px; right: -8px;">
+                    <i class="fas fa-times"></i>
+                 </button>`;
+        
+        div.innerHTML = html;
+        container.appendChild(div);
+    }
+
+    function loadInitialData() {
+        initialEdu.forEach(d => addEntry('edu', d));
+        initialTraining.forEach(d => addEntry('training', d));
+        initialExp.forEach(d => addEntry('exp', d));
+        initialSkills.forEach(d => addEntry('skill', d));
+    }
+
+    function prepareData() {
+        // Education
+        const eduEntries = [];
+        document.querySelectorAll('.edu-entry').forEach(row => {
+            eduEntries.push({
+                degree: row.querySelector('.degree').value,
+                institution: row.querySelector('.institution').value,
+                year: row.querySelector('.year').value,
+                grade: row.querySelector('.grade').value
+            });
+        });
+        document.getElementById('education_json').value = JSON.stringify(eduEntries.filter(e => e.degree));
+
+        // Training
+        const trainingEntries = [];
+        document.querySelectorAll('.training-entry').forEach(row => {
+            trainingEntries.push({
+                title: row.querySelector('.title').value,
+                org: row.querySelector('.org').value,
+                year: row.querySelector('.year').value
+            });
+        });
+        document.getElementById('trainings_json').value = JSON.stringify(trainingEntries.filter(e => e.title));
+
+        // Experience
+        const expEntries = [];
+        document.querySelectorAll('.exp-entry').forEach(row => {
+            expEntries.push({
+                designation: row.querySelector('.designation').value,
+                company: row.querySelector('.company').value,
+                duration: row.querySelector('.duration').value,
+                desc: row.querySelector('.desc').value
+            });
+        });
+        document.getElementById('experience_json').value = JSON.stringify(expEntries.filter(e => e.designation));
+
+        // Skills
+        const skillEntries = [];
+        document.querySelectorAll('.skill-name').forEach(input => {
+            if (input.value) skillEntries.push(input.value);
+        });
+        document.getElementById('skills_json').value = JSON.stringify(skillEntries);
+
+        return true;
+    }
+</script>
+</div>
+{% endblock %}

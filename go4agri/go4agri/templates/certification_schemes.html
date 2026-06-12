@@ -58,7 +58,7 @@
         <div class="scheme-card" id="eu" style="cursor: default;">
             <div class="scheme-header" style="background: #f0f4f9; border-bottom-color: #e1e9f2; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <h3 style="color: #1a3c17; margin: 0;">EU Organic Certification</h3>
-                <p style="color: #666; font-size: 0.9rem; margin: 5px 0 0;">Coming Soon</p>
+                <p style="color: #666; font-size: 0.9rem; margin: 5px 0 0;">(Under EU Recognition Process)</p>
             </div>
             <div class="scheme-body">
                 <h4 style="color: #333; margin-bottom: 10px;">{{ _t('scope_label') }}</h4>
@@ -78,10 +78,9 @@
 
         <!-- USDA NOP -->
         <div class="scheme-card" id="nop" onclick="window.location.href='/scheme-nop'" style="cursor: pointer;">
-            <div class="scheme-header" style="background: #fdfdfd; border-bottom-color: #eee;">
-                <img src="{{ url_for('static', filename='images/nop_logo.png') }}" alt="NOP Logo" style="height: 60px; margin-bottom: 10px;">
-                <h3 style="color: #33691e; margin-bottom: 5px;">{{ _t('scheme_nop') }}</h3>
-                <p style="color: var(--accent-gold); font-size: 0.85rem; font-weight: 600; margin: 0;">in collaboration with STC</p>
+            <div class="scheme-header" style="background: #fdfdfd; border-bottom-color: #eee; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <h3 style="color: #33691e; margin: 0;">{{ _t('scheme_nop') }}</h3>
+                <p style="color: var(--accent-gold); font-size: 0.85rem; font-weight: 600; margin: 5px 0 0;">in collaboration with STC</p>
             </div>
             <div class="scheme-body">
                 <h4 style="color: #333; margin-bottom: 10px;">{{ _t('scope_label') }}</h4>
@@ -100,10 +99,10 @@
         </div>
 
         <!-- GLOBALG.A.P. -->
-        <div class="scheme-card" id="globalgap" onclick="window.location.href='/scheme-globalgap'" style="cursor: pointer;">
-            <div class="scheme-header" style="background: #f1f8e9; border-bottom-color: #dcedc8;">
-                <img src="{{ url_for('static', filename='images/globalgap_logo.png') }}" alt="GLOBALG.A.P. Logo" style="height: 60px; margin-bottom: 10px;">
-                <h3 style="color: #1b5e20;">{{ _t('scheme_globalgap') }}</h3>
+        <div class="scheme-card" id="globalgap" style="cursor: default;">
+            <div class="scheme-header" style="background: #f1f8e9; border-bottom-color: #dcedc8; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <h3 style="color: #1b5e20; margin: 0;">{{ _t('scheme_globalgap') }}</h3>
+                <p style="color: #666; font-size: 0.9rem; margin: 5px 0 0;">Coming Soon</p>
             </div>
             <div class="scheme-body">
                 <h4 style="color: #333; margin-bottom: 10px;">{{ _t('scope_label') }}</h4>
@@ -116,7 +115,9 @@
                 <p style="color: #666; font-size: 0.9rem; margin-top: 15px;">{{ _t('globalgap_desc') }}</p>
             </div>
             <div class="scheme-footer">
-                <a href="/apply?program=GLOBALG.A.P." class="btn-gold" style="width: 100%; border: none; text-align: center; display: inline-block;">{{ _t('apply_btn') }}</a>
+                <div style="width: 100%; padding: 12px; border: 2px dashed #ccc; border-radius: 5px; color: #777; font-weight: 600; text-align: center; cursor: default; background: #fdfdfd;">
+                    Coming Soon
+                </div>
             </div>
         </div>
 

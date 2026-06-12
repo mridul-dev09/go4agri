@@ -33,16 +33,22 @@
                                     class="fas fa-chevron-down" style="font-size: 0.7rem;"></i></span></a>
                         <ul class="dropdown-menu">
                             <li class="dropdown">
-                                <a href="{{ url_for('certification_schemes') }}">{{ _t('nav_certification_schemes') }}
-                                    <i class="fas fa-chevron-right" style="font-size: 0.7rem;"></i></a>
+                                <a href="#">{{ _t('nav_certification') }} <i
+                                        class="fas fa-chevron-right" style="font-size: 0.7rem;"></i></a>
                                 <ul class="dropdown-menu">
-                                    <li><a href="{{ url_for('scheme_npop') }}">NPOP</a></li>
-                                    <li><a href="{{ url_for('scheme_cor') }}">COR</a></li>
-                                    <li><a href="{{ url_for('scheme_eu') }}">EU</a></li>
-                                    <li><a href="{{ url_for('scheme_nop') }}">NOP</a></li>
-                                    <li><a href="{{ url_for('scheme_globalgap') }}">GLOBALG.A.P.</a></li>
+                                    <li class="dropdown">
+                                        <a href="{{ url_for('certification_schemes') }}">{{ _t('nav_certification_schemes') }}
+                                            <i class="fas fa-chevron-right" style="font-size: 0.7rem;"></i></a>
+                                        <ul class="dropdown-menu">
+                                            <li><a href="javascript:void(0)" onclick="return false;" style="cursor: default;">NPOP</a></li>
+                                            <li><a href="{{ url_for('scheme_cor') }}">COR</a></li>
+                                            <li><a href="{{ url_for('scheme_eu') }}">EU</a></li>
+                                            <li><a href="javascript:void(0)" onclick="return false;" style="cursor: default;">NOP</a></li>
+                                            <li><a href="javascript:void(0)" onclick="return false;" style="cursor: default;">GLOBALG.A.P.</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="{{ url_for('certification_process') }}">{{ _t('nav_certification_process') }}</a></li>
                                 </ul>
-
                             </li>
                             <li><a href="{{ url_for('training') }}">{{ _t('nav_training') }}</a></li>
                         </ul>
@@ -122,8 +128,8 @@
                 <h3>{{ _t('quick_links') }}</h3>
                 <ul>
                     <li><a href="/about">{{ _t('about_title') }}</a></li>
-                    <li><a href="/certification-schemes">{{ _t('nav_certification_schemes') }}</a></li>
-                    <li><a href="/#certification-process">{{ _t('nav_certification_process') }}</a></li>
+                    <li><a href="{{ url_for('certification_schemes') }}">{{ _t('nav_certification_schemes') }}</a></li>
+                    <li><a href="{{ url_for('certification_process') }}">{{ _t('nav_certification_process') }}</a></li>
                     <li><a href="/contact">{{ _t('nav_contact') }}</a></li>
                 </ul>
             </div>

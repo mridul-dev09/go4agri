@@ -3,12 +3,134 @@
 {% block dashboard_title %}Portal Dashboard - Accounts{% endblock %}
 
 {% block dashboard_content %}
-<div class="portal-header">
+<!-- Pending Assessments Section -->
+{% if pending_assessments %}
+<div class="db-card" style="margin-bottom: 25px; border-top: 5px solid #4285f4; padding: 20px; background: #fff;">
+    <h4 style="margin: 0 0 15px 0; color: #333; display: flex; align-items: center; gap: 10px;">
+        <i class="fas fa-clipboard-check" style="color: #4285f4;"></i> Pending Training Assessments
+    </h4>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+        {% for ass in pending_assessments %}
+        <div style="border: 1px solid #e8f0fe; border-radius: 10px; padding: 15px; background: #f8faff; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-weight: 700; color: #333; margin-bottom: 3px;">{{ ass.title }}</div>
+                <div style="font-size: 0.8rem; color: #666;">Module: <span class="badge info" style="font-size: 0.7rem;">{{ ass.training_type }}</span></div>
+            </div>
+            <a href="{{ url_for('take_assessment', assignment_id=ass.id) }}" class="btn-primary" style="padding: 8px 15px; border-radius: 6px; font-size: 0.85rem; background: #4285f4; text-decoration: none; color: white;">
+                Take Form
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ===== Tab Navigation Styles ===== -->
+<style>
+.accounts-tabs-nav {
+    display: flex;
+    gap: 4px;
+    border-bottom: 3px solid var(--primary-green);
+    margin-bottom: 0;
+    flex-wrap: wrap;
+}
+.accounts-tab-btn {
+    padding: 10px 22px;
+    border: none;
+    background: #f0f4f8;
+    color: #555;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #dde4eb;
+    border-bottom: none;
+    position: relative;
+    top: 3px;
+}
+.accounts-tab-btn:hover {
+    background: #e3edf7;
+    color: var(--primary-green);
+}
+.accounts-tab-btn.active {
+    background: white;
+    color: var(--primary-green);
+    border-color: var(--primary-green);
+    border-bottom: 3px solid white;
+}
+.accounts-tab-btn .tab-badge {
+    background: var(--primary-green);
+    color: white;
+    border-radius: 999px;
+    padding: 1px 7px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    min-width: 20px;
+    text-align: center;
+}
+.accounts-tab-panel {
+    display: none;
+    background: white;
+    border: 1px solid #dde4eb;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    padding: 24px;
+}
+.accounts-tab-panel.active {
+    display: block;
+}
+/* History action buttons */
+.hist-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all 0.18s;
+    text-decoration: none;
+    background: none;
+}
+.hist-action-btn.view  { color: #0072bc; border-color: #0072bc; }
+.hist-action-btn.view:hover  { background: #0072bc; color: #fff; }
+.hist-action-btn.archive { color: #e67e22; border-color: #e67e22; }
+.hist-action-btn.archive:hover { background: #e67e22; color: #fff; }
+.hist-action-btn.del  { color: #e74c3c; border-color: #e74c3c; }
+.hist-action-btn.del:hover  { background: #e74c3c; color: #fff; }
+
+.portal-row:hover { background-color: #f4f9fc !important; }
+.details-row td { border-bottom: 1px solid #eee; }
+</style>
+
+<div class="portal-header" style="border-radius: 10px 10px 0 0; margin-bottom: 0;">
     <i class="fas fa-file-invoice-dollar"></i> Accounts Dashboard
 </div>
-<div class="db-card" style="border-radius: 0 0 10px 10px; padding: 20px;">
-    <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-money-check-alt"></i> Pending Payment Verifications</h3>
 
+<!-- Tab Nav -->
+<div class="accounts-tabs-nav">
+    <button class="accounts-tab-btn active" onclick="switchAccountsTab('tab-pending', this)">
+        <i class="fas fa-money-check-alt"></i> Pending Payment Verifications
+        <span class="tab-badge">{{ applications|length if applications else 0 }}</span>
+    </button>
+    <button class="accounts-tab-btn" onclick="switchAccountsTab('tab-history', this)">
+        <i class="fas fa-history"></i> Verification History
+        <span class="tab-badge" style="background:#3498db;">{{ processed_applications|length if processed_applications else 0 }}</span>
+    </button>
+    <button class="accounts-tab-btn" onclick="switchAccountsTab('tab-archived', this)">
+        <i class="fas fa-archive"></i> Archived
+        <span class="tab-badge" style="background:#e67e22;">{{ deleted_applications|length if deleted_applications else 0 }}</span>
+    </button>
+</div>
+
+<!-- ===== TAB 1: Pending Verifications ===== -->
+<div id="tab-pending" class="accounts-tab-panel active">
     <div class="audit-table-wrapper table-responsive">
         <table class="audit-table">
             <thead>
@@ -30,8 +152,8 @@
                     <td style="text-align: center; color: #0072bc; cursor: pointer;">
                         <i id="icon-{{ app.id }}" class="fas fa-caret-right"></i>
                     </td>
-                    <td style="font-weight: 600; color: #555;">USR-{{ "%04d" | format(app.client_id) }}</td>
-                    <td style="font-weight: 600; color: var(--primary-green);">PRG-{{ "%04d" | format(app.id) }}</td>
+                    <td style="font-weight: 600; color: #555;">{{ app.client_code if app.client_code else 'USR-' ~ '%04d'|format(app.client_id) }}</td>
+                    <td style="font-weight: 600; color: var(--primary-green);">{{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }}</td>
                     <td>
                         <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" style="text-decoration: none; color: #0072bc; font-weight: 600;">
                             {{ app.company_name }}
@@ -83,12 +205,174 @@
     </div>
 </div>
 
-<style>
-    .portal-row:hover { background-color: #f4f9fc !important; }
-    .details-row td { border-bottom: 1px solid #eee; }
-</style>
+<!-- ===== TAB 2: Verification History ===== -->
+<div id="tab-history" class="accounts-tab-panel">
+    <div class="audit-table-wrapper table-responsive">
+        <table class="audit-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px;"></th>
+                    <th>User ID</th>
+                    <th>Program ID</th>
+                    <th>Company Name</th>
+                    <th>Status</th>
+                    <th>Partial Payment Txn</th>
+                    <th>Final Payment Txn</th>
+                    <th style="text-align: center; min-width: 150px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if processed_applications %}
+                {% for app in processed_applications %}
+                <tr class="portal-row" id="hist-row-{{ app.id }}" onclick="toggleDetails('proc-details-{{ app.id }}', 'proc-icon-{{ app.id }}')">
+                    <td style="text-align: center; color: #0072bc; cursor: pointer;">
+                        <i id="proc-icon-{{ app.id }}" class="fas fa-caret-right"></i>
+                    </td>
+                    <td style="font-weight: 600; color: #555;">{{ app.client_code if app.client_code else 'USR-' ~ '%04d'|format(app.client_id) }}</td>
+                    <td style="font-weight: 600; color: var(--primary-green);">{{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }}</td>
+                    <td>
+                        <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" style="text-decoration: none; color: #0072bc; font-weight: 600;" onclick="event.stopPropagation();">
+                            {{ app.company_name }}
+                        </a>
+                    </td>
+                    <td><span class="badge info" style="background: #27ae60; color: white;">{{ app.status.replace('_', ' ') }}</span></td>
+                    <td>{{ app.partial_payment_txn or 'N/A' }}</td>
+                    <td>{{ app.final_payment_txn or 'N/A' }}</td>
+                    <td style="text-align: center;" onclick="event.stopPropagation();">
+                        <div style="display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
+                            <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" class="hist-action-btn view" title="View Application">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <form action="/archive-application/{{ app.id }}" method="POST" style="margin:0;" onsubmit="return confirm('Archive this application from your history?')">
+                                <button type="submit" class="hist-action-btn archive" title="Archive this application">
+                                    <i class="fas fa-archive"></i> Archive
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr id="proc-details-{{ app.id }}" class="details-row" style="display: none; background: #fdfdfd;">
+                    <td></td>
+                    <td colspan="7" style="padding: 15px;">
+                        <div style="padding: 15px; border-left: 3px solid var(--primary-green); background: #f8fafc; border-radius: 4px;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; font-size: 0.85rem;">
+                                <div><strong>Client Name:</strong> {{ app.client_name or 'N/A' }}</div>
+                                <div><strong>Program:</strong> {{ app.program_type }}</div>
+                                <div><strong>Scope:</strong> {{ app.scope or 'N/A' }}</div>
+                                <div>
+                                    <strong>Signed Contract:</strong>
+                                    {% if app.signed_contract_path %}
+                                    <a href="{{ url_for('static', filename='uploads/' ~ app.signed_contract_path) }}" target="_blank" style="color: #0072bc;"><i class="fas fa-file-pdf"></i> View Contract</a>
+                                    {% else %}
+                                    N/A
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 30px; color: #999;">
+                        <i class="fas fa-history" style="font-size: 2rem; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+                        No payment verification history found.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ===== TAB 3: Archived ===== -->
+<div id="tab-archived" class="accounts-tab-panel">
+    <div class="audit-table-wrapper table-responsive">
+        <table class="audit-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px;"></th>
+                    <th>User ID</th>
+                    <th>Program ID</th>
+                    <th>Company Name</th>
+                    <th>Status</th>
+                    <th>Partial Payment Txn</th>
+                    <th>Final Payment Txn</th>
+                    <th style="text-align: center; min-width: 120px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if deleted_applications %}
+                {% for app in deleted_applications %}
+                <tr class="portal-row" id="arch-row-{{ app.id }}" onclick="toggleDetails('arch-details-{{ app.id }}', 'arch-icon-{{ app.id }}')">
+                    <td style="text-align: center; color: #0072bc; cursor: pointer;">
+                        <i id="arch-icon-{{ app.id }}" class="fas fa-caret-right"></i>
+                    </td>
+                    <td style="font-weight: 600; color: #555;">{{ app.client_code if app.client_code else 'USR-' ~ '%04d'|format(app.client_id) }}</td>
+                    <td style="font-weight: 600; color: var(--primary-green);">{{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }}</td>
+                    <td>
+                        <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" style="text-decoration: none; color: #0072bc; font-weight: 600;" onclick="event.stopPropagation();">
+                            {{ app.company_name }}
+                        </a>
+                    </td>
+                    <td><span class="badge info" style="background: #7f8c8d; color: white;">{{ app.status.replace('_', ' ') }}</span></td>
+                    <td>{{ app.partial_payment_txn or 'N/A' }}</td>
+                    <td>{{ app.final_payment_txn or 'N/A' }}</td>
+                    <td style="text-align: center;" onclick="event.stopPropagation();">
+                        <form action="/restore-application/{{ app.id }}" method="POST" style="margin: 0; display: inline-block;">
+                            <button type="submit" class="btn-primary" style="padding: 5px 12px; font-size: 0.8rem; border: none; border-radius: 5px; background: #27ae60; color: white; cursor: pointer;">
+                                <i class="fas fa-undo"></i> Restore
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                <tr id="arch-details-{{ app.id }}" class="details-row" style="display: none; background: #fdfdfd;">
+                    <td></td>
+                    <td colspan="7" style="padding: 15px;">
+                        <div style="padding: 15px; border-left: 3px solid #7f8c8d; background: #f8fafc; border-radius: 4px;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; font-size: 0.85rem;">
+                                <div><strong>Client Name:</strong> {{ app.client_name or 'N/A' }}</div>
+                                <div><strong>Program:</strong> {{ app.program_type }}</div>
+                                <div><strong>Scope:</strong> {{ app.scope or 'N/A' }}</div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 30px; color: #999;">
+                        <i class="fas fa-archive" style="font-size: 2rem; margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+                        No archived applications found.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
 
 <script>
+    function switchAccountsTab(tabId, btn) {
+        // Hide all tab panels
+        document.querySelectorAll('.accounts-tab-panel').forEach(function(panel) {
+            panel.style.display = 'none';
+            panel.classList.remove('active');
+        });
+        // Deactivate all tab buttons
+        document.querySelectorAll('.accounts-tab-btn').forEach(function(button) {
+            button.classList.remove('active');
+        });
+        // Show the selected tab panel
+        var activePanel = document.getElementById(tabId);
+        if (activePanel) {
+            activePanel.style.display = 'block';
+            activePanel.classList.add('active');
+        }
+        // Activate the clicked button
+        btn.classList.add('active');
+    }
+
     function toggleDetails(rowId, iconId) {
         var detailsRow = document.getElementById(rowId);
         var icon = document.getElementById(iconId);

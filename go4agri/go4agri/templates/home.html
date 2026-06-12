@@ -20,20 +20,21 @@
         </a>
         <div style="height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f0f4f9; border-radius: 8px; padding: 10px; text-align: center; min-width: 150px;">
             <span style="color: #1a3c17; font-weight: 700; font-size: 0.9rem;">EU Organic Certification</span>
+            <span style="color: #666; font-size: 0.8rem; margin-top: 5px;">(Under EU Recognition Process)</span>
+        </div>
+        <div style="height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fdfdfd; border-radius: 8px; padding: 10px; text-align: center; min-width: 150px; border: 1px solid #eee;">
+            <span style="color: #33691e; font-weight: 700; font-size: 0.9rem;">NOP Certification</span>
+            <span style="color: #666; font-size: 0.8rem; margin-top: 5px;">in collaboration with STC</span>
+        </div>
+        <div style="height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f1f8e9; border-radius: 8px; padding: 10px; text-align: center; min-width: 150px; border: 1px solid #eee;">
+            <span style="color: #1b5e20; font-weight: 700; font-size: 0.9rem;">GLOBALG.A.P.</span>
             <span style="color: #666; font-size: 0.8rem; margin-top: 5px;">Coming Soon</span>
         </div>
-        <a href="{{ url_for('certification_schemes') }}">
-            <img src="{{ url_for('static', filename='images/nop_logo.png') }}" alt="NOP Organic" style="height: 120px;">
-        </a>
-        <a href="{{ url_for('certification_schemes') }}">
-            <img src="{{ url_for('static', filename='images/globalgap_logo.png') }}" alt="GLOBALG.A.P."
-                style="height: 120px;">
-        </a>
 
     </div>
 </section>
 
-<section class="section-container" style="background: #fdfdfd;">
+<section class="section-container leaf-texture-light">
     <h2 class="section-title">{{ _t('why_choose') }} <span style="color: #2d5a27;">Go4Agri?</span></h2>
     <div class="features-grid">
         <div class="feature-card">
@@ -217,9 +218,9 @@
         </a>
         <div style="height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 10px; text-align: center; min-width: 15rem;">
             <span style="color: #1a3c17; font-weight: 700; font-size: 0.8rem;">EU Organic Certification</span>
-            <span style="color: #666; font-size: 0.7rem; margin-top: 3px;">Coming Soon</span>
+            <span style="color: #666; font-size: 0.7rem; margin-top: 3px;">(Under EU Recognition Process)</span>
         </div>
-        <a href="{{ url_for('static', filename='images/IOAS certificate.jpg') }}" target="_blank">
+        <a href="{{ url_for('static', filename='images/IOAS_certificate.pdf') }}" target="_blank">
             <img src="{{ url_for('static', filename='images/ioas_new.png') }}" alt="IOAS" style="height: 100px;">
         </a>
     </div>

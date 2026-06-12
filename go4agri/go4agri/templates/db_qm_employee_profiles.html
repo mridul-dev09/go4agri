@@ -1,0 +1,484 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Employee Profiles — Quality Review{% endblock %}
+
+{% block dashboard_content %}
+<style>
+    .qm-stat-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 20px 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        border-left: 5px solid #eee;
+    }
+    .qm-stat-icon {
+        width: 52px; height: 52px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; flex-shrink: 0;
+    }
+    .qm-stat-val { font-size: 2rem; font-weight: 800; line-height: 1; }
+    .qm-stat-lbl { font-size: 0.8rem; color: #888; margin-top: 2px; }
+
+    .emp-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid #f0f0f0;
+    }
+    .emp-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+
+    .emp-card-header {
+        padding: 18px 20px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border-bottom: 1px solid #f5f5f5;
+    }
+    .emp-avatar {
+        width: 50px; height: 50px; border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary-green), #81c784);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 1.3rem; font-weight: 700; flex-shrink: 0;
+    }
+    .emp-card-body { padding: 15px 20px; }
+    .emp-card-footer {
+        padding: 12px 20px;
+        background: #fafafa;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .cv-badge-verified {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #e8f5e9; color: #2e7d32;
+        padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    }
+    .cv-badge-pending {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #fff3e0; color: #e65100;
+        padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    }
+    .cv-badge-missing {
+        display: inline-flex; align-items: center; gap: 5px;
+        background: #fce4ec; color: #c62828;
+        padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    }
+
+    .qm-btn-verify {
+        flex: 1; min-width: 120px; padding: 8px 12px;
+        background: var(--primary-green); color: white; border: none; border-radius: 6px;
+        font-size: 0.8rem; font-weight: 700; cursor: pointer; text-align: center;
+        transition: background 0.2s;
+    }
+    .qm-btn-verify:hover { background: #2e7d32; }
+    .qm-btn-flag {
+        flex: 1; min-width: 120px; padding: 8px 12px;
+        background: #fff; color: #e65100; border: 1px solid #e65100; border-radius: 6px;
+        font-size: 0.8rem; font-weight: 700; cursor: pointer; text-align: center;
+        transition: all 0.2s;
+    }
+    .qm-btn-flag:hover { background: #fff3e0; }
+    .qm-btn-view {
+        flex: 1; min-width: 100px; padding: 8px 12px;
+        background: #e8f0fe; color: #1a73e8; border: none; border-radius: 6px;
+        font-size: 0.8rem; font-weight: 700; cursor: pointer; text-align: center;
+        text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+        transition: background 0.2s;
+    }
+    .qm-btn-view:hover { background: #d2e3fc; }
+    .qm-btn-download {
+        flex: 1; min-width: 110px; padding: 8px 12px;
+        background: #e3f2fd; color: #1565c0; border: none; border-radius: 6px;
+        font-size: 0.8rem; font-weight: 700; cursor: pointer; text-align: center;
+        text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+        transition: background 0.2s;
+    }
+    .qm-btn-download:hover { background: #bbdefb; }
+
+    .filter-pill {
+        padding: 6px 16px; border-radius: 20px;
+        font-size: 0.82rem; font-weight: 600; cursor: pointer;
+        text-decoration: none; display: inline-block; transition: all 0.2s;
+        border: 2px solid transparent;
+    }
+    .filter-pill.active { border-color: var(--primary-green); background: var(--primary-green); color: white; }
+    .filter-pill:not(.active) { background: #f5f5f5; color: #555; }
+    .filter-pill:not(.active):hover { background: #eee; }
+
+    /* Profile details panel (expandable) */
+    .profile-detail-panel {
+        display: none;
+        padding: 15px 20px;
+        background: #f8fafb;
+        border-top: 1px dashed #e0e0e0;
+        font-size: 0.85rem; color: #555;
+    }
+    .profile-detail-panel.open { display: block; }
+    .section-chip {
+        background: #eef7ee; color: var(--primary-green);
+        padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; margin-right: 5px;
+    }
+    .verify-modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.5); z-index: 9000;
+        align-items: center; justify-content: center;
+    }
+    .verify-modal-overlay.open { display: flex; }
+    .verify-modal {
+        background: white; border-radius: 12px; padding: 30px;
+        width: 100%; max-width: 460px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+</style>
+
+<!-- Page Header -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px;">
+    <div>
+        <h2 style="margin: 0; color: #333; font-size: 1.4rem;">
+            <i class="fas fa-id-badge" style="color: var(--primary-green);"></i>
+            Employee Profiles &amp; CV Verification
+        </h2>
+        <p style="margin: 4px 0 0; color: #888; font-size: 0.9rem;">
+            Review professional profiles and verify CVs according to company norms.
+        </p>
+    </div>
+    <a href="/dashboard" style="padding: 9px 20px; background: #f0f7f0; color: var(--primary-green); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.88rem;">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+<!-- Stats Row -->
+{% set total = employees|length %}
+{% set cv_uploaded = employees|selectattr('cv_path')|list|length %}
+{% set cv_verified = employees|selectattr('cv_verified')|list|length %}
+{% set cv_missing = total - cv_uploaded %}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px;">
+    <div class="qm-stat-card" style="border-left-color: var(--primary-green);">
+        <div class="qm-stat-icon" style="background: #e8f5e9; color: var(--primary-green);"><i class="fas fa-users"></i></div>
+        <div>
+            <div class="qm-stat-val" style="color: var(--primary-green);">{{ total }}</div>
+            <div class="qm-stat-lbl">Total Employees</div>
+        </div>
+    </div>
+    <div class="qm-stat-card" style="border-left-color: #4285f4;">
+        <div class="qm-stat-icon" style="background: #e8f0fe; color: #4285f4;"><i class="fas fa-file-alt"></i></div>
+        <div>
+            <div class="qm-stat-val" style="color: #4285f4;">{{ cv_uploaded }}</div>
+            <div class="qm-stat-lbl">CVs Uploaded</div>
+        </div>
+    </div>
+    <div class="qm-stat-card" style="border-left-color: #34a853;">
+        <div class="qm-stat-icon" style="background: #e8f5e9; color: #34a853;"><i class="fas fa-check-circle"></i></div>
+        <div>
+            <div class="qm-stat-val" style="color: #34a853;">{{ cv_verified }}</div>
+            <div class="qm-stat-lbl">CVs Verified</div>
+        </div>
+    </div>
+    <div class="qm-stat-card" style="border-left-color: #ea4335;">
+        <div class="qm-stat-icon" style="background: #fce8e6; color: #ea4335;"><i class="fas fa-exclamation-triangle"></i></div>
+        <div>
+            <div class="qm-stat-val" style="color: #ea4335;">{{ cv_missing }}</div>
+            <div class="qm-stat-lbl">CVs Missing</div>
+        </div>
+    </div>
+</div>
+
+<!-- Search + Filter Bar -->
+<div class="db-card" style="padding: 18px 22px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;">
+    <form method="GET" action="/quality-manager/employee-profiles" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <div style="position: relative;">
+            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #bbb; font-size: 0.85rem;"></i>
+            <input type="text" name="search" value="{{ search }}" placeholder="Search by name, email, role…"
+                   style="padding: 9px 12px 9px 35px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.88rem; width: 280px; outline: none;">
+        </div>
+        <input type="hidden" name="filter_cv" value="{{ filter_cv }}">
+        <button type="submit" style="padding: 9px 20px; background: var(--primary-green); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.88rem;">
+            Search
+        </button>
+        {% if search %}<a href="/quality-manager/employee-profiles?filter_cv={{ filter_cv }}" style="color: #888; font-size: 0.85rem; text-decoration: none;">✕ Clear</a>{% endif %}
+    </form>
+
+    <!-- Filter Pills -->
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="/quality-manager/employee-profiles?filter_cv=all{% if search %}&search={{ search }}{% endif %}" class="filter-pill {% if filter_cv == 'all' %}active{% endif %}">All</a>
+        <a href="/quality-manager/employee-profiles?filter_cv=uploaded{% if search %}&search={{ search }}{% endif %}" class="filter-pill {% if filter_cv == 'uploaded' %}active{% endif %}"><i class="fas fa-file-upload"></i> CV Uploaded</a>
+        <a href="/quality-manager/employee-profiles?filter_cv=unverified{% if search %}&search={{ search }}{% endif %}" class="filter-pill {% if filter_cv == 'unverified' %}active{% endif %}"><i class="fas fa-clock"></i> Pending Verification</a>
+        <a href="/quality-manager/employee-profiles?filter_cv=verified{% if search %}&search={{ search }}{% endif %}" class="filter-pill {% if filter_cv == 'verified' %}active{% endif %}"><i class="fas fa-check-circle"></i> Verified</a>
+        <a href="/quality-manager/employee-profiles?filter_cv=missing{% if search %}&search={{ search }}{% endif %}" class="filter-pill {% if filter_cv == 'missing' %}active{% endif %}"><i class="fas fa-exclamation-triangle"></i> CV Missing</a>
+    </div>
+</div>
+
+<!-- Employee Cards Grid -->
+{% if employees %}
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px;">
+    {% for emp in employees %}
+    <div class="emp-card" id="card-{{ emp.id }}">
+        <!-- Card Header -->
+        <div class="emp-card-header">
+            <div class="emp-avatar">{{ emp.full_name[0].upper() if emp.full_name else '?' }}</div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 700; color: #222; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {{ emp.full_name }}
+                </div>
+                <div style="font-size: 0.8rem; color: var(--primary-green); font-weight: 600; margin-top: 1px;">{{ emp.designation }}</div>
+                <div style="font-size: 0.78rem; color: #999; margin-top: 1px;">{{ emp.email }}</div>
+            </div>
+            <!-- CV Status Badge -->
+            <div>
+                {% if emp.cv_path %}
+                    {% if emp.cv_verified %}
+                    <span class="cv-badge-verified"><i class="fas fa-check-circle"></i> Verified</span>
+                    {% else %}
+                    <span class="cv-badge-pending"><i class="fas fa-clock"></i> Pending</span>
+                    {% endif %}
+                {% else %}
+                <span class="cv-badge-missing"><i class="fas fa-times-circle"></i> No CV</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Profile Quick Info -->
+        <div class="emp-card-body">
+            {% if emp.bio %}
+            <p style="font-size: 0.82rem; color: #666; margin: 0 0 10px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                {{ emp.bio }}
+            </p>
+            {% endif %}
+
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.78rem;">
+                {% if emp.education %}
+                {% set edu = emp.education|from_json %}
+                {% if edu and edu|length > 0 %}
+                <span class="section-chip"><i class="fas fa-graduation-cap"></i> {{ edu|length }} Education</span>
+                {% endif %}
+                {% endif %}
+                {% if emp.trainings %}
+                {% set tr = emp.trainings|from_json %}
+                {% if tr and tr|length > 0 %}
+                <span class="section-chip"><i class="fas fa-certificate"></i> {{ tr|length }} Training{{ 's' if tr|length > 1 }}</span>
+                {% endif %}
+                {% endif %}
+                {% if emp.experience %}
+                {% set ex = emp.experience|from_json %}
+                {% if ex and ex|length > 0 %}
+                <span class="section-chip"><i class="fas fa-briefcase"></i> {{ ex|length }} Experience</span>
+                {% endif %}
+                {% endif %}
+                {% if emp.skills %}
+                {% set sk = emp.skills|from_json %}
+                {% if sk and sk|length > 0 %}
+                <span class="section-chip"><i class="fas fa-tools"></i> {{ sk|length }} Skills</span>
+                {% endif %}
+                {% endif %}
+            </div>
+
+            {% if emp.cv_path and emp.cv_verified_at %}
+            <div style="margin-top: 10px; font-size: 0.77rem; color: #aaa;">
+                {% if emp.cv_verified %}
+                <i class="fas fa-user-check" style="color: #34a853;"></i> Verified by {{ emp.verified_by_name or 'QM' }} on {{ emp.cv_verified_at | string | truncate(10, True, '') }}
+                {% else %}
+                <i class="fas fa-user-times" style="color: #e65100;"></i> Flagged by {{ emp.verified_by_name or 'QM' }} on {{ emp.cv_verified_at | string | truncate(10, True, '') }}
+                {% endif %}
+            </div>
+            {% endif %}
+            {% if emp.cv_remarks %}
+            <div style="margin-top: 8px; font-size: 0.78rem; background: #fff3e0; border-left: 3px solid #ff9800; padding: 6px 10px; border-radius: 4px; color: #5d4037;">
+                <strong>Remarks:</strong> {{ emp.cv_remarks }}
+            </div>
+            {% endif %}
+            {% if emp.assigned_role or emp.assigned_scheme or emp.assigned_client_name %}
+            <div style="margin-top: 8px; font-size: 0.78rem; background: #e8f5e9; border-left: 3px solid var(--primary-green); padding: 8px 12px; border-radius: 6px; color: #2e7d32;">
+                <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 4px; font-weight: 700;">
+                    <i class="fas fa-briefcase"></i> Assigned Auditor Scope:
+                </div>
+                <div style="padding-left: 15px; display: flex; flex-direction: column; gap: 2px;">
+                    {% if emp.assigned_role %}<div>• <strong>Role:</strong> {{ emp.assigned_role }}</div>{% endif %}
+                    {% if emp.assigned_scheme %}<div>• <strong>Scheme:</strong> {{ emp.assigned_scheme }}</div>{% endif %}
+                    {% if emp.assigned_client_name %}<div>• <strong>Client:</strong> {{ emp.assigned_client_name }}</div>{% endif %}
+                </div>
+            </div>
+            {% elif emp.job_description %}
+            <div style="margin-top: 8px; font-size: 0.78rem; background: #e8f5e9; border-left: 3px solid var(--primary-green); padding: 8px 12px; border-radius: 6px; color: #2e7d32; display: flex; align-items: flex-start; gap: 8px;">
+                <i class="fas fa-briefcase" style="margin-top: 2px;"></i>
+                <div>
+                    <strong>Assigned Responsibility:</strong> {{ emp.job_description }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Action Footer -->
+        <div class="emp-card-footer">
+            <a href="/profile/{{ emp.id }}" class="qm-btn-view">
+                <i class="fas fa-eye"></i> View Profile
+            </a>
+            <a href="/quality-manager/download-profile/{{ emp.id }}" target="_blank" class="qm-btn-download" title="Open printable profile (Print / Save as PDF)">
+                <i class="fas fa-file-download"></i> Download Profile
+            </a>
+            {% if emp.cv_path %}
+            <a href="/profile/download-cv/{{ emp.id }}" class="qm-btn-download">
+                <i class="fas fa-download"></i> Download CV
+            </a>
+            <!-- Verify / Flag buttons -->
+            {% if not emp.cv_verified %}
+            <button class="qm-btn-verify" onclick="openVerifyModal({{ emp.id }}, '{{ emp.full_name | replace("'", "\\'") }}', 'verify', '{{ emp.assigned_role or '' }}', '{{ emp.assigned_scheme or '' }}', '{{ emp.assigned_client_id or '' }}')">
+                <i class="fas fa-check-circle"></i> Verify
+            </button>
+            {% endif %}
+            <button class="qm-btn-flag" onclick="openVerifyModal({{ emp.id }}, '{{ emp.full_name | replace("'", "\\'") }}', 'reject')">
+                <i class="fas fa-flag"></i> {{ 'Re-flag' if emp.cv_verified else 'Flag' }}
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="db-card" style="padding: 60px; text-align: center; color: #bbb;">
+    <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 15px; display: block; opacity: 0.4;"></i>
+    <p style="font-size: 1.1rem; margin: 0;">No employees found matching your criteria.</p>
+    <a href="/quality-manager/employee-profiles" style="margin-top: 12px; display: inline-block; color: var(--primary-green);">Clear filters</a>
+</div>
+{% endif %}
+
+<!-- Verify / Flag Modal -->
+<div class="verify-modal-overlay" id="verifyModalOverlay">
+    <div class="verify-modal">
+        <h3 id="verifyModalTitle" style="margin: 0 0 6px; color: #333; font-size: 1.1rem;"></h3>
+        <p id="verifyModalSubtitle" style="margin: 0 0 20px; color: #888; font-size: 0.88rem;"></p>
+
+        <form id="verifyForm" method="POST">
+            <input type="hidden" name="action" id="verifyAction" value="verify">
+            
+            <!-- Job Description / Responsibilities (only for verification) -->
+            <div id="jobDescContainer" style="margin-bottom: 15px;">
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #555; font-size: 0.88rem;">
+                        Assigned Role <span style="color: var(--primary-green); font-size: 0.8rem;">(optional)</span>
+                    </label>
+                    <select name="assigned_role" id="verifyAssignedRole" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.88rem; box-sizing: border-box; background: white; outline: none;">
+                        <option value="">-- Select Role --</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Dy. Quality Manager">Dy. Quality Manager</option>
+                        <option value="Initial reviewer">Initial reviewer</option>
+                        <option value="Inspection planner">Inspection planner</option>
+                        <option value="Lead Auditor">Lead Auditor</option>
+                        <option value="Auditor">Auditor</option>
+                        <option value="Trainee Auditor">Trainee Auditor</option>
+                        <option value="Witness Auditor">Witness Auditor</option>
+                        <option value="Technical reviewer">Technical reviewer</option>
+                        <option value="Certifier">Certifier</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #555; font-size: 0.88rem;">
+                        Assigned Scheme <span style="color: var(--primary-green); font-size: 0.8rem;">(optional)</span>
+                    </label>
+                    <select name="assigned_scheme" id="verifyAssignedScheme" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.88rem; box-sizing: border-box; background: white; outline: none;">
+                        <option value="">-- Select Scheme --</option>
+                        <option value="NPOP">NPOP (National Programme for Organic Production)</option>
+                        <option value="COR">COR (Canada Organic Regime)</option>
+                        <option value="EU">EU (EU Organic)</option>
+                        <option value="NOP">NOP (USDA Organic)</option>
+                        <option value="GLOBALG.A.P.">GLOBALG.A.P.</option>
+                        <option value="All Schemes">All Schemes</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #555; font-size: 0.88rem;">
+                        Assigned Client <span style="color: var(--primary-green); font-size: 0.8rem;">(optional)</span>
+                    </label>
+                    <select name="assigned_client_id" id="verifyAssignedClient" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.88rem; box-sizing: border-box; background: white; outline: none;">
+                        <option value="">-- Select Client --</option>
+                        {% for client in clients %}
+                        <option value="{{ client.id }}">{{ client.full_name }} ({{ client.email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #555; font-size: 0.88rem;">
+                    Remarks / Comments <span id="remarksHint" style="color: #e65100; font-size: 0.8rem;">(required when flagging)</span>
+                </label>
+                <textarea name="remarks" id="verifyRemarks" rows="3"
+                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.88rem; resize: vertical; box-sizing: border-box;"
+                          placeholder="Enter feedback, issues found, or approval notes…"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" id="verifySubmitBtn"
+                        style="flex: 1; padding: 11px; border: none; border-radius: 7px; font-weight: 700; cursor: pointer; font-size: 0.92rem; color: white; background: var(--primary-green);">
+                    <i class="fas fa-check"></i> Confirm
+                </button>
+                <button type="button" onclick="closeVerifyModal()"
+                        style="flex: 1; padding: 11px; border: 1px solid #ccc; border-radius: 7px; font-weight: 600; cursor: pointer; font-size: 0.92rem; background: white; color: #555;">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openVerifyModal(empId, empName, action, assignedRole = '', assignedScheme = '', assignedClientId = '') {
+    const overlay = document.getElementById('verifyModalOverlay');
+    const form = document.getElementById('verifyForm');
+    const titleEl = document.getElementById('verifyModalTitle');
+    const subtitleEl = document.getElementById('verifyModalSubtitle');
+    const actionInput = document.getElementById('verifyAction');
+    const submitBtn = document.getElementById('verifySubmitBtn');
+    const remarksHint = document.getElementById('remarksHint');
+    const remarksInput = document.getElementById('verifyRemarks');
+    const jobDescContainer = document.getElementById('jobDescContainer');
+    
+    const roleInput = document.getElementById('verifyAssignedRole');
+    const schemeInput = document.getElementById('verifyAssignedScheme');
+    const clientInput = document.getElementById('verifyAssignedClient');
+
+    form.action = `/quality-manager/verify-cv/${empId}`;
+    actionInput.value = action;
+    remarksInput.value = '';
+    
+    roleInput.value = assignedRole;
+    schemeInput.value = assignedScheme;
+    clientInput.value = assignedClientId || '';
+
+    if (action === 'verify') {
+        titleEl.textContent = `✅ Verify CV — ${empName}`;
+        subtitleEl.textContent = 'Mark this CV as compliant with company norms.';
+        submitBtn.style.background = '#34a853';
+        submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Mark as Verified';
+        remarksHint.style.display = 'none';
+        jobDescContainer.style.display = 'block';
+    } else {
+        titleEl.textContent = `🚩 Flag CV — ${empName}`;
+        subtitleEl.textContent = 'Flag this CV for revision and send remarks to the employee.';
+        submitBtn.style.background = '#e65100';
+        submitBtn.innerHTML = '<i class="fas fa-flag"></i> Flag & Send Remarks';
+        remarksHint.style.display = 'inline';
+        jobDescContainer.style.display = 'none';
+    }
+    overlay.classList.add('open');
+}
+
+function closeVerifyModal() {
+    document.getElementById('verifyModalOverlay').classList.remove('open');
+}
+
+// Close modal on background click
+document.getElementById('verifyModalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeVerifyModal();
+});
+</script>
+
+{% endblock %}

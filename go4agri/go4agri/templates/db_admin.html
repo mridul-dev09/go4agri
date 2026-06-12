@@ -3,12 +3,52 @@
 {% block dashboard_title %}Admin Control Panel{% endblock %}
 
 {% block dashboard_content %}
-<div class="features-grid" style="margin-bottom: 40px;">
+
+{% set submitted_apps_count = applications | selectattr('status', 'equalto', 'APPLICATION_SUBMITTED') | list | length %}
+
+<!-- Pending Assessments Section (always visible, above tabs) -->
+{% if pending_assessments %}
+<div class="db-card" style="margin-bottom: 25px; border-top: 5px solid #4285f4; padding: 20px; background: #fff;">
+    <h4 style="margin: 0 0 15px 0; color: #333; display: flex; align-items: center; gap: 10px;">
+        <i class="fas fa-clipboard-check" style="color: #4285f4;"></i> Pending Training Assessments
+    </h4>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+        {% for ass in pending_assessments %}
+        <div style="border: 1px solid #e8f0fe; border-radius: 10px; padding: 15px; background: #f8faff; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-weight: 700; color: #333; margin-bottom: 3px;">{{ ass.title }}</div>
+                <div style="font-size: 0.8rem; color: #666;">Module: <span class="badge info" style="font-size: 0.7rem;">{{ ass.training_type }}</span></div>
+            </div>
+            <a href="{{ url_for('take_assessment', assignment_id=ass.id) }}" class="btn-primary" style="padding: 8px 15px; border-radius: 6px; font-size: 0.85rem; background: #4285f4; text-decoration: none; color: white;">
+                Take Form
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Document Repository Shortcut Card (always visible) -->
+<div class="db-card" style="margin-bottom: 25px; border-top: 5px solid var(--accent-gold); padding: 20px; background: #fff;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h4 style="margin: 0; color: #333; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-folder-open" style="color: var(--accent-gold);"></i> Personal Document Repository
+        </h4>
+        <a href="/repository" class="btn-primary" style="padding: 8px 15px; border-radius: 6px; font-size: 0.85rem; background: var(--primary-green); text-decoration: none; color: white;">
+            Open Repository <i class="fas fa-external-link-alt" style="font-size: 0.7rem; margin-left: 5px;"></i>
+        </a>
+    </div>
+    <p style="margin: 10px 0 0 35px; color: #666; font-size: 0.85rem;">
+        Quickly access your saved files, archive old documents, or attach them to internal messages.
+    </p>
+</div>
+
+<!-- Stats Overview (always visible) -->
+<div class="features-grid" style="margin-bottom: 35px;">
     <div class="db-card" style="border-left: 5px solid #2d5a27; padding: 25px;">
         <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">Ongoing Applications</p>
         <h2 style="color: #333;">{{ applications|length }}</h2>
     </div>
-    {# Placeholder for other stats #}
     <div class="db-card" style="border-left: 5px solid var(--accent-gold); padding: 25px;">
         <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">Total Clients</p>
         <h2 style="color: #333;">{{ registered_clients|length }}</h2>
@@ -23,13 +63,167 @@
     </div>
 </div>
 
+<!-- ===== SECTION TABS ===== -->
+<style>
+    .admin-tab-nav {
+        display: flex;
+        gap: 0;
+        border-bottom: 3px solid #e0e8e0;
+        margin-bottom: 0;
+        flex-wrap: wrap;
+    }
 
-<!-- Leads Section (MOVED UP) -->
-<div id="leads"
-    style="margin-top: 30px; margin-bottom: 40px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid #3498db;">
-    <h3 style="color: #0072bc; margin-bottom: 20px;"><i class="fas fa-headset"></i> Leads & Enquiries {% if enquiries
-        %}<span class="badge info" style="font-size: 0.7rem; vertical-align: middle; margin-left: 10px;">{{
-            enquiries|length }} NEW</span>{% endif %}</h3>
+    .admin-tab-btn {
+        padding: 13px 24px;
+        background: #f4f7f4;
+        border: none;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -3px;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #666;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.22s ease;
+        border-radius: 8px 8px 0 0;
+        white-space: nowrap;
+    }
+
+    .admin-tab-btn:hover {
+        background: #e8f2e8;
+        color: var(--primary-green);
+    }
+
+    .admin-tab-btn.active {
+        background: white;
+        color: var(--primary-green);
+        border-bottom: 3px solid var(--primary-green);
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    }
+
+    .admin-tab-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        border-radius: 20px;
+        background: #ccc;
+        color: white;
+        transition: background 0.2s;
+    }
+
+    .admin-tab-btn.active .admin-tab-badge,
+    .admin-tab-btn:hover .admin-tab-badge {
+        background: var(--primary-green);
+    }
+
+    .admin-tab-badge.gold {
+        background: #c5a059;
+    }
+
+    .admin-tab-content {
+        display: none;
+        background: white;
+        border-radius: 0 10px 10px 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+        padding: 30px;
+        border: 1px solid #e0e8e0;
+        border-top: none;
+        animation: fadeTabIn 0.25s ease;
+    }
+
+    .admin-tab-content.active-tab {
+        display: block;
+    }
+
+    @keyframes fadeTabIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .portal-row:hover { background-color: #f4f9fc !important; }
+
+    .action-menu-link {
+        color: #444;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+    .action-menu-link:hover { background: #e9ecef; color: #0072bc; }
+
+    .action-menu-btn {
+        background: none;
+        border: none;
+        color: #d9534f;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+    .action-menu-btn:hover { background: #fdf5f5; color: #c9302c; }
+
+    .details-row td { border-bottom: 1px solid #eee; }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #bbb;
+    }
+    .empty-state i { font-size: 3rem; margin-bottom: 15px; display: block; }
+    .empty-state p { font-size: 0.95rem; }
+</style>
+
+<div class="admin-tab-nav">
+    <button class="admin-tab-btn active" id="admin-tab-btn-leads" onclick="openAdminTab(event, 'admin-tab-leads')">
+        <i class="fas fa-headset"></i>
+        Leads &amp; Enquiries
+        <span class="admin-tab-badge {% if enquiries %}gold{% endif %}">{{ enquiries|length }}</span>
+    </button>
+    <button class="admin-tab-btn" id="admin-tab-btn-approvals" onclick="openAdminTab(event, 'admin-tab-approvals')">
+        <i class="fas fa-tasks"></i>
+        Pending Approvals
+        <span class="admin-tab-badge {% if applications %}gold{% endif %}">{{ applications|length }}</span>
+    </button>
+    <button class="admin-tab-btn" id="admin-tab-btn-clients" onclick="openAdminTab(event, 'admin-tab-clients')">
+        <i class="fas fa-users"></i>
+        Registered Clients
+        <span class="admin-tab-badge">{{ registered_clients|length }}</span>
+    </button>
+    <button class="admin-tab-btn" id="admin-tab-btn-history" onclick="openAdminTab(event, 'admin-tab-history')">
+        <i class="fas fa-history"></i>
+        Deleted/Archived History
+        <span class="admin-tab-badge {% if deleted_applications or deleted_enquiries %}gold{% endif %}">{{ deleted_applications|length + deleted_enquiries|length }}</span>
+    </button>
+</div>
+
+<!-- ===== TAB 1: Leads & Enquiries ===== -->
+<div id="admin-tab-leads" class="admin-tab-content active-tab">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f0f6f0; padding-bottom: 15px;">
+        <h3 style="color: #0072bc; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-headset"></i> Leads &amp; Enquiries
+            {% if enquiries %}
+            <span class="badge info" style="font-size: 0.7rem; vertical-align: middle; margin-left: 5px;">{{ enquiries|length }} NEW</span>
+            {% endif %}
+        </h3>
+    </div>
+
     {% if enquiries %}
     <div class="table-responsive">
         <table style="width: 100%; border-collapse: collapse;">
@@ -45,7 +239,7 @@
             </thead>
             <tbody>
                 {% for enquiry in enquiries %}
-                <tr style="border-bottom: 1px solid #eee;">
+                <tr style="border-bottom: 1px solid #eee;" class="portal-row">
                     <td style="padding: 12px; font-weight: 600;">{{ enquiry.name }}</td>
                     <td style="padding: 12px; font-style: italic; color: #555;">{{ enquiry.company_name or '---' }}</td>
                     <td style="padding: 12px;">{{ enquiry.program_type }}</td>
@@ -77,137 +271,143 @@
         </table>
     </div>
     {% else %}
-    <div style="text-align: center; padding: 40px; color: #999;">
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
         <p>No new enquiries found.</p>
     </div>
     {% endif %}
 </div>
 
-<div class="db-grid-2-1" style="margin-bottom: 40px;">
-    <!-- Application Approval Queue -->
-    <div class="db-card" style="grid-column: span 2;">
-        <h3
-            style="color: var(--primary-green); margin-bottom: 20px; border-bottom: 2px solid #f4f7f4; padding-bottom: 10px;">
-            Pending Approvals</h3>
-
-        {% if not applications %}
-        <p style="color: #999; padding: 20px; text-align: center;">No applications awaiting your approval.</p>
-        {% else %}
-        <div
-            style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px; color: #666; font-size: 0.9rem;">
-            <i class="fas fa-minus-square"></i> Basic search options
-        </div>
-        <div class="audit-table-wrapper table-responsive">
-            <table class="audit-table">
-                <thead>
-                    <tr>
-                        <th style="width: 40px;"></th>
-                        <th>User ID</th>
-                        <th>Program ID</th>
-                        <th>Company Name</th>
-                        <th>Activity #</th>
-                        <th>Status</th>
-                        <th>Lead Auditor</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for app in applications %}
-                    <!-- Main Row -->
-                    <tr class="portal-row" onclick="toggleDetails('details-{{ app.id }}', 'icon-{{ app.id }}')">
-                        <td style="text-align: center; color: #0072bc; cursor: pointer;"><i id="icon-{{ app.id }}" class="fas fa-caret-right"></i></td>
-                        <td style="font-weight: 600; color: #555;">USR-{{ "%04d" | format(app.client_id) }}</td>
-                        <td style="font-weight: 600; color: var(--primary-green);">PRG-{{ "%04d" | format(app.id) }}</td>
-                        <td><a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" style="text-decoration: none; color: #0072bc; font-weight: 600;">{{ app.company_name }}</a></td>
-                        <td>ACTY-{{ "%06d" | format(app.id) }}</td>
-                        <td>{{ app.status.replace('_', ' ') }}</td>
-                        <td>{{ app.lead_auditor_name if app.lead_auditor_name else 'Not Assigned' }}</td>
-                    </tr>
-
-                    <!-- Expandable Details/Actions Row -->
-                    <tr id="details-{{ app.id }}" class="details-row" style="display: none; background: #fdfdfd;">
-                        <td></td>
-                        <td colspan="6" style="padding: 0;">
-                            <div
-                                style="padding: 10px 15px; border-left: 2px solid #0072bc; display: flex; gap: 15px; align-items: center; background: #f8fafc;">
-
-                                <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}"
-                                    class="action-menu-link">
-                                    <i class="fas fa-eye"></i> View Details / Documents
-                                </a>
-
-                                <span style="color: #ccc;">|</span>
-
-
-                                    <form action="/update-application-status/{{ app.id }}" method="POST"
-                                        style="margin: 0; display: inline-block;">
-                                        <input type="hidden" name="current_status" value="{{ app.status }}">
-                                        {% if app.status == 'APPLICATION_RECEIVED' %}
-                                        <button type="submit" class="action-menu-btn"><i class="fas fa-user-plus"></i> REGISTER CLIENT</button>
-                                        {% elif app.status == 'PARTIAL_PAYMENT_VERIFIED' %}
-                                        <button type="submit" class="action-menu-btn"><i class="fas fa-file-import"></i> FORWARD TO DOCUMENT REVIEW</button>
-                                        {% elif app.status == 'REJECTED' %}
-                                        {# No advance button for rejected #}
-                                        {% else %}
-                                        <button type="submit" class="action-menu-btn"><i class="fas fa-arrow-right"></i>
-                                            ADVANCE</button>
-                                        {% endif %}
-                                    </form>
-
-                                {% if app.status == 'REJECTED' %}
-                                <span style="color: #ccc;">|</span>
-                                <div style="display: flex; flex-direction: column; gap: 6px; border-left: 2px solid #e74c3c; padding-left: 12px; margin-left: 5px;">
-                                    <strong style="color: #e74c3c; font-size: 0.78rem;">⛔ REJECTED — Restart Required</strong>
-                                    <form action="/restart-application/{{ app.id }}" method="POST" style="display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap;">
-                                        <textarea name="rejection_reason" rows="2" placeholder="Reason / correction required (Mandatory)" required style="font-size: 0.78rem; border: 1px solid #e74c3c; border-radius: 4px; padding: 4px 8px; min-width: 230px;"></textarea>
-                                        <button type="submit" class="action-menu-btn" style="color: #27ae60; border-color: #27ae60; margin-top: 0; align-self: flex-end;"><i class="fas fa-redo"></i> RESTART</button>
-                                    </form>
-                                    {% if app.restart_count and app.restart_count > 0 %}
-                                    <a href="/restart-history/{{ app.id }}" style="font-size: 0.78rem; color: #e74c3c;"><i class="fas fa-history"></i> View Restart History ({{ app.restart_count }}x restarted)</a>
-                                    {% endif %}
-                                </div>
-                                {% else %}
-                                <span style="color: #ccc;">|</span>
-                                <form action="/delete-application/{{ app.id }}" method="POST"
-                                    style="margin: 0; display: inline-block;"
-                                    onsubmit="return confirm('Are you sure you want to completely remove this application?');">
-                                    <button type="submit" class="action-menu-btn" style="color: #e74c3c;"><i
-                                            class="fas fa-trash-alt"></i> REMOVE</button>
-                                </form>
-                                {% if app.restart_count and app.restart_count > 0 %}
-                                <span style="color: #ccc;">|</span>
-                                <a href="/restart-history/{{ app.id }}" class="action-menu-link" style="color: #e74c3c;"><i class="fas fa-history"></i> History ({{ app.restart_count }}x)</a>
-                                {% endif %}
-                                {% endif %}
-
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <div
-            style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #666; padding: 0 10px;">
-            <div>
-                <i class="fas fa-backward"></i> <i class="fas fa-step-backward" style="margin-right: 5px;"></i> 1 <i
-                    class="fas fa-step-forward" style="margin-left: 5px;"></i>
-                <i class="fas fa-forward"></i>
-                <span style="margin-left: 10px;">Page Size: <select>
-                        <option>20</option>
-                    </select></span>
-            </div>
-            <div>{{ applications|length }} items in 1 pages</div>
-        </div>
-        {% endif %}
+<!-- ===== TAB 2: Pending Approvals ===== -->
+<div id="admin-tab-approvals" class="admin-tab-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f0f6f0; padding-bottom: 15px;">
+        <h3 style="color: var(--primary-green); margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-tasks"></i> Pending Approvals
+            {% if applications %}
+            <span class="badge warning" style="font-size: 0.7rem; margin-left: 5px;">{{ applications|length }} active</span>
+            {% endif %}
+        </h3>
     </div>
 
+    {% if not applications %}
+    <div class="empty-state">
+        <i class="fas fa-clipboard-check"></i>
+        <p>No applications awaiting your approval.</p>
+    </div>
+    {% else %}
+    <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px; color: #666; font-size: 0.9rem;">
+        <i class="fas fa-minus-square"></i> Basic search options
+    </div>
+    <div class="audit-table-wrapper table-responsive">
+        <table class="audit-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px;"></th>
+                    <th>User ID</th>
+                    <th>Program ID</th>
+                    <th>Company Name</th>
+                    <th>Activity #</th>
+                    <th>Status</th>
+                    <th>Lead Auditor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
+                <!-- Main Row -->
+                <tr class="portal-row" onclick="toggleDetails('details-{{ app.id }}', 'icon-{{ app.id }}')">
+                    <td style="text-align: center; color: #0072bc; cursor: pointer;"><i id="icon-{{ app.id }}" class="fas fa-caret-right"></i></td>
+                    <td style="font-weight: 600; color: #555;">{{ app.client_code if app.client_code else 'USR-' ~ '%04d'|format(app.client_id) }}</td>
+                    <td style="font-weight: 600; color: var(--primary-green);">{{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }}</td>
+                    <td><a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" style="text-decoration: none; color: #0072bc; font-weight: 600;">{{ app.company_name }}</a></td>
+                    <td>ACTY-{{ "%06d" | format(app.id) }}</td>
+                    <td>{{ app.status.replace('_', ' ') }}</td>
+                    <td>{{ app.lead_auditor_name if app.lead_auditor_name else 'Not Assigned' }}</td>
+                </tr>
+
+                <!-- Expandable Details/Actions Row -->
+                <tr id="details-{{ app.id }}" class="details-row" style="display: none; background: #fdfdfd;">
+                    <td></td>
+                    <td colspan="6" style="padding: 0;">
+                        <div style="padding: 10px 15px; border-left: 2px solid #0072bc; display: flex; gap: 15px; align-items: center; background: #f8fafc;">
+
+                            <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" class="action-menu-link">
+                                <i class="fas fa-eye"></i> View Details / Documents
+                            </a>
+
+                            <span style="color: #ccc;">|</span>
+
+                            <form action="/update-application-status/{{ app.id }}" method="POST"
+                                style="margin: 0; display: inline-block;">
+                                <input type="hidden" name="current_status" value="{{ app.status }}">
+                                {% if app.status == 'APPLICATION_RECEIVED' %}
+                                <button type="submit" class="action-menu-btn"><i class="fas fa-user-plus"></i> REGISTER CLIENT</button>
+                                {% elif app.status == 'PARTIAL_PAYMENT_VERIFIED' %}
+                                <button type="submit" class="action-menu-btn"><i class="fas fa-file-import"></i> FORWARD TO DOCUMENT REVIEW</button>
+                                {% elif app.status == 'REJECTED' %}
+                                {# No advance button for rejected #}
+                                {% else %}
+                                <button type="submit" class="action-menu-btn"><i class="fas fa-arrow-right"></i> ADVANCE</button>
+                                {% endif %}
+                            </form>
+
+                            {% if app.status == 'REJECTED' %}
+                            <span style="color: #ccc;">|</span>
+                            <div style="display: flex; flex-direction: column; gap: 6px; border-left: 2px solid #e74c3c; padding-left: 12px; margin-left: 5px;">
+                                <strong style="color: #e74c3c; font-size: 0.78rem;">⛔ REJECTED — Restart Required</strong>
+                                <form action="/restart-application/{{ app.id }}" method="POST" style="display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap;">
+                                    <textarea name="rejection_reason" rows="2" placeholder="Reason / correction required (Mandatory)" required style="font-size: 0.78rem; border: 1px solid #e74c3c; border-radius: 4px; padding: 4px 8px; min-width: 230px;"></textarea>
+                                    <button type="submit" class="action-menu-btn" style="color: #27ae60; border-color: #27ae60; margin-top: 0; align-self: flex-end;"><i class="fas fa-redo"></i> RESTART</button>
+                                </form>
+                                {% if app.restart_count and app.restart_count > 0 %}
+                                <a href="/restart-history/{{ app.id }}" style="font-size: 0.78rem; color: #e74c3c;"><i class="fas fa-history"></i> View Restart History ({{ app.restart_count }}x restarted)</a>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span style="color: #ccc;">|</span>
+                            <form action="/delete-application/{{ app.id }}" method="POST"
+                                style="margin: 0; display: inline-block;"
+                                onsubmit="return confirm('Are you sure you want to completely remove this application?');">
+                                <button type="submit" class="action-menu-btn" style="color: #e74c3c;"><i
+                                        class="fas fa-trash-alt"></i> REMOVE</button>
+                            </form>
+                            {% if app.restart_count and app.restart_count > 0 %}
+                            <span style="color: #ccc;">|</span>
+                            <a href="/restart-history/{{ app.id }}" class="action-menu-link" style="color: #e74c3c;"><i class="fas fa-history"></i> History ({{ app.restart_count }}x)</a>
+                            {% endif %}
+                            {% endif %}
+
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #666; padding: 0 10px;">
+        <div>
+            <i class="fas fa-backward"></i> <i class="fas fa-step-backward" style="margin-right: 5px;"></i> 1 <i
+                class="fas fa-step-forward" style="margin-left: 5px;"></i>
+            <i class="fas fa-forward"></i>
+            <span style="margin-left: 10px;">Page Size: <select>
+                    <option>20</option>
+                </select></span>
+        </div>
+        <div>{{ applications|length }} items in 1 pages</div>
+    </div>
+    {% endif %}
 </div>
 
-<!-- Registered Clients Section -->
-<div id="registered-clients"
-    style="margin-top: 30px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary-green);">
-    <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-users"></i> Registered Clients
-        Overview</h3>
+<!-- ===== TAB 3: Registered Clients Overview ===== -->
+<div id="admin-tab-clients" class="admin-tab-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f0f6f0; padding-bottom: 15px;">
+        <h3 style="color: var(--primary-green); margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-users"></i> Registered Clients Overview
+            {% if registered_clients %}
+            <span class="badge success" style="font-size: 0.7rem; margin-left: 5px;">{{ registered_clients|length }} total</span>
+            {% endif %}
+        </h3>
+    </div>
+
     {% if registered_clients %}
     <div class="table-responsive">
         <table style="width: 100%; border-collapse: collapse;">
@@ -225,7 +425,7 @@
                 {% for client in registered_clients %}
                 <tr class="portal-row" style="border-bottom: 1px solid #eee; cursor: pointer;" onclick="toggleDetails('client-details-{{ client.id }}', 'client-icon-{{ client.id }}')">
                     <td style="text-align: center; color: #0072bc;"><i id="client-icon-{{ client.id }}" class="fas fa-caret-right"></i></td>
-                    <td style="padding: 12px; font-weight: 600; color: #555;">USR-{{ "%04d" | format(client.id) }}</td>
+                    <td style="padding: 12px; font-weight: 600; color: #555;">{{ client.client_code if client.client_code else 'USR-' ~ '%04d'|format(client.id) }}</td>
                     <td style="padding: 12px; font-weight: 600;">
                         <a href="/client-details/{{ client.id }}"
                             style="color: var(--primary-green); text-decoration: none;" onclick="event.stopPropagation();">
@@ -264,7 +464,7 @@
                                     {% if client_apps %}
                                         {% for app in client_apps %}
                                         <tr style="border-bottom: 1px dotted #eee;">
-                                            <td style="padding: 8px; font-weight: 600; color: var(--primary-green);">PRG-{{ "%04d" | format(app.id) }}</td>
+                                            <td style="padding: 8px; font-weight: 600; color: var(--primary-green);">{{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }}</td>
                                             <td style="padding: 8px;">{{ app.program_type }}</td>
                                             <td style="padding: 8px; color: #666;">ACTY-{{ "%06d" | format(app.id) }}</td>
                                             <td style="padding: 8px;">
@@ -305,64 +505,143 @@
         </table>
     </div>
     {% else %}
-    <div style="text-align: center; padding: 40px; color: #999;">
+    <div class="empty-state">
+        <i class="fas fa-user-slash"></i>
         <p>No clients have been registered yet.</p>
     </div>
     {% endif %}
 </div>
+<!-- ===== END TABS ===== -->
 
+<!-- ===== TAB 4: Deleted / Archived History ===== -->
+<div id="admin-tab-history" class="admin-tab-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f0f6f0; padding-bottom: 15px;">
+        <h3 style="color: #c0392b; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-history"></i> Deleted / Archived History
+        </h3>
+    </div>
 
+    <!-- Soft-Deleted Applications -->
+    <h4 style="color: #333; margin-top: 20px; margin-bottom: 10px;"><i class="fas fa-file-alt"></i> Soft-Deleted Applications</h4>
+    {% if deleted_applications %}
+    <div class="table-responsive" style="margin-bottom: 30px;">
+        <table class="audit-table">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Program ID</th>
+                    <th>Company Name</th>
+                    <th>Activity #</th>
+                    <th>Last Status</th>
+                    <th style="width: 120px; text-align: center;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in deleted_applications %}
+                <tr style="background: #fff5f5; border-bottom: 1px solid #eee;">
+                    <td style="font-weight: 600; color: #555;">{{ app.client_code if app.client_code else 'USR-' ~ '%04d'|format(app.client_id) }}</td>
+                    <td style="font-weight: 600; color: var(--primary-green);">{{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }}</td>
+                    <td>{{ app.company_name }}</td>
+                    <td>ACTY-{{ "%06d" | format(app.id) }}</td>
+                    <td><span class="badge info" style="background: #e74c3c;">{{ app.status.replace('_', ' ') }}</span></td>
+                    <td style="text-align: center;">
+                        <form action="/restore-application/{{ app.id }}" method="POST" style="margin: 0; display: inline-block;">
+                            <button type="submit" class="btn-primary" style="padding: 5px 12px; font-size: 0.8rem; border: none; border-radius: 5px; background: #27ae60; color: white; cursor: pointer;">
+                                <i class="fas fa-undo"></i> Restore
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: #888; font-size: 0.9rem; margin-bottom: 30px;">No soft-deleted applications.</p>
+    {% endif %}
 
-<!-- Portal Table Styles & JS -->
-<style>
-    .portal-row:hover {
-        background-color: #f4f9fc !important;
-    }
-
-    .action-menu-link {
-        color: #444;
-        text-decoration: none;
-        font-size: 0.85rem;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 10px;
-        border-radius: 4px;
-        transition: all 0.2s;
-    }
-
-    .action-menu-link:hover {
-        background: #e9ecef;
-        color: #0072bc;
-    }
-
-    .action-menu-btn {
-        background: none;
-        border: none;
-        color: #d9534f;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 10px;
-        border-radius: 4px;
-        transition: all 0.2s;
-    }
-
-    .action-menu-btn:hover {
-        background: #fdf5f5;
-        color: #c9302c;
-    }
-
-    .details-row td {
-        border-bottom: 1px solid #eee;
-    }
-</style>
+    <!-- Soft-Deleted Enquiries -->
+    <h4 style="color: #333; margin-top: 20px; margin-bottom: 10px;"><i class="fas fa-headset"></i> Soft-Deleted Enquiries</h4>
+    {% if deleted_enquiries %}
+    <div class="table-responsive">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #fdf2f2; text-align: left;">
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Name</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Company</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Program</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Contact</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enquiry in deleted_enquiries %}
+                <tr style="border-bottom: 1px solid #eee; background: #fff5f5;">
+                    <td style="padding: 12px; font-weight: 600;">{{ enquiry.name }}</td>
+                    <td style="padding: 12px; font-style: italic; color: #555;">{{ enquiry.company_name or '---' }}</td>
+                    <td style="padding: 12px;">{{ enquiry.program_type }}</td>
+                    <td style="padding: 12px; font-size: 0.85rem;">
+                        <div><i class="fas fa-envelope" style="width: 15px;"></i> {{ enquiry.email }}</div>
+                        <div><i class="fas fa-phone" style="width: 15px;"></i> {{ enquiry.phone }}</div>
+                    </td>
+                    <td style="padding: 12px;">
+                        <form action="/restore-enquiry/{{ enquiry.id }}" method="POST" style="margin: 0;">
+                            <button type="submit" style="padding: 5px 12px; font-size: 0.8rem; border: none; border-radius: 5px; background: #27ae60; color: white; cursor: pointer;">
+                                <i class="fas fa-undo"></i> Restore
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: #888; font-size: 0.9rem;">No soft-deleted enquiries.</p>
+    {% endif %}
+</div>
 
 <script>
+    function openAdminTab(evt, tabId) {
+        // Hide all admin tab contents
+        document.querySelectorAll('.admin-tab-content').forEach(function(tc) {
+            tc.classList.remove('active-tab');
+        });
+        // Deactivate all admin tab buttons
+        document.querySelectorAll('.admin-tab-btn').forEach(function(btn) {
+            btn.classList.remove('active');
+        });
+        // Show selected tab and mark button active
+        document.getElementById(tabId).classList.add('active-tab');
+        
+        var suffix = tabId.replace('admin-tab-', '');
+        var btn = document.getElementById('admin-tab-btn-' + suffix);
+        if (btn) {
+            btn.classList.add('active');
+        } else if (evt && evt.currentTarget) {
+            evt.currentTarget.classList.add('active');
+        }
+    }
+
+    function handleHashChange() {
+        var hash = window.location.hash;
+        if (hash === '#registered-clients') {
+            openAdminTab(null, 'admin-tab-clients');
+        } else if (hash === '#pending-approvals' || hash === '#approvals') {
+            openAdminTab(null, 'admin-tab-approvals');
+        } else if (hash === '#leads' || hash === '#enquiries') {
+            openAdminTab(null, 'admin-tab-leads');
+        } else if (hash === '#history' || hash === '#deleted') {
+            openAdminTab(null, 'admin-tab-history');
+        }
+    }
+
+    window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('DOMContentLoaded', handleHashChange);
+    if (document.readyState === 'interactive' || document.readyState === 'complete') {
+        handleHashChange();
+    }
+
     function toggleDetails(rowId, iconId) {
         var detailsRow = document.getElementById(rowId);
         var icon = document.getElementById(iconId);

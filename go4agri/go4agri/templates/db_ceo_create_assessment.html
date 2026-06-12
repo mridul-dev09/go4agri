@@ -1,0 +1,117 @@
+{% extends "db_base.html" %}
+
+{% block dashboard_title %}Create Training Assessment{% endblock %}
+
+{% block dashboard_content %}
+<div class="db-card" style="padding: 30px; border-top: 5px solid var(--primary-green); max-width: 900px; margin: 0 auto;">
+    <h3 style="color: var(--primary-green); margin-bottom: 25px;"><i class="fas fa-plus-circle"></i> New Training Form</h3>
+    
+    <form action="{{ url_for('create_assessment') }}" method="POST">
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label style="font-weight: 600; display: block; margin-bottom: 8px;">Assessment Title</label>
+            <input type="text" name="title" placeholder="e.g., Organic Standards Post-Training Quiz" required 
+                   style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 30px;">
+            <label style="font-weight: 600; display: block; margin-bottom: 8px;">Target Training Module</label>
+            <select name="training_type" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                {% for key, val in training_data.items() %}
+                <option value="{{ val.title }}">{{ val.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+        <h4 style="margin-bottom: 20px; color: #555;">Questions (Max 25)</h4>
+
+        <div id="questions-container">
+            <!-- Question 1 (Default) -->
+            <div class="q-block" style="background: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #4285f4;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <strong style="color: #4285f4;">Question 1</strong>
+                </div>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <input type="text" name="q1_text" placeholder="Enter your question here" required 
+                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                </div>
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.85rem; color: #666;">Type</label>
+                        <select name="q1_type" onchange="toggleOptions(1, this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                            <option value="text">Short Answer (Text)</option>
+                            <option value="mcq">Multiple Choice (MCQ)</option>
+                        </select>
+                    </div>
+                    <div id="q1-options-box" style="flex: 2; display: none;">
+                        <label style="font-size: 0.85rem; color: #666;">Options (comma separated)</label>
+                        <input type="text" name="q1_options" placeholder="Option A, Option B, Option C" 
+                               style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 40px;">
+            <button type="button" onclick="addQuestion()" class="btn-secondary" style="background: #eee; color: #333; border: 1px solid #ccc; padding: 10px 20px; border-radius: 8px; cursor: pointer;">
+                <i class="fas fa-plus"></i> Add Another Question
+            </button>
+        </div>
+
+        <div style="display: flex; gap: 15px;">
+            <button type="submit" class="btn-primary" style="flex: 2; padding: 15px; border: none; border-radius: 8px; background: var(--primary-green); color: white; font-weight: 600; cursor: pointer;">
+                <i class="fas fa-save"></i> PUBLISH ASSESSMENT
+            </button>
+            <a href="{{ url_for('dashboard') }}" class="btn-secondary" style="flex: 1; text-align: center; padding: 15px; border: 1px solid #ddd; border-radius: 8px; text-decoration: none; color: #666;">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+let qCount = 1;
+
+function toggleOptions(id, type) {
+    const box = document.getElementById(`q${id}-options-box`);
+    box.style.display = (type === 'mcq') ? 'block' : 'none';
+}
+
+function addQuestion() {
+    if (qCount >= 25) {
+        alert("Maximum 25 questions allowed.");
+        return;
+    }
+    qCount++;
+    const container = document.getElementById('questions-container');
+    const div = document.createElement('div');
+    div.className = 'q-block';
+    div.style = "background: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #4285f4;";
+    div.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <strong style="color: #4285f4;">Question ${qCount}</strong>
+            <button type="button" onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: #e74c3c; cursor: pointer;"><i class="fas fa-trash"></i></button>
+        </div>
+        <div class="form-group" style="margin-bottom: 10px;">
+            <input type="text" name="q${qCount}_text" placeholder="Enter your question here" required 
+                   style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+        </div>
+        <div style="display: flex; gap: 20px;">
+            <div style="flex: 1;">
+                <label style="font-size: 0.85rem; color: #666;">Type</label>
+                <select name="q${qCount}_type" onchange="toggleOptions(${qCount}, this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <option value="text">Short Answer (Text)</option>
+                    <option value="mcq">Multiple Choice (MCQ)</option>
+                </select>
+            </div>
+            <div id="q${qCount}-options-box" style="flex: 2; display: none;">
+                <label style="font-size: 0.85rem; color: #666;">Options (comma separated)</label>
+                <input type="text" name="q${qCount}_options" placeholder="Option A, Option B, Option C" 
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
+        </div>
+    `;
+    container.appendChild(div);
+}
+</script>
+{% endblock %}

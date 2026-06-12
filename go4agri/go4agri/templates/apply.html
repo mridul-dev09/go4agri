@@ -102,6 +102,7 @@
         const programSelect = document.getElementById("programSelect");
         const scopeSelect = document.getElementById("scopeSelect");
         const scopeGroup = document.getElementById("scopeGroup");
+        const submitBtn = document.querySelector(".premium-submit-btn");
         const selectedProgram = programSelect.value;
         
         // Clear existing options
@@ -117,10 +118,6 @@
             });
         } else {
             scopeGroup.style.display = 'none'; // Hide if no valid program selected
-            // If they pick something that has no defined scopes, maybe we just don't show the scope field?
-            // But we made it required. For robustness, if they pick an unknown program, 
-            // we should ideally add a general scope or remove the required attribute.
-            // In this setup, all defined programs have scopes.
             if(selectedProgram) {
                scopeGroup.style.display = 'block';
                const option = document.createElement("option");
@@ -129,6 +126,35 @@
                scopeSelect.appendChild(option);
                scopeSelect.value = "General Scope";
             }
+        }
+
+        // Logic to restrict submission to COR only
+        if (selectedProgram && selectedProgram !== 'COR') {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
+            submitBtn.style.cursor = 'not-allowed';
+            submitBtn.innerHTML = 'Program Under Recognition <i class="fas fa-lock"></i>';
+            
+            // Add a small notice if it doesn't exist
+            let notice = document.getElementById("programNotice");
+            if (!notice) {
+                notice = document.createElement("p");
+                notice.id = "programNotice";
+                notice.style.color = "#dc3545";
+                notice.style.fontSize = "0.85rem";
+                notice.style.marginTop = "5px";
+                notice.style.textAlign = "center";
+                submitBtn.parentNode.insertBefore(notice, submitBtn);
+            }
+            notice.textContent = "Currently, only COR certification applications are being accepted. Other programs will be available soon.";
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+            submitBtn.innerHTML = '{{ _t("submit_application") }} <i class="fas fa-paper-plane"></i>';
+            
+            const notice = document.getElementById("programNotice");
+            if (notice) notice.remove();
         }
     }
     

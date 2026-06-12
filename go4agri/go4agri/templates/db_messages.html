@@ -3,8 +3,25 @@
 {% block dashboard_title %}Messages{% endblock %}
 
 {% block dashboard_content %}
+<!-- Choices.js CSS & JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+<style>
+    /* Choices.js adjustments to match theme */
+    .choices__inner {
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        background-color: #fff;
+        padding: 5px 10px;
+    }
+    .choices__list--multiple .choices__item {
+        background-color: var(--primary-green);
+        border: 1px solid var(--primary-green);
+    }
+</style>
 <div class="db-card" style="padding: 0; overflow: hidden;">
-    <div class="table-responsive" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); height: auto; min-height: 600px;">
+    <div class="table-responsive" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); height: 75vh; min-height: 500px; max-height: 800px;">
         <!-- Sidebar: Message List -->
         <div style="border-right: 1px solid #eee; background: #fdfdfd; display: flex; flex-direction: column;">
             <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
@@ -14,24 +31,36 @@
                 </div>
                 <button onclick="openNewMessageModal()" class="btn-gold" style="padding: 5px 10px; font-size: 0.8rem; border: none; border-radius: 5px;">New</button>
             </div>
+            <div style="padding: 8px 15px; border-bottom: 1px solid #eee; background: #fafafa; display: flex; align-items: center; gap: 10px;" id="bulk-toolbar-{{ active_tab }}">
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #666; cursor: pointer;">
+                    <input type="checkbox" id="select-all-msgs" onchange="toggleSelectAll(this)" style="width: auto; cursor: pointer;"> Select All
+                </label>
+                <form id="bulk-delete-form" action="/delete-messages-bulk" method="POST" style="margin: 0;" onsubmit="return confirm('Delete selected messages?');">
+                    <input type="hidden" name="tab" value="{{ active_tab }}">
+                    <div id="selected-ids-container"></div>
+                    <button type="submit" id="bulk-delete-btn" disabled style="background: #e74c3c; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 0.78rem; cursor: pointer; opacity: 0.4;">
+                        <i class="fas fa-trash"></i> Delete Selected
+                    </button>
+                </form>
+            </div>
             <div style="flex: 1; overflow-y: auto;">
                 {% if messages %}
                 {% for msg in messages %}
-                <div onclick="location.href='/messages?tab={{ active_tab }}&id={{ msg.id }}'"
-                    style="padding: 15px; border-bottom: 1px solid #f9f9f9; cursor: pointer; border-left: 4px solid {% if active_tab == 'inbox' and not msg.is_read %}var(--accent-gold){% else %}transparent{% endif %}; background: {% if selected_message and selected_message.id == msg.id %}#f4faf4{% else %}transparent{% endif %};">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span style="font-weight: 700; font-size: 0.9rem;">
-                            {% if active_tab == 'sent' %}
-                            To: {{ msg.receiver_name }}
-                            {% else %}
-                            {{ msg.sender_name }}
-                            {% endif %}
-                        </span>
-                        <span style="font-size: 0.75rem; color: #999;">{{ msg.created_at.strftime('%m-%d') }}</span>
+                <div style="padding: 12px 15px; border-bottom: 1px solid #f5f5f5; display: flex; align-items: flex-start; gap: 10px; background: {% if selected_message and selected_message.id == msg.id %}#f4faf4{% else %}transparent{% endif %};">
+                    <input type="checkbox" class="msg-checkbox" data-id="{{ msg.id }}" onchange="updateBulkDelete()" style="width: auto; margin-top: 4px; cursor: pointer; flex-shrink: 0;">
+                    <div onclick="location.href='/messages?tab={{ active_tab }}&id={{ msg.id }}'" style="flex: 1; cursor: pointer; border-left: 4px solid {% if active_tab == 'inbox' and not msg.is_read %}var(--accent-gold){% else %}transparent{% endif %}; padding-left: 10px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="font-weight: 700; font-size: 0.9rem;">
+                                {% if active_tab == 'sent' %}
+                                To: {{ msg.receiver_name }}
+                                {% else %}
+                                {{ msg.sender_name }}
+                                {% endif %}
+                            </span>
+                            <span style="font-size: 0.75rem; color: #999;">{{ msg.created_at.strftime('%m-%d') }}</span>
+                        </div>
+                        <div style="font-size: 0.85rem; color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ msg.subject }}</div>
                     </div>
-                    <div
-                        style="font-size: 0.85rem; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        {{ msg.subject }}</div>
                 </div>
                 {% endfor %}
                 {% else %}
@@ -54,12 +83,37 @@
                         <span style="color: #999; margin: 0 10px;">&bull;</span>
                         <span style="font-size: 0.85rem; color: #666;">To: {{ selected_message.receiver_name }}</span>
                     </div>
-                    <span style="font-size: 0.85rem; color: #999;">{{ selected_message.created_at.strftime('%Y-%m-%d
-                        %H:%M') }}</span>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span style="font-size: 0.85rem; color: #999;">{{ selected_message.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        <form action="/delete-message/{{ selected_message.id }}" method="POST" style="margin: 0;" onsubmit="return confirm('Delete this message?');">
+                            <input type="hidden" name="tab" value="{{ active_tab }}">
+                            <button type="submit" style="background: none; border: none; color: #e74c3c; cursor: pointer; padding: 0;" title="Delete Message">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
             <div style="padding: 30px; flex: 1; overflow-y: auto; line-height: 1.6; color: #444; white-space: pre-wrap;">
                 {{ selected_message.body|urlize(target="_blank")|safe }}
+                
+                {% if selected_message.attachment_filename %}
+                <div style="margin-top: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #eee; border-radius: 5px; display: inline-block;">
+                    <strong style="display: block; margin-bottom: 5px; font-size: 0.9rem; color: #555;">Attachment:</strong>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <a href="/download-message-attachment/{{ selected_message.id }}" style="color: var(--primary-green); text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-paperclip"></i> {{ selected_message.attachment_filename }}
+                        </a>
+                        {% if session.designation != 'Client' %}
+                        <form action="/save-message-attachment-to-repo/{{ selected_message.id }}" method="POST" style="margin: 0;">
+                            <button type="submit" style="background: var(--accent-gold); color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 5px;" title="Save to your Document Repository">
+                                <i class="fas fa-save"></i> Save to Repo
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
             {% if active_tab == 'inbox' %}
             <div style="padding: 20px; border-top: 1px solid #eee; text-align: right;">
@@ -87,11 +141,10 @@
         <span onclick="closeMessageModal()"
             style="position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #999;">&times;</span>
         <h3 id="modalTitle" style="color: var(--primary-green); margin-bottom: 20px;">New Message</h3>
-        <form action="/send-message" method="POST">
+        <form action="/send-message" method="POST" enctype="multipart/form-data">
             <div class="form-group">
-                <label>Recipients</label>
-                <select name="receiver_id" id="msgReceiver" required>
-                    <option value="">-- Select Recipient --</option>
+                <label>Recipients (Select multiple)</label>
+                <select name="receiver_ids" id="msgReceiver" multiple required>
                     {% for user in contacts %}
                     <option value="{{ user.id }}">{{ user.full_name }} ({{ user.designation }})</option>
                     {% endfor %}
@@ -105,6 +158,26 @@
                 <label>Message</label>
                 <textarea name="body" rows="6" placeholder="Type your message here..." required></textarea>
             </div>
+            <div class="form-group">
+                <label>Attachment (Optional)</label>
+                {% if repo_file %}
+                <div style="background: #eef7ee; padding: 10px; border-radius: 5px; margin-bottom: 10px; border-left: 3px solid var(--primary-green);">
+                    <strong style="color: var(--primary-green); font-size: 0.9rem;"><i class="fas fa-paperclip"></i> Attached from Repository:</strong><br>
+                    <span style="font-size: 0.85rem;">{{ repo_file.filename }}</span>
+                    {% if session.designation == 'CEO' %}
+                    <input type="hidden" name="repo_file_id" value="{{ repo_file.id }}">
+                    {% else %}
+                    <input type="hidden" name="employee_repo_file_id" value="{{ repo_file.id }}">
+                    {% endif %}
+                </div>
+                <small style="color: #666; display: block; margin-top: 5px;">Uploading a new file will override the repository attachment.</small>
+                {% endif %}
+                <input type="file" name="attachment" id="msgAttachment">
+                <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" name="save_to_repo" id="saveToRepo" style="width: auto; margin: 0;">
+                    <label for="saveToRepo" style="margin: 0; font-size: 0.85rem; color: #666; font-weight: normal;">Save attachment to my repository</label>
+                </div>
+            </div>
             <button type="submit" class="btn-gold" style="width: 100%; border: none; margin-top: 10px;">SEND
                 MESSAGE</button>
         </form>
@@ -112,10 +185,24 @@
 </div>
 
 <script>
+    let recipientChoices;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const element = document.getElementById('msgReceiver');
+        recipientChoices = new Choices(element, {
+            removeItemButton: true,
+            searchPlaceholderValue: 'Type name or designation to search...',
+            placeholderValue: 'Select recipients'
+        });
+    });
+
     function openNewMessageModal() {
         document.getElementById('msgModal').style.display = 'block';
         document.getElementById('modalTitle').innerText = 'New Message';
-        document.getElementById('msgReceiver').value = '';
+        // Reset selections
+        if (recipientChoices) {
+            recipientChoices.removeActiveItems();
+        }
         document.getElementById('msgSubject').value = '';
     }
 
@@ -123,9 +210,54 @@
         {% if selected_message %}
         document.getElementById('msgModal').style.display = 'block';
         document.getElementById('modalTitle').innerText = 'Reply Message';
-        document.getElementById('msgReceiver').value = "{{ selected_message.sender_id }}";
+        if (recipientChoices) {
+            recipientChoices.removeActiveItems();
+            recipientChoices.setChoiceByValue("{{ selected_message.sender_id }}");
+        }
         document.getElementById('msgSubject').value = "Re: {{ selected_message.subject }}";
         {% endif %}
+    }
+
+    {% if repo_file %}
+    // Auto-open modal if repo file is being attached
+    window.onload = function() {
+        openNewMessageModal();
+        document.getElementById('modalTitle').innerText = 'New Message (with Repository Attachment)';
+    }
+    {% endif %}
+
+    function toggleSelectAll(cb) {
+        var checkboxes = document.querySelectorAll('.msg-checkbox');
+        checkboxes.forEach(function(c) { c.checked = cb.checked; });
+        updateBulkDelete();
+    }
+
+    function updateBulkDelete() {
+        var checkboxes = document.querySelectorAll('.msg-checkbox:checked');
+        var btn = document.getElementById('bulk-delete-btn');
+        var container = document.getElementById('selected-ids-container');
+        
+        // Rebuild hidden inputs
+        container.innerHTML = '';
+        checkboxes.forEach(function(c) {
+            var inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'message_ids';
+            inp.value = c.getAttribute('data-id');
+            container.appendChild(inp);
+        });
+
+        if (checkboxes.length > 0) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        } else {
+            btn.disabled = true;
+            btn.style.opacity = '0.4';
+        }
+
+        // Sync Select All checkbox
+        var all = document.querySelectorAll('.msg-checkbox');
+        document.getElementById('select-all-msgs').checked = (all.length > 0 && checkboxes.length === all.length);
     }
 
     function closeMessageModal() {

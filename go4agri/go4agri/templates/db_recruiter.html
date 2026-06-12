@@ -1,59 +1,382 @@
 {% extends "db_base.html" %}
 
-{% block dashboard_title %}Recruitment & Enquiries Control Panel{% endblock %}
+{% block dashboard_title %}Recruitment &amp; Enquiries Control Panel{% endblock %}
 
 {% block dashboard_content %}
-<div class="features-grid" style="margin-bottom: 40px;">
-    <div class="db-card" style="border-left: 5px solid #2d5a27; padding: 25px;">
-        <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">New Job Applications</p>
-        <h2 style="color: #333;">{{ job_applications|length }}</h2>
-    </div>
-</div>
 
-<!-- Job Applications Section -->
-<div id="job-applications" style="margin-top: 30px; margin-bottom: 40px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary-green);">
-    <h3 style="color: var(--primary-green); margin-bottom: 20px;"><i class="fas fa-file-invoice"></i> Incoming Job Applications</h3>
-    {% if job_applications %}
-    <div class="table-responsive">
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr style="background: #f4faf4; text-align: left;">
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Date</th>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Applicant Name</th>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Position</th>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Contact Info</th>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Resume</th>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for app in job_applications %}
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 12px; font-size: 0.85rem; color: #666;">{{ app.created_at.strftime('%Y-%m-%d') }}</td>
-                    <td style="padding: 12px; font-weight: 600;">{{ app.full_name }}</td>
-                    <td style="padding: 12px;"><span class="badge info" style="background: #e1f5fe; color: #01579b;">{{ app.position }}</span></td>
-                    <td style="padding: 12px; font-size: 0.85rem;">
-                        <div><i class="fas fa-envelope" style="width: 15px; color: #888;"></i> {{ app.email }}</div>
-                        <div><i class="fas fa-phone" style="width: 15px; color: #888;"></i> {{ app.phone }}</div>
-                    </td>
-                    <td style="padding: 12px;">
-                        <a href="/download-resume/{{ app.resume_path }}" class="btn-primary" style="padding: 5px 12px; font-size: 0.8rem; text-decoration: none; border-radius: 4px; background: #27ae60; color: white;">
-                            <i class="fas fa-download"></i> Download
-                        </a>
-                    </td>
-                    <td style="padding: 12px;">
-                        <span class="badge" style="background: #fff3e0; color: #ef6c00;">{{ app.status }}</span>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<style>
+    /* ===== Apply Desk Card Styles ===== */
+    .apply-card {
+        background: #fffaf5;
+        border: 1px solid #f0c070;
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 18px;
+        transition: box-shadow 0.2s;
+    }
+    .apply-card:hover { box-shadow: 0 4px 18px rgba(197,160,89,0.13); }
+    .apply-card-meta { font-size: 0.82rem; color: #666; margin-top: 4px; display: flex; gap: 18px; flex-wrap: wrap; }
+    .apply-card-meta span { display: flex; align-items: center; gap: 5px; }
+    .upload-zone {
+        display: flex; align-items: center; gap: 12px;
+        background: #f9fdf9; border: 2px dashed #b5cdb5; border-radius: 8px;
+        padding: 12px 16px; margin-top: 14px; flex-wrap: wrap;
+    }
+    .upload-zone label { font-size: 0.82rem; font-weight: 600; color: #2d5a27; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+    .upload-zone input[type=file] { flex: 1; font-size: 0.8rem; min-width: 0; }
+    .file-hint { font-size: 0.74rem; color: #888; white-space: nowrap; }
+    .action-row { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+    .btn-accept {
+        display: inline-flex; align-items: center; gap: 7px; padding: 10px 22px;
+        background: #2d5a27; color: white; border: none; border-radius: 7px;
+        font-size: 0.87rem; font-weight: 700; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-accept:hover { background: #1e3d1b; }
+    .btn-reject {
+        display: inline-flex; align-items: center; gap: 7px; padding: 10px 22px;
+        background: #e74c3c; color: white; border: none; border-radius: 7px;
+        font-size: 0.87rem; font-weight: 700; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-reject:hover { background: #c0392b; }
+    .btn-view-form {
+        display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px;
+        background: #0072bc; color: white; text-decoration: none; border-radius: 7px;
+        font-size: 0.82rem; font-weight: 600; margin-left: auto; white-space: nowrap;
+    }
+    .upload-required-note { font-size: 0.78rem; color: #c0392b; display: flex; align-items: center; gap: 5px; }
+
+    /* ===== Tab Navigation ===== */
+    .rec-tabs {
+        display: flex; gap: 4px; border-bottom: 3px solid #e0e0e0;
+        margin-bottom: 0; flex-wrap: wrap;
+    }
+    .rec-tab-btn {
+        padding: 11px 22px; border: none; background: #f2f2f2;
+        border-radius: 10px 10px 0 0; font-size: 0.87rem; font-weight: 700;
+        cursor: pointer; color: #666; border-bottom: 3px solid transparent;
+        margin-bottom: -3px; transition: all 0.2s;
+        display: inline-flex; align-items: center; gap: 8px;
+    }
+    .rec-tab-btn.active {
+        background: #fff; color: #2d5a27; border-bottom: 3px solid #2d5a27;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+    }
+    .rec-tab-btn:hover:not(.active) { background: #e8e8e8; color: #333; }
+    .rec-tab-pane {
+        display: none; background: white;
+        border-radius: 0 10px 10px 10px; padding: 28px;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+        animation: fadeInTab 0.22s ease;
+    }
+    .rec-tab-pane.active { display: block; }
+    @keyframes fadeInTab { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .tab-badge {
+        display: inline-block; background: #e74c3c; color: white;
+        border-radius: 20px; padding: 2px 9px; font-size: 0.68rem; font-weight: 800; min-width: 22px; text-align: center;
+    }
+    .tab-badge.blue  { background: #0072bc; }
+    .tab-badge.grey  { background: #607d8b; }
+    .tab-badge.green { background: #2d5a27; }
+    .tab-badge.gold  { background: #b8860b; }
+
+    /* ===== History Action Buttons ===== */
+    .hist-btn {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 5px 12px; border-radius: 5px; font-size: 0.75rem; font-weight: 700;
+        border: 1px solid; cursor: pointer; background: white; transition: all 0.2s;
+        text-decoration: none; white-space: nowrap;
+    }
+    .hist-btn-edit   { color: #0056b3; border-color: #0072bc; }
+    .hist-btn-edit:hover { background: #e8f4fc; }
+    .hist-btn-archive { color: #856404; border-color: #c49a05; }
+    .hist-btn-archive:hover { background: #fff3cd; }
+    .hist-btn-delete  { color: #c0392b; border-color: #e74c3c; }
+    .hist-btn-delete:hover { background: #fdecea; }
+    .hist-btn-restore { color: #2d5a27; border-color: #2d5a27; }
+    .hist-btn-restore:hover { background: #e9f5e8; }
+</style>
+
+<!-- Pending Assessments Section -->
+{% if pending_assessments %}
+<div class="db-card" style="margin-bottom: 25px; border-top: 5px solid #4285f4; padding: 20px; background: #fff;">
+    <h4 style="margin: 0 0 15px 0; color: #333; display: flex; align-items: center; gap: 10px;">
+        <i class="fas fa-clipboard-check" style="color: #4285f4;"></i> Pending Training Assessments
+    </h4>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+        {% for ass in pending_assessments %}
+        <div style="border: 1px solid #e8f0fe; border-radius: 10px; padding: 15px; background: #f8faff; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-weight: 700; color: #333; margin-bottom: 3px;">{{ ass.title }}</div>
+                <div style="font-size: 0.8rem; color: #666;">Module: <span class="badge info" style="font-size: 0.7rem;">{{ ass.training_type }}</span></div>
+            </div>
+            <a href="{{ url_for('take_assessment', assignment_id=ass.id) }}" class="btn-primary" style="padding: 8px 15px; border-radius: 6px; font-size: 0.85rem; background: #4285f4; text-decoration: none; color: white;">
+                Take Form
+            </a>
+        </div>
+        {% endfor %}
     </div>
-    {% else %}
-    <div style="text-align: center; padding: 40px; color: #999;">
-        <p>No job applications received yet.</p>
-    </div>
-    {% endif %}
 </div>
+{% endif %}
+
+<!-- ===== Tab Navigation ===== -->
+{% set submitted_apps = all_applications | selectattr('status', 'equalto', 'APPLICATION_SUBMITTED') | list %}
+
+<div style="margin-top: 10px;">
+    <div class="rec-tabs">
+        <button id="rec-tab-btn-pending" class="rec-tab-btn active" onclick="switchRecTab('pending')">
+            <i class="fas fa-inbox"></i> Pending Review
+            {% if submitted_apps %}<span class="tab-badge">{{ submitted_apps|length }}</span>{% endif %}
+        </button>
+        <button id="rec-tab-btn-history" class="rec-tab-btn" onclick="switchRecTab('history')">
+            <i class="fas fa-history"></i> Review History
+            {% if processed_applications %}<span class="tab-badge blue">{{ processed_applications|length }}</span>{% endif %}
+        </button>
+        <button id="rec-tab-btn-archived" class="rec-tab-btn" onclick="switchRecTab('archived')">
+            <i class="fas fa-archive"></i> Archived / Deleted
+            {% if deleted_applications %}<span class="tab-badge grey">{{ deleted_applications|length }}</span>{% endif %}
+        </button>
+    </div>
+
+    <!-- ========== Tab 1: Pending Review ========== -->
+    <div id="rec-tab-pending" class="rec-tab-pane active">
+        {% if submitted_apps %}
+        <div style="border-left: 5px solid #e74c3c; padding-left: 18px; margin-bottom: 22px;">
+            <h3 style="color: #c0392b; margin: 0 0 4px 0; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-file-alt"></i> Step 1b &mdash; Apply Desk Review
+                <span style="background: #e74c3c; color: white; font-size: 0.72rem; padding: 3px 12px; border-radius: 20px; font-weight: 700;">{{ submitted_apps|length }} PENDING</span>
+            </h3>
+            <p style="color: #666; font-size: 0.85rem; margin: 6px 0 0;">
+                Clients have uploaded their filled application forms awaiting your review.
+                Upload the signed <strong>FMO11</strong> (Letter of Registration) to <strong>Accept</strong>,
+                or upload the signed <strong>FMO15</strong> (Letter of Rejection) to <strong>Reject</strong>.
+            </p>
+        </div>
+
+        {% for app in submitted_apps %}
+        <form class="apply-card" action="/apply-desk/review/{{ app.id }}" method="POST" enctype="multipart/form-data"
+              onsubmit="return validateApplyForm(this, event)">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <div style="font-weight: 700; color: #2d5a27; font-size: 1.05rem;">{{ app.company_name }}</div>
+                    <div class="apply-card-meta">
+                        <span><i class="fas fa-id-badge"></i> {{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }}</span>
+                        <span><i class="fas fa-tag"></i> {{ app.program_type }}</span>
+                        <span><i class="fas fa-user"></i> {{ app.client_code if app.client_code else 'USR-' ~ '%04d'|format(app.client_id) }}</span>
+                        <span><i class="fas fa-calendar"></i> {{ app.created_at.strftime('%d %b %Y') if app.created_at else '' }}</span>
+                    </div>
+                </div>
+                <a href="/application-documents/{{ app.id }}" target="_blank" class="btn-view-form">
+                    <i class="fas fa-eye"></i> View Client's Form
+                </a>
+            </div>
+            <div class="upload-zone">
+                <label for="desk_file_{{ app.id }}">
+                    <i class="fas fa-file-upload"></i> Upload Response Form:
+                </label>
+                <input type="file" id="desk_file_{{ app.id }}" name="response_form" accept=".pdf,.doc,.docx,.xls,.xlsx">
+                <span class="file-hint">FMO11 (Accept) or FMO15 (Reject)</span>
+            </div>
+            <div style="margin-top: 6px;">
+                <span class="upload-required-note">
+                    <i class="fas fa-exclamation-circle"></i>
+                    A response form must be uploaded before accepting or rejecting.
+                </span>
+            </div>
+            <div class="action-row">
+                <button type="submit" name="action" value="accept" class="btn-accept"
+                        onclick="return confirmAction(event, 'accept', '{{ app.company_name }}')">
+                    <i class="fas fa-check-circle"></i> Accept &mdash; Send FMO11
+                </button>
+                <button type="submit" name="action" value="reject" class="btn-reject"
+                        onclick="return confirmAction(event, 'reject', '{{ app.company_name }}')">
+                    <i class="fas fa-times-circle"></i> Reject &mdash; Send FMO15
+                </button>
+            </div>
+        </form>
+        {% endfor %}
+
+        {% else %}
+        <div style="text-align: center; padding: 60px 20px;">
+            <div style="font-size: 3.5rem; color: #ccc; margin-bottom: 18px;"><i class="fas fa-clipboard-check"></i></div>
+            <h3 style="color: #333; margin-bottom: 10px;">No Pending Client Reviews</h3>
+            <p style="color: #666; font-size: 0.9rem;">
+                There are currently no new client application forms submitted for review at the Apply Desk.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ========== Tab 2: Review History ========== -->
+    <div id="rec-tab-history" class="rec-tab-pane">
+        <div style="border-left: 5px solid #2980b9; padding-left: 18px; margin-bottom: 22px;">
+            <h3 style="color: #2980b9; margin: 0 0 4px 0; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-history"></i> Step 1b &mdash; Apply Desk Review History
+            </h3>
+            <p style="color: #666; font-size: 0.85rem; margin: 6px 0 0;">
+                A complete record of all applications accepted or rejected at the Apply Desk.
+                Use <strong>Archive</strong> to move completed records out of active view, or <strong>Delete</strong> to soft-remove (records remain visible in Archived/Deleted tab).
+            </p>
+        </div>
+
+        {% if processed_applications %}
+        <div class="table-responsive">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+                <thead>
+                    <tr style="background: #f4f9fd; text-align: left;">
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #dee2e6;">Company</th>
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #dee2e6;">Program ID</th>
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #dee2e6;">Type</th>
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #dee2e6;">Client Code</th>
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #dee2e6;">Outcome</th>
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #dee2e6; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in processed_applications %}
+                    <tr style="border-bottom: 1px solid #eee; transition: background 0.15s;" onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background=''">
+                        <td style="padding: 12px 14px; font-weight: 600; color: #2d5a27;">{{ app.company_name }}</td>
+                        <td style="padding: 12px 14px; color: #555;">{{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }}</td>
+                        <td style="padding: 12px 14px; color: #555;">{{ app.program_type }}</td>
+                        <td style="padding: 12px 14px; color: #555;">{{ app.client_code if app.client_code else 'USR-' ~ '%04d'|format(app.client_id) }}</td>
+                        <td style="padding: 12px 14px;">
+                            {% if app.status == 'APPLICATION_REJECTED_1B' %}
+                            <span style="background: #e74c3c; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;"><i class="fas fa-times-circle"></i> Rejected (FMO15)</span>
+                            {% else %}
+                            <span style="background: #2d5a27; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;"><i class="fas fa-check-circle"></i> Accepted (FMO11)</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 14px;">
+                            <div style="display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap;">
+                                <a href="/client-details/{{ app.client_id }}?app_id={{ app.id }}" class="hist-btn hist-btn-edit">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <form action="/archive-application/{{ app.id }}" method="POST" style="margin:0;"
+                                      onsubmit="return confirm('Archive this record? It will move to the Archived/Deleted tab.')">
+                                    <button type="submit" class="hist-btn hist-btn-archive">
+                                        <i class="fas fa-archive"></i> Archive
+                                    </button>
+                                </form>
+                                <form action="/delete-application/{{ app.id }}" method="POST" style="margin:0;"
+                                      onsubmit="return confirm('Delete this record? It will remain visible in the Archived/Deleted tab.')">
+                                    <button type="submit" class="hist-btn hist-btn-delete">
+                                        <i class="fas fa-trash-alt"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 50px 20px;">
+            <div style="font-size: 2.5rem; color: #ccc; margin-bottom: 12px;"><i class="fas fa-history"></i></div>
+            <p style="color: #999; font-size: 0.9rem;">No applications have been processed yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ========== Tab 3: Archived / Deleted ========== -->
+    <div id="rec-tab-archived" class="rec-tab-pane">
+        <div style="border-left: 5px solid #607d8b; padding-left: 18px; margin-bottom: 22px;">
+            <h3 style="color: #455a64; margin: 0 0 4px 0; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-archive"></i> Archived &amp; Deleted Records
+            </h3>
+            <p style="color: #666; font-size: 0.85rem; margin: 6px 0 0;">
+                A permanent history of all archived and soft-deleted applications.
+                Records here are <strong>never permanently removed</strong>. You can restore them to active view at any time.
+            </p>
+        </div>
+
+        {% if deleted_applications %}
+        <div class="table-responsive">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+                <thead>
+                    <tr style="background: #f5f5f5; text-align: left;">
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #dee2e6;">Company</th>
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #dee2e6;">Program ID</th>
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #dee2e6;">Type</th>
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #dee2e6;">Client Code</th>
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #dee2e6;">Workflow Status</th>
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #dee2e6;">Record State</th>
+                        <th style="padding: 12px 14px; border-bottom: 2px solid #dee2e6; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in deleted_applications %}
+                    <tr style="border-bottom: 1px solid #eee; transition: background 0.15s;" onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background=''">
+                        <td style="padding: 12px 14px; font-weight: 600;">{{ app.company_name }}</td>
+                        <td style="padding: 12px 14px; color: #555;">{{ app.project_code if app.project_code else 'PRG-' ~ '%04d'|format(app.id) }}</td>
+                        <td style="padding: 12px 14px; color: #555;">{{ app.program_type }}</td>
+                        <td style="padding: 12px 14px; color: #555;">{{ app.client_code if app.client_code else 'USR-' ~ '%04d'|format(app.client_id) }}</td>
+                        <td style="padding: 12px 14px;">
+                            <span style="background: #f0f0f0; color: #555; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem;">{{ app.status.replace('_', ' ') }}</span>
+                        </td>
+                        <td style="padding: 12px 14px;">
+                            {% if app.current_status == 'Archived' %}
+                            <span style="background: #b8860b; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;"><i class="fas fa-archive"></i> Archived</span>
+                            {% else %}
+                            <span style="background: #e74c3c; color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;"><i class="fas fa-trash"></i> Deleted</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 14px; text-align: right;">
+                            <form action="/restore-application/{{ app.id }}" method="POST" style="margin: 0; display: inline;"
+                                  onsubmit="return confirm('Restore this application to active view?')">
+                                <button type="submit" class="hist-btn hist-btn-restore">
+                                    <i class="fas fa-undo"></i> Restore
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 50px 20px;">
+            <div style="font-size: 2.5rem; color: #ccc; margin-bottom: 12px;"><i class="fas fa-archive"></i></div>
+            <p style="color: #999; font-size: 0.9rem;">No archived or deleted applications found.</p>
+        </div>
+        {% endif %}
+    </div>
+</div><!-- end tab wrapper -->
+
+<script>
+    function switchRecTab(tab) {
+        document.querySelectorAll('.rec-tab-pane').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.rec-tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('rec-tab-' + tab).classList.add('active');
+        document.getElementById('rec-tab-btn-' + tab).classList.add('active');
+    }
+
+    function validateApplyForm(form, evt) {
+        var fileInput = form.querySelector('input[type="file"]');
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            evt.preventDefault();
+            alert('Please upload the response form (FMO11 or FMO15) before proceeding.');
+            return false;
+        }
+        return true;
+    }
+
+    function confirmAction(evt, action, company) {
+        var form = evt.target.closest('form');
+        var fileInput = form.querySelector('input[type="file"]');
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            evt.preventDefault();
+            alert('Please upload the response form (FMO11 or FMO15) before proceeding.');
+            return false;
+        }
+        var label = action === 'accept'
+            ? 'ACCEPT this application and send FMO11 (Letter of Registration) to ' + company + '?'
+            : 'REJECT this application and send FMO15 (Letter of Rejection) to ' + company + '?';
+        if (!confirm(label)) {
+            evt.preventDefault();
+            return false;
+        }
+        return true;
+    }
+</script>
 
 {% endblock %}
