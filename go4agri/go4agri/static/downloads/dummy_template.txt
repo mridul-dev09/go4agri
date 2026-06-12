@@ -1,0 +1,2 @@
+This is a dummy template file for document review.
+Please fill in your company details, scope, and certification scheme preferences.
