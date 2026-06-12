@@ -276,9 +276,10 @@
         modalTitle.textContent = title;
         
         // Inline PDF URL (with inline=1 parameter)
-        const inlineUrl = `/download-doc/${encodeURIComponent(filename)}?inline=1`;
+        const isDirectUrl = filename.startsWith('/static/') || filename.startsWith('http://') || filename.startsWith('https://');
+        const inlineUrl = isDirectUrl ? filename : `/download-doc/${encodeURIComponent(filename)}?inline=1`;
         // Regular download URL
-        const downloadUrl = `/download-doc/${encodeURIComponent(filename)}`;
+        const downloadUrl = isDirectUrl ? filename : `/download-doc/${encodeURIComponent(filename)}`;
         
         pdfFrame.src = inlineUrl;
         downloadBtn.href = downloadUrl;
@@ -308,3 +309,5 @@
     }
 </script>
 {% endblock %}
+
+
