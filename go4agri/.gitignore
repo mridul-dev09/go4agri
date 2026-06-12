@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment
+.env
+
+# Uploads (optional - agar nahi chahte to remove karo)
+uploads/
+
+# OS files
+.DS_Store
+Thumbs.db 
